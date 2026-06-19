@@ -2,6 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getSupabasePublicEnv } from "@/lib/env/supabase";
+import {
+  DEV_AUTH_COOKIE_NAME,
+  getDevAuthUserFromCookie
+} from "@/server/auth/dev-auth";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
@@ -15,7 +19,7 @@ export async function updateSession(request: NextRequest) {
   } catch {
     return {
       response,
-      user: null
+      user: getDevUser(request)
     };
   }
 
@@ -52,7 +56,13 @@ export async function updateSession(request: NextRequest) {
   } catch {
     return {
       response,
-      user: null
+      user: getDevUser(request)
     };
   }
+}
+
+function getDevUser(request: NextRequest) {
+  return getDevAuthUserFromCookie(
+    request.cookies.get(DEV_AUTH_COOKIE_NAME)?.value
+  );
 }

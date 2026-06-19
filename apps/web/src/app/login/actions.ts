@@ -1,8 +1,15 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  DEV_AUTH_COOKIE_NAME,
+  DEV_AUTH_COOKIE_VALUE,
+  getDevAuthCookieOptions,
+  isDevAuthCredential
+} from "@/server/auth/dev-auth";
 import { getSafeRedirectPath } from "@/server/auth/protected-routes";
 
 export async function loginAction(formData: FormData) {
@@ -12,13 +19,11 @@ export async function loginAction(formData: FormData) {
     String(formData.get("redirectTo") ?? "/dashboard")
   );
 
-  let supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
-
-  try {
-    supabase = await createServerSupabaseClient();
-  } catch {
-    redirectToLogin(redirectTo, "auth_unavailable");
-  }
+  const supabase = await createSupabaseOrSignInDevUser(
+    email,
+    password,
+    redirectTo
+  );
 
   let error: unknown;
 
@@ -34,6 +39,37 @@ export async function loginAction(formData: FormData) {
   if (error) {
     redirectToLogin(redirectTo, "invalid_credentials");
   }
+
+  redirect(redirectTo);
+}
+
+async function createSupabaseOrSignInDevUser(
+  email: string,
+  password: string,
+  redirectTo: string
+): Promise<Awaited<ReturnType<typeof createServerSupabaseClient>>> {
+  try {
+    return await createServerSupabaseClient();
+  } catch {
+    return signInDevUserOrRedirect(email, password, redirectTo);
+  }
+}
+
+async function signInDevUserOrRedirect(
+  email: string,
+  password: string,
+  redirectTo: string
+): Promise<never> {
+  if (!isDevAuthCredential(email, password)) {
+    redirectToLogin(redirectTo, "auth_unavailable");
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(
+    DEV_AUTH_COOKIE_NAME,
+    DEV_AUTH_COOKIE_VALUE,
+    getDevAuthCookieOptions()
+  );
 
   redirect(redirectTo);
 }

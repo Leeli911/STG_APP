@@ -7,6 +7,10 @@ import LoginPage from "@/app/login/page";
 import { middleware } from "@/middleware";
 import { signOutUser } from "@/server/auth/logout";
 import {
+  DEV_AUTH_COOKIE_NAME,
+  DEV_AUTH_COOKIE_VALUE
+} from "@/server/auth/dev-auth";
+import {
   getLoginRedirectUrl,
   isProtectedRoute
 } from "@/server/auth/protected-routes";
@@ -22,13 +26,27 @@ function AuthProbe() {
   return <p>{user ? user.email : "No user"}</p>;
 }
 
-function createMiddlewareRequest(url: string): NextRequest {
+function createMiddlewareRequest(
+  url: string,
+  cookieValues: Record<string, string> = {}
+): NextRequest {
   const requestUrl = new URL(url);
 
   return {
     headers: new Headers(),
     cookies: {
-      getAll: () => [],
+      get: (name: string) =>
+        cookieValues[name]
+          ? {
+              name,
+              value: cookieValues[name]
+            }
+          : undefined,
+      getAll: () =>
+        Object.entries(cookieValues).map(([name, value]) => ({
+          name,
+          value
+        })),
       set: vi.fn()
     },
     nextUrl: requestUrl,
@@ -40,6 +58,7 @@ describe("Module 2 auth foundation", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.doUnmock("@/lib/supabase/server");
+    vi.doUnmock("next/headers");
     vi.doUnmock("next/navigation");
     vi.resetModules();
   });
@@ -88,6 +107,21 @@ describe("Module 2 auth foundation", () => {
     expect(response.headers.get("location")).toBe(
       "http://localhost:3000/login?redirectTo=%2Fdashboard"
     );
+  });
+
+  it("allows protected routes with the local dev auth cookie", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+
+    const response = await middleware(
+      createMiddlewareRequest("http://localhost:3000/dashboard", {
+        [DEV_AUTH_COOKIE_NAME]: DEV_AUTH_COOKIE_VALUE
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
   });
 
   it("loads the persisted session into user context and listens for auth updates", async () => {
@@ -212,6 +246,47 @@ describe("Module 2 auth foundation", () => {
     );
   });
 
+  it("signs in with the local dev account when Supabase auth is unavailable", async () => {
+    const redirect = vi.fn((path: string) => {
+      throw new Error(`NEXT_REDIRECT:${path}`);
+    });
+    const setCookie = vi.fn();
+
+    vi.doMock("next/navigation", () => ({
+      redirect
+    }));
+    vi.doMock("next/headers", () => ({
+      cookies: vi.fn().mockResolvedValue({
+        set: setCookie
+      })
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createServerSupabaseClient: vi
+        .fn()
+        .mockRejectedValue(new Error("Missing NEXT_PUBLIC_SUPABASE_URL"))
+    }));
+
+    const { loginAction } = await import("@/app/login/actions");
+    const formData = new FormData();
+    formData.set("email", "test@123.com");
+    formData.set("password", "123");
+    formData.set("redirectTo", "/dashboard");
+
+    await expect(loginAction(formData)).rejects.toThrow(
+      "NEXT_REDIRECT:/dashboard"
+    );
+    expect(setCookie).toHaveBeenCalledWith(
+      DEV_AUTH_COOKIE_NAME,
+      DEV_AUTH_COOKIE_VALUE,
+      expect.objectContaining({
+        httpOnly: true,
+        path: "/",
+        sameSite: "lax"
+      })
+    );
+    expect(redirect).toHaveBeenCalledWith("/dashboard");
+  });
+
   it("signs the user out and returns the login redirect", async () => {
     const signOut = vi.fn().mockResolvedValue({ error: null });
 
@@ -243,6 +318,33 @@ describe("Module 2 auth foundation", () => {
     const { logoutAction } = await import("@/app/logout/actions");
 
     await expect(logoutAction()).rejects.toThrow("NEXT_REDIRECT:/login");
+    expect(redirect).toHaveBeenCalledWith("/login");
+  });
+
+  it("clears the local dev auth cookie when logout auth is unavailable", async () => {
+    const redirect = vi.fn((path: string) => {
+      throw new Error(`NEXT_REDIRECT:${path}`);
+    });
+    const deleteCookie = vi.fn();
+
+    vi.doMock("next/navigation", () => ({
+      redirect
+    }));
+    vi.doMock("next/headers", () => ({
+      cookies: vi.fn().mockResolvedValue({
+        delete: deleteCookie
+      })
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createServerSupabaseClient: vi
+        .fn()
+        .mockRejectedValue(new Error("Missing NEXT_PUBLIC_SUPABASE_URL"))
+    }));
+
+    const { logoutAction } = await import("@/app/logout/actions");
+
+    await expect(logoutAction()).rejects.toThrow("NEXT_REDIRECT:/login");
+    expect(deleteCookie).toHaveBeenCalledWith(DEV_AUTH_COOKIE_NAME);
     expect(redirect).toHaveBeenCalledWith("/login");
   });
 });
