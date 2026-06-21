@@ -13,6 +13,7 @@ export type ApiErrorEnvelope = {
   error: {
     code: string;
     message: string;
+    details: Record<string, unknown>;
   };
   meta: ApiMeta;
 };
@@ -40,14 +41,16 @@ export function jsonError(
   code: string,
   message: string,
   requestId: string,
-  status: number
+  status: number,
+  details: Record<string, unknown> = {}
 ) {
   return Response.json(
     {
       ok: false,
       error: {
         code,
-        message
+        message,
+        details
       },
       meta: {
         request_id: requestId

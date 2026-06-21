@@ -203,7 +203,7 @@ describe("Module 2 auth foundation", () => {
     );
   });
 
-  it("renders a configuration error when login auth is unavailable", async () => {
+  it("renders a development login hint when login auth fallback is enabled", async () => {
     render(
       await LoginPage({
         searchParams: Promise.resolve({
@@ -213,9 +213,10 @@ describe("Module 2 auth foundation", () => {
       })
     );
 
+    expect(screen.getByText("Development login is enabled.")).toBeInTheDocument();
     expect(
-      screen.getByText("Authentication is not configured for this environment.")
-    ).toBeInTheDocument();
+      screen.queryByText("Authentication is not configured for this environment.")
+    ).not.toBeInTheDocument();
   });
 
   it("redirects back to login instead of crashing when login auth is unavailable", async () => {

@@ -13,6 +13,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const redirectTo = getSafeRedirectPath(params.redirectTo);
   const hasLoginError = params.error === "invalid_credentials";
   const hasAuthUnavailableError = params.error === "auth_unavailable";
+  const showDevelopmentAuthMessage =
+    hasAuthUnavailableError &&
+    (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test");
 
   return (
     <main className="mx-auto max-w-md space-y-6">
@@ -62,7 +65,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </p>
         ) : null}
 
-        {hasAuthUnavailableError ? (
+        {showDevelopmentAuthMessage ? (
+          <p className="text-sm text-slate-600">
+            Development login is enabled.
+          </p>
+        ) : null}
+
+        {hasAuthUnavailableError && !showDevelopmentAuthMessage ? (
           <p className="text-sm text-red-600">
             Authentication is not configured for this environment.
           </p>

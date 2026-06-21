@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getDevAuthUserFromCookieHeader } from "@/server/auth/dev-auth";
 import {
   createQuestionService,
+  createStaticQuestionRepository,
   createSupabaseQuestionRepository
 } from "@/server/questions";
 import { jsonError } from "@/server/api/envelope";
@@ -15,6 +17,21 @@ export async function GET(request: Request) {
   try {
     supabase = await createServerSupabaseClient();
   } catch {
+    const devUser = getDevAuthUserFromCookieHeader(
+      request.headers.get("cookie")
+    );
+
+    if (devUser) {
+      return handleGetQuestions(request, {
+        async getUser() {
+          return {
+            id: devUser.id
+          };
+        },
+        questionService: createQuestionService(createStaticQuestionRepository())
+      });
+    }
+
     return jsonError(
       "UNAUTHENTICATED",
       "Authentication is required.",

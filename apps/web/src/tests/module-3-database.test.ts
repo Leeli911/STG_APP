@@ -7,6 +7,21 @@ const migrationPath = join(
   "migrations",
   "202606180001_create_training_core.sql"
 );
+const attemptIdempotencyMigrationPath = join(
+  databaseDir,
+  "migrations",
+  "202606190001_add_attempt_idempotency.sql"
+);
+const mockResultMigrationPath = join(
+  databaseDir,
+  "migrations",
+  "202606190002_create_mock_result_tables.sql"
+);
+const realAiPipelineMigrationPath = join(
+  databaseDir,
+  "migrations",
+  "202606190003_add_real_ai_pipeline_metadata.sql"
+);
 const seedPath = join(databaseDir, "seed", "questions.v1.sql");
 
 function readSql(path: string) {
@@ -45,7 +60,35 @@ describe("Module 3 database layer", () => {
     expect(sql).toContain("user_id uuid not null references auth.users(id)");
     expect(sql).toContain("question_id uuid not null references public.questions(id)");
     expect(sql).toContain("original_answer text not null");
+    expect(sql).toContain("idempotency_key text not null");
+    expect(sql).toContain("client_started_at timestamp with time zone");
     expect(sql).toContain("status text not null default 'submitted'");
+    expect(sql).toContain("mock_result_generating");
+    expect(sql).toContain("attempts_user_idempotency_key_unique");
+
+    expect(sql).toContain("create table if not exists public.scores");
+    for (const column of [
+      "attempt_id uuid primary key references public.attempts(id)",
+      "answer_relevance integer not null",
+      "core_message integer not null",
+      "structure integer not null",
+      "evidence integer not null",
+      "interview_impact integer not null",
+      "total_score integer not null",
+      "scores_total_matches_dimensions"
+    ]) {
+      expect(sql).toContain(column);
+    }
+
+    expect(sql).toContain("create table if not exists public.ai_feedback");
+    for (const column of [
+      "diagnosis jsonb not null",
+      "rewrite jsonb not null",
+      "why_better jsonb not null",
+      "growth_suggestion jsonb not null"
+    ]) {
+      expect(sql).toContain(column);
+    }
 
     expect(sql).toContain("create table if not exists public.growth_profiles");
     expect(sql).toContain("user_id uuid primary key references auth.users(id)");
@@ -59,6 +102,54 @@ describe("Module 3 database layer", () => {
     ]) {
       expect(sql).toContain(column);
     }
+  });
+
+  it("includes an incremental migration for attempt idempotency", () => {
+    const sql = readSql(attemptIdempotencyMigrationPath);
+
+    expect(sql).toContain("add column if not exists idempotency_key text");
+    expect(sql).toContain("alter column idempotency_key set not null");
+    expect(sql).toContain("add column if not exists client_started_at");
+    expect(sql).toContain("attempts_user_idempotency_key_unique");
+  });
+
+  it("includes an incremental migration for mock result persistence", () => {
+    const sql = readSql(mockResultMigrationPath);
+
+    expect(sql).toContain("mock_result_generating");
+    expect(sql).toContain("create table if not exists public.scores");
+    expect(sql).toContain("create table if not exists public.ai_feedback");
+    expect(sql).toContain("scores_total_matches_dimensions");
+    expect(sql).toContain("users can update own attempts");
+    expect(sql).toContain("users can read own scores");
+    expect(sql).toContain("users can create own ai feedback");
+  });
+
+  it("includes an incremental migration for real AI pipeline metadata", () => {
+    const sql = readSql(realAiPipelineMigrationPath);
+
+    for (const column of [
+      "analysis_prompt_version text",
+      "coaching_prompt_version text",
+      "ai_model text",
+      "repair_count integer not null default 0",
+      "error_code text",
+      "analysis_latency_ms integer",
+      "coaching_latency_ms integer",
+      "total_latency_ms integer"
+    ]) {
+      expect(sql).toContain(column);
+    }
+
+    expect(sql).toContain("analysis_running");
+    expect(sql).toContain("coaching_running");
+    expect(sql).toContain("rubric_evidence jsonb");
+    expect(sql).toContain("structure between 0 and 25");
+    expect(sql).toContain("interview_impact between 0 and 15");
+    expect(sql).toContain("question_analysis jsonb");
+    expect(sql).toContain("observable_features jsonb");
+    expect(sql).toContain("safety_flags jsonb");
+    expect(sql).toContain("attempts_user_status_idx");
   });
 
   it("seeds exactly the fixed seven training questions", () => {

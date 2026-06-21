@@ -21,9 +21,38 @@ create table if not exists public.attempts (
   user_id uuid not null references auth.users(id) on delete cascade,
   question_id uuid not null references public.questions(id) on delete restrict,
   original_answer text not null check (length(trim(original_answer)) > 0),
+  idempotency_key text not null,
+  client_started_at timestamp with time zone,
   status text not null default 'submitted' check (
-    status in ('submitted', 'completed', 'failed')
+    status in ('submitted', 'mock_result_generating', 'completed', 'failed')
   ),
+  created_at timestamp with time zone not null default now(),
+  constraint attempts_user_idempotency_key_unique unique (
+    user_id,
+    idempotency_key
+  )
+);
+
+create table if not exists public.scores (
+  attempt_id uuid primary key references public.attempts(id) on delete cascade,
+  answer_relevance integer not null check (answer_relevance between 0 and 20),
+  core_message integer not null check (core_message between 0 and 20),
+  structure integer not null check (structure between 0 and 20),
+  evidence integer not null check (evidence between 0 and 20),
+  interview_impact integer not null check (interview_impact between 0 and 20),
+  total_score integer not null check (total_score between 0 and 100),
+  created_at timestamp with time zone not null default now(),
+  constraint scores_total_matches_dimensions check (
+    total_score = answer_relevance + core_message + structure + evidence + interview_impact
+  )
+);
+
+create table if not exists public.ai_feedback (
+  attempt_id uuid primary key references public.attempts(id) on delete cascade,
+  diagnosis jsonb not null,
+  rewrite jsonb not null,
+  why_better jsonb not null,
+  growth_suggestion jsonb not null,
   created_at timestamp with time zone not null default now()
 );
 
@@ -55,8 +84,16 @@ create index if not exists attempts_user_created_at_idx
 create index if not exists attempts_question_id_idx
   on public.attempts(question_id);
 
+create index if not exists scores_attempt_id_idx
+  on public.scores(attempt_id);
+
+create index if not exists ai_feedback_attempt_id_idx
+  on public.ai_feedback(attempt_id);
+
 alter table public.questions enable row level security;
 alter table public.attempts enable row level security;
+alter table public.scores enable row level security;
+alter table public.ai_feedback enable row level security;
 alter table public.growth_profiles enable row level security;
 
 drop policy if exists "Authenticated users can read active questions"
@@ -82,6 +119,75 @@ create policy "Users can create own attempts"
   for insert
   to authenticated
   with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own attempts"
+  on public.attempts;
+create policy "Users can update own attempts"
+  on public.attempts
+  for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can read own scores"
+  on public.scores;
+create policy "Users can read own scores"
+  on public.scores
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.attempts
+      where attempts.id = scores.attempt_id
+        and attempts.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Users can create own scores"
+  on public.scores;
+create policy "Users can create own scores"
+  on public.scores
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1
+      from public.attempts
+      where attempts.id = scores.attempt_id
+        and attempts.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Users can read own ai feedback"
+  on public.ai_feedback;
+create policy "Users can read own ai feedback"
+  on public.ai_feedback
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.attempts
+      where attempts.id = ai_feedback.attempt_id
+        and attempts.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Users can create own ai feedback"
+  on public.ai_feedback;
+create policy "Users can create own ai feedback"
+  on public.ai_feedback
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1
+      from public.attempts
+      where attempts.id = ai_feedback.attempt_id
+        and attempts.user_id = auth.uid()
+    )
+  );
 
 drop policy if exists "Users can read own growth profile"
   on public.growth_profiles;

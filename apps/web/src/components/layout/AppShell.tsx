@@ -2,15 +2,28 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { getCurrentUser } from "@/server/auth/session";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/workspace", label: "Workspace" },
-  { href: "/history", label: "History" },
-  { href: "/admin", label: "Admin" }
+  { href: "/history", label: "History" }
 ];
 
-export function AppShell({ children }: { children: ReactNode }) {
+type AppShellUser = {
+  id: string;
+  email?: string | null;
+};
+
+export async function AppShell({
+  children,
+  user
+}: {
+  children: ReactNode;
+  user?: AppShellUser | null;
+}) {
+  const currentUser = user === undefined ? await getCurrentUser() : user;
+
   return (
     <div className="min-h-screen bg-paper text-ink">
       <header className="border-b border-slate-200 bg-white">
@@ -18,14 +31,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href="/dashboard" className="font-semibold">
             Structured Thinking Gym
           </Link>
-          <nav aria-label="Main navigation" className="flex gap-4 text-sm">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <LogoutButton />
+          {currentUser ? (
+            <>
+              <nav aria-label="Main navigation" className="flex gap-4 text-sm">
+                {navItems.map((item) => (
+                  <Link key={item.href} href={item.href}>
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+              <LogoutButton />
+            </>
+          ) : null}
         </div>
       </header>
       <div className="mx-auto max-w-6xl px-6 py-8">{children}</div>

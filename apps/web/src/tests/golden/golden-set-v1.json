@@ -1,0 +1,358 @@
+{
+  "version": "Golden Set V1",
+  "cases": [
+    {
+      "id": "case-01",
+      "title": "极差回答，无内容",
+      "question": "请介绍一个你最有代表性的项目。",
+      "user_answer": "我做过一些项目，感觉还可以，也学到了很多东西。",
+      "case_type": "极差回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"project\\_experience\",\n\n\"main\\_point\\_position\": \"missing\",\n\n\"has\\_clear\\_opening\\_claim\": false,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": false,\n\n\"has\\_result\": false,\n\n\"has\\_metric\": false,\n\n\"star\\_completeness\": {\n\n\"situation\": false,\n\n\"task\": false,\n\n\"action\": false,\n\n\"result\": false\n\n}\n\n}",
+      "expected_diagnosis": [
+        "缺少具体项目",
+        "没有说明自己做了什么",
+        "没有结果",
+        "回答无法证明能力"
+      ],
+      "expected_score_range": {
+        "min": 25,
+        "max": 40
+      }
+    },
+    {
+      "id": "case-02",
+      "title": "极差回答，只有态度",
+      "question": "你为什么适合这个岗位？",
+      "user_answer": "我觉得我比较认真，也愿意学习。如果公司给我机会，我一定会努力。",
+      "case_type": "极差回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"motivation\",\n\n\"main\\_point\\_position\": \"missing\",\n\n\"has\\_clear\\_opening\\_claim\": false,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": false,\n\n\"has\\_result\": false,\n\n\"has\\_role\\_fit\": false\n\n}",
+      "expected_diagnosis": [
+        "没有说明岗位匹配点",
+        "只有态度，没有证据",
+        "没有展示技能或经历"
+      ],
+      "expected_score_range": {
+        "min": 25,
+        "max": 42
+      }
+    },
+    {
+      "id": "case-03",
+      "title": "啰嗦回答，背景过长",
+      "question": "请做一下自我介绍。",
+      "user_answer": "我本科是数学专业，然后也学过一些会计相关课程。毕业以后我开始工作，做过数据分析，也做过一些报表。我一开始其实也不是很清楚自己未来要做什么，但是工作以后发现数据确实很重要，因为很多业务决策都需要数据支持。后来我去了瑞典读数据科学硕士，也学习了一些机器学习、统计和数据工程相关课程。现在我想找数据分析或者数据科学相关岗位。",
+      "case_type": "啰嗦回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"self\\_introduction\",\n\n\"main\\_point\\_position\": \"late\",\n\n\"has\\_clear\\_opening\\_claim\": false,\n\n\"has\\_structure\\_markers\": false,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": false,\n\n\"has\\_result\": false,\n\n\"has\\_role\\_fit\": true,\n\n\"repetition\\_level\": \"medium\"\n\n}",
+      "expected_diagnosis": [
+        "自我定位出现太晚",
+        "背景信息过多",
+        "没有代表项目或能力标签",
+        "结尾才说明求职方向"
+      ],
+      "expected_score_range": {
+        "min": 50,
+        "max": 65
+      }
+    },
+    {
+      "id": "case-04",
+      "title": "没有结论，内容还可以",
+      "question": "请介绍一个你最有代表性的项目。",
+      "user_answer": "当时业务方想看商户的活跃情况。我先和他们沟通了一些指标，比如活跃商户数、交易金额和留存率。然后我用 SQL 整理数据，再用 Tableau 做了一个看板。这个看板后来用于业务方每周复盘。",
+      "case_type": "没有结论",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"project\\_experience\",\n\n\"main\\_point\\_position\": \"middle\",\n\n\"has\\_clear\\_opening\\_claim\": false,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": false,\n\n\"has\\_role\\_fit\": false\n\n}",
+      "expected_diagnosis": [
+        "没有先说明这个项目证明什么能力",
+        "有行动和结果，但缺少能力总结",
+        "没有把项目连接到岗位要求"
+      ],
+      "expected_score_range": {
+        "min": 65,
+        "max": 75
+      }
+    },
+    {
+      "id": "case-05",
+      "title": "没有 STAR，信息堆叠",
+      "question": "请讲一次你解决困难问题的经历。",
+      "user_answer": "我之前遇到过报表数据不一致的问题。我看了 SQL，也看了数据来源，还和业务方沟通了口径。这个问题后来解决了，所以我觉得遇到问题要仔细排查。",
+      "case_type": "没有 STAR",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"behavioral\",\n\n\"main\\_point\\_position\": \"middle\",\n\n\"has\\_clear\\_opening\\_claim\": false,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": false,\n\n\"star\\_completeness\": {\n\n\"situation\": true,\n\n\"task\": false,\n\n\"action\": true,\n\n\"result\": true\n\n}\n\n}",
+      "expected_diagnosis": [
+        "没有明确说明任务目标",
+        "行动过于概括",
+        "结果只说“解决了”，没有说明影响",
+        "反思比较泛"
+      ],
+      "expected_score_range": {
+        "min": 58,
+        "max": 70
+      }
+    },
+    {
+      "id": "case-06",
+      "title": "没有结果",
+      "question": "请介绍一个你做过的数据分析项目。",
+      "user_answer": "我做过一个用户留存分析项目。当时我用 SQL 提取用户行为数据，然后按照注册时间分组，计算不同 cohort 的留存率。我也做了一些可视化，帮助业务方查看不同用户群体的变化。",
+      "case_type": "没有结果",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"project\\_experience\",\n\n\"main\\_point\\_position\": \"early\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": false,\n\n\"has\\_metric\": true,\n\n\"has\\_role\\_fit\": false\n\n}",
+      "expected_diagnosis": [
+        "项目过程清楚",
+        "缺少最终业务结果",
+        "没说明分析被如何使用"
+      ],
+      "expected_score_range": {
+        "min": 68,
+        "max": 78
+      }
+    },
+    {
+      "id": "case-07",
+      "title": "没有数据",
+      "question": "请讲一个你提升业务效率的案例。",
+      "user_answer": "我之前做过一个运营报表自动化项目。业务方原来经常临时找数据，我把常用指标整理成固定报表，并做成看板。后来业务方可以自己查看数据，不需要每次都找我取数。",
+      "case_type": "没有数据",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"project\\_experience\",\n\n\"main\\_point\\_position\": \"early\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": false,\n\n\"has\\_role\\_fit\": false\n\n}",
+      "expected_diagnosis": [
+        "回答有项目和结果",
+        "缺少具体效率变化数据",
+        "可以补充节省时间、减少请求次数或使用频率"
+      ],
+      "expected_score_range": {
+        "min": 72,
+        "max": 82
+      }
+    },
+    {
+      "id": "case-08",
+      "title": "普通回答，真实但弱",
+      "question": "你最大的优势是什么？",
+      "user_answer": "我的优势是比较细心，也比较有责任感。以前做数据分析的时候，我会检查数据结果，避免出现错误。如果发现问题，我也会主动去排查。",
+      "case_type": "普通回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"strength\\_weakness\",\n\n\"main\\_point\\_position\": \"first\\_sentence\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": false,\n\n\"has\\_metric\": false\n\n}",
+      "expected_diagnosis": [
+        "有优势结论",
+        "例子不够具体",
+        "缺少一次真实场景",
+        "没有说明这个优势带来的结果"
+      ],
+      "expected_score_range": {
+        "min": 58,
+        "max": 70
+      }
+    },
+    {
+      "id": "case-09",
+      "title": "普通回答，缺岗位匹配",
+      "question": "为什么想加入我们公司？",
+      "user_answer": "我对这个岗位比较感兴趣，因为我之前一直做数据分析，也读了数据科学硕士。我觉得这个岗位和我的背景比较相关，所以想申请。",
+      "case_type": "普通回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"motivation\",\n\n\"main\\_point\\_position\": \"early\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": false,\n\n\"has\\_result\": false,\n\n\"has\\_role\\_fit\": true\n\n}",
+      "expected_diagnosis": [
+        "动机过于通用",
+        "没有提到公司或岗位具体吸引点",
+        "没有用经历证明匹配"
+      ],
+      "expected_score_range": {
+        "min": 50,
+        "max": 63
+      }
+    },
+    {
+      "id": "case-10",
+      "title": "普通回答，英文简单",
+      "question": "Why should we hire you?",
+      "user_answer": "Because I have data analysis experience and I can learn fast. I used SQL and Tableau before. I also studied data science, so I think I can do this job.",
+      "case_type": "普通回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"motivation\",\n\n\"main\\_point\\_position\": \"first\\_sentence\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": false,\n\n\"has\\_result\": false,\n\n\"has\\_metric\": false,\n\n\"has\\_role\\_fit\": true\n\n}",
+      "expected_diagnosis": [
+        "有基本匹配点",
+        "缺少具体项目证据",
+        "“learn fast” 没有例子支撑",
+        "结尾说服力弱"
+      ],
+      "expected_score_range": {
+        "min": 50,
+        "max": 65
+      }
+    },
+    {
+      "id": "case-11",
+      "title": "较好回答，有项目但可增强",
+      "question": "请介绍一个你最有代表性的项目。",
+      "user_answer": "我最有代表性的项目是一个商户运营分析看板。这个项目主要解决业务方难以及时看到商户活跃变化的问题。我先和业务方确认活跃商户、留存率和交易金额这些指标口径，然后用 SQL 整理数据，再用 Tableau 做成看板。最后业务方可以按区域和商户类型查看商户表现，并用于每周复盘。",
+      "case_type": "较好回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"project\\_experience\",\n\n\"main\\_point\\_position\": \"first\\_sentence\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": true,\n\n\"has\\_role\\_fit\": false,\n\n\"star\\_completeness\": {\n\n\"situation\": true,\n\n\"task\": true,\n\n\"action\": true,\n\n\"result\": true\n\n}\n\n}",
+      "expected_diagnosis": [
+        "回答结构完整",
+        "可以加强个人能力标签",
+        "可以补充岗位相关性",
+        "结果可以更具体"
+      ],
+      "expected_score_range": {
+        "min": 78,
+        "max": 88
+      }
+    },
+    {
+      "id": "case-12",
+      "title": "较好回答，行为题",
+      "question": "请讲一次你解决困难问题的经历。",
+      "user_answer": "有一次业务方发现两个报表里的活跃商户数量不一致。我负责排查原因。我先检查 SQL 逻辑和数据来源，发现两个报表对“活跃”的定义不同，一个按登录，一个按交易。我和业务方确认后，把口径统一为指定周期内有交易行为的商户，并更新了报表说明。之后业务方复盘时不再因为这个指标产生争议。",
+      "case_type": "较好回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"behavioral\",\n\n\"main\\_point\\_position\": \"early\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": false,\n\n\"star\\_completeness\": {\n\n\"situation\": true,\n\n\"task\": true,\n\n\"action\": true,\n\n\"result\": true\n\n}\n\n}",
+      "expected_diagnosis": [
+        "STAR 完整",
+        "个人行动清楚",
+        "缺少量化结果",
+        "可以强化能力总结"
+      ],
+      "expected_score_range": {
+        "min": 80,
+        "max": 90
+      }
+    },
+    {
+      "id": "case-13",
+      "title": "优秀回答，项目题",
+      "question": "请介绍一个你最有代表性的项目。",
+      "user_answer": "我最有代表性的项目是商户运营分析看板，因为它体现了我把模糊业务问题拆成指标体系的能力。当时运营团队想知道哪些商户活跃度下降，但原来每次复盘都需要临时取数。我先和业务方确认活跃商户、留存率、交易金额和区域维度的口径，再用 SQL 整理数据，并用 Tableau 搭建看板。上线后，业务方可以直接按区域和商户类型查看异常变化，用于每周复盘和跟进重点商户。",
+      "case_type": "优秀回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"project\\_experience\",\n\n\"main\\_point\\_position\": \"first\\_sentence\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": true,\n\n\"has\\_role\\_fit\": true,\n\n\"star\\_completeness\": {\n\n\"situation\": true,\n\n\"task\": true,\n\n\"action\": true,\n\n\"result\": true\n\n}\n\n}",
+      "expected_diagnosis": [
+        "不应强行输出高严重问题",
+        "可指出结果仍可量化",
+        "可指出岗位连接可以更明确"
+      ],
+      "expected_score_range": {
+        "min": 88,
+        "max": 96
+      }
+    },
+    {
+      "id": "case-14",
+      "title": "优秀回答，自我介绍",
+      "question": "请先做一个简单的自我介绍。",
+      "user_answer": "你好，我叫 Li Li。我有五年数据分析和 BI 工作经验，本科是数学背景，后来在瑞典完成了 Data Science 硕士。我比较核心的能力是把业务方的问题拆成指标、数据表和可视化结果。比如在商户运营项目中，我做过活跃商户、留存率和交易变化相关分析，也用 Tableau 支持业务复盘。现在我希望继续做数据分析、数据科学或 AI 数据产品相关的工作。",
+      "case_type": "优秀回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"self\\_introduction\",\n\n\"main\\_point\\_position\": \"early\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": true,\n\n\"has\\_role\\_fit\": true\n\n}",
+      "expected_diagnosis": [
+        "结构完整",
+        "可补充更具体结果",
+        "可根据目标岗位强化最后一句"
+      ],
+      "expected_score_range": {
+        "min": 85,
+        "max": 94
+      }
+    },
+    {
+      "id": "case-15",
+      "title": "没有结论，流水账",
+      "question": "请讲一次你和业务方合作的经历。",
+      "user_answer": "业务方有时候会找我取数，然后我会问他们想看什么。如果他们不清楚，我会继续问他们想解决什么问题。然后我会写 SQL，把数据取出来，有时候也会做报表。最后他们会拿这些数据去看业务情况。",
+      "case_type": "没有结论",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"behavioral\",\n\n\"main\\_point\\_position\": \"missing\",\n\n\"has\\_clear\\_opening\\_claim\": false,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": false,\n\n\"has\\_role\\_fit\": false\n\n}",
+      "expected_diagnosis": [
+        "没有具体合作案例",
+        "过程像日常工作描述",
+        "没有说明合作中的难点",
+        "没有总结能力"
+      ],
+      "expected_score_range": {
+        "min": 52,
+        "max": 65
+      }
+    },
+    {
+      "id": "case-16",
+      "title": "缺少个人贡献",
+      "question": "请介绍一个团队项目。",
+      "user_answer": "我们团队做过一个用户分析项目，主要是分析用户活跃和留存情况。项目中大家一起完成了数据处理、分析和报表。最后这个项目帮助业务方更好地了解用户情况。",
+      "case_type": "普通回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"project\\_experience\",\n\n\"main\\_point\\_position\": \"early\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": true,\n\n\"has\\_personal\\_action\": false,\n\n\"has\\_result\": true,\n\n\"has\\_metric\": false\n\n}",
+      "expected_diagnosis": [
+        "分不清个人贡献",
+        "行动描述过于团队化",
+        "结果比较抽象",
+        "缺少具体方法"
+      ],
+      "expected_score_range": {
+        "min": 50,
+        "max": 65
+      }
+    },
+    {
+      "id": "case-17",
+      "title": "过度夸大",
+      "question": "你为什么适合这个数据科学岗位？",
+      "user_answer": "我非常适合这个岗位，因为我有很强的数据科学能力，也能快速解决公司的所有数据问题。我相信只要我加入，就可以马上帮助团队提升很多效率。",
+      "case_type": "极差回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"motivation\",\n\n\"main\\_point\\_position\": \"first\\_sentence\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": false,\n\n\"has\\_result\": false,\n\n\"has\\_metric\": false,\n\n\"has\\_role\\_fit\": true\n\n}",
+      "expected_diagnosis": [
+        "过度夸大",
+        "没有证据支撑",
+        "说服力低",
+        "需要用经历替代自我评价"
+      ],
+      "expected_score_range": {
+        "min": 35,
+        "max": 50
+      }
+    },
+    {
+      "id": "case-18",
+      "title": "过度谦虚",
+      "question": "你为什么适合这个岗位？",
+      "user_answer": "我可能不是最强的候选人，也还有很多地方需要学习。但是我会努力，也愿意听团队安排。如果有机会，我会认真做。",
+      "case_type": "极差回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"motivation\",\n\n\"main\\_point\\_position\": \"missing\",\n\n\"has\\_clear\\_opening\\_claim\": false,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": false,\n\n\"has\\_result\": false,\n\n\"has\\_role\\_fit\": false\n\n}",
+      "expected_diagnosis": [
+        "过度弱化自己",
+        "没有能力证据",
+        "没有岗位匹配",
+        "语气降低面试信任感"
+      ],
+      "expected_score_range": {
+        "min": 25,
+        "max": 42
+      }
+    },
+    {
+      "id": "case-19",
+      "title": "技术回答，缺业务影响",
+      "question": "你如何评价自己的 SQL 能力？",
+      "user_answer": "我的 SQL 比较熟练，之前经常用 SQL 做数据提取和清洗。我写过 join、窗口函数、聚合查询，也做过留存率和活跃用户相关指标。",
+      "case_type": "普通回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"technical\",\n\n\"main\\_point\\_position\": \"first\\_sentence\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": false,\n\n\"has\\_metric\": true,\n\n\"has\\_role\\_fit\": true\n\n}",
+      "expected_diagnosis": [
+        "技术点明确",
+        "缺少具体业务场景",
+        "没有说明 SQL 解决了什么问题",
+        "结果缺失"
+      ],
+      "expected_score_range": {
+        "min": 62,
+        "max": 75
+      }
+    },
+    {
+      "id": "case-20",
+      "title": "AI 项目回答，概念多但不具体",
+      "question": "请介绍一个你做过的 AI 项目。",
+      "user_answer": "我最近做过一些 AI 项目，比如 NL2SQL、prompt evaluation、task routing 和 guardrails。我主要是想学习 AI 产品怎么从想法变成流程，也做了一些 demo。",
+      "case_type": "普通回答",
+      "expected_analysis_raw": "{\n\n\"question\\_type\": \"project\\_experience\",\n\n\"main\\_point\\_position\": \"early\",\n\n\"has\\_clear\\_opening\\_claim\": true,\n\n\"has\\_specific\\_example\": false,\n\n\"has\\_personal\\_action\": true,\n\n\"has\\_result\": false,\n\n\"has\\_metric\": false,\n\n\"has\\_role\\_fit\": true\n\n}",
+      "expected_diagnosis": [
+        "项目范围太散",
+        "没有聚焦一个项目",
+        "缺少具体流程和结果",
+        "需要说明自己的实际贡献"
+      ],
+      "expected_score_range": {
+        "min": 55,
+        "max": 70
+      }
+    }
+  ]
+}

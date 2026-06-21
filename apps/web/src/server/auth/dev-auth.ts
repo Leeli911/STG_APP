@@ -25,6 +25,27 @@ export function getDevAuthUserFromCookie(
   };
 }
 
+export function getDevAuthUserFromCookieHeader(
+  cookieHeader: string | null
+): DevAuthUser | null {
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookie = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${DEV_AUTH_COOKIE_NAME}=`));
+
+  if (!cookie) {
+    return null;
+  }
+
+  return getDevAuthUserFromCookie(
+    decodeURIComponent(cookie.slice(DEV_AUTH_COOKIE_NAME.length + 1))
+  );
+}
+
 export function getDevAuthCookieOptions() {
   return {
     httpOnly: true,

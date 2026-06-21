@@ -9,7 +9,9 @@
     "dev": "npm --workspace apps/web run dev",
     "build": "npm --workspace apps/web run build",
     "lint": "npm --workspace apps/web run lint",
-    "test": "npm --workspace apps/web run test"
+    "test": "npm --workspace apps/web run test",
+    "test:live-smoke": "npm --workspace apps/web run test:live-smoke --",
+    "verify:live-attempt": "npm --workspace apps/web run verify:live-attempt --"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
