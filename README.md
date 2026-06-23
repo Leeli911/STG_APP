@@ -8,6 +8,16 @@ The Sprint 1 MVP focuses on one simple loop: users read one interview question, 
 
 Sprint 1 MVP.
 
+### STG V2 Phase A: Explainable Feedback
+
+Phase A adds a parallel V2 feedback-ready screen that explains each score
+dimension with the evidence, recorded deductions, and existing coaching focus
+behind it. The mapper reuses stored Analysis and Coaching output; it adds no
+database migration, prompt change, model call, or AI agent.
+
+The existing Result page remains unchanged while the V2 training-session flow
+is developed in phases.
+
 Currently implemented:
 
 - Next.js web app shell with protected routes
