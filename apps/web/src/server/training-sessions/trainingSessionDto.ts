@@ -7,10 +7,12 @@ import type {
   DeductionDto,
   DimensionKey,
   ExplainableDimensionDto,
-  FeedbackMode,
   FeedbackReadyTrainingSessionDto,
+  PracticeSessionRow,
+  RevisionEventRow,
   SourceMode
 } from "@/server/training-sessions/types";
+import type { TrainingSessionDto } from "@/server/training-sessions/types";
 
 const dimensionKeys = new Set<DimensionKey>([
   "relevance",
@@ -57,14 +59,13 @@ type RawDimensionScore = {
 export function toFeedbackReadyTrainingSessionDto({
   sessionId,
   sourceMode,
-  feedbackMode,
   attempt,
   score,
   feedback
 }: {
   sessionId: string;
   sourceMode: SourceMode;
-  feedbackMode: FeedbackMode;
+  feedbackMode: "D";
   attempt: AttemptRow;
   score: ScoreRow;
   feedback: AiFeedbackRow;
@@ -72,7 +73,7 @@ export function toFeedbackReadyTrainingSessionDto({
   return {
     id: sessionId,
     sourceMode,
-    feedbackMode,
+    feedbackMode: "D",
     practiceDay: attempt.day_number,
     status: "feedback_ready",
     draft: {
@@ -95,6 +96,90 @@ export function toFeedbackReadyTrainingSessionDto({
     scoreAfter: null,
     delta: null,
     feedbackShownAt: null
+  };
+}
+
+export function toTrainingSessionDto({
+  session,
+  revision,
+  initialAttempt,
+  initialScore,
+  initialFeedback,
+  finalAttempt = null,
+  finalScore = null,
+  finalFeedback = null
+}: {
+  session: PracticeSessionRow;
+  revision: RevisionEventRow | null;
+  initialAttempt: AttemptRow;
+  initialScore: ScoreRow;
+  initialFeedback: AiFeedbackRow;
+  finalAttempt?: AttemptRow | null;
+  finalScore?: ScoreRow | null;
+  finalFeedback?: AiFeedbackRow | null;
+}): TrainingSessionDto {
+  const feedbackReady = toFeedbackReadyTrainingSessionDto({
+    sessionId: session.id,
+    sourceMode: "live",
+    feedbackMode: "D",
+    attempt: initialAttempt,
+    score: initialScore,
+    feedback: initialFeedback
+  });
+  const shared = {
+    ...feedbackReady,
+    feedbackShownAt: session.feedback_shown_at
+  };
+
+  if (session.status === "feedback_ready") {
+    return shared;
+  }
+
+  if (!revision || !finalAttempt) {
+    throw new Error("Revision session is missing its committed decision or final attempt.");
+  }
+
+  const decision = {
+    action: revision.action,
+    editedText: revision.edited_text,
+    decidedAt: revision.client_decided_at ?? revision.created_at,
+    idempotencyKey: revision.idempotency_key
+  };
+  const final = {
+    text: finalAttempt.original_answer,
+    attemptId: finalAttempt.id,
+    submittedAt: finalAttempt.created_at
+  };
+
+  if (session.status === "completed") {
+    if (!finalScore || !finalFeedback) {
+      throw new Error("Completed revision session is missing its final result.");
+    }
+
+    return {
+      ...shared,
+      status: "completed",
+      decision,
+      final,
+      scoreAfter: toScoreSnapshot(finalScore, finalFeedback),
+      delta: null
+    };
+  }
+
+  return {
+    ...shared,
+    status: session.status,
+    decision,
+    final,
+    scoreAfter: null,
+    delta: null
+  };
+}
+
+function toScoreSnapshot(score: ScoreRow, feedback: AiFeedbackRow) {
+  return {
+    total: score.total_score,
+    dimensions: toExplainableDimensions(score, feedback)
   };
 }
 
