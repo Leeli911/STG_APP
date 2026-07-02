@@ -1,169 +1,144 @@
 # Structured Thinking Gym
 
-Structured Thinking Gym is an AI interview communication coach for practicing structured answers.
+Structured Thinking Gym (STG) is an AI-powered communication training system for practicing structured interview answers through assessment, guided revision, and progress-ready feedback.
 
-The Sprint 1 MVP focuses on one simple loop: users read one interview question, write an answer, submit it, and save the training attempt. The next AI Coach module will add scoring, diagnosis, rewrite, explanation, and next-practice guidance.
+It is built as a production-quality portfolio project: practical for users, explainable in its feedback, and designed so future learning analytics can emerge from normal product use. It is not a research platform, survey tool, or course project.
 
-## Current Version
+## Project Overview
 
-Sprint 1 MVP.
+STG focuses on one high-value learning loop:
 
-Currently implemented:
+```text
+Question
+→ Draft answer
+→ Explainable feedback
+→ AI suggestion
+→ Accept / reject / edit
+→ Final answer
+→ Re-score
+```
 
-- Next.js web app shell with protected routes
-- Local development login fallback
-- Supabase auth integration when environment variables are configured
-- Dashboard, workspace, result, history, and admin routes
-- Fixed 7-day interview question pack
-- Question API for today's question, all questions, or a specific day
-- Attempt API with answer validation and idempotency support
-- Supabase migrations for questions, attempts, and growth profiles
+The goal is to help users communicate with a clearer main point, stronger structure, better evidence, and more audience-aware delivery.
 
-Planned next in Sprint 1:
+## Why STG is Different
 
-- AI analysis and scoring
-- AI coaching result rendering
-- AI rewrite and "why better" explanation
-- Training history populated from saved attempts
-- Growth profile updates after completed feedback
+- Explainable feedback: users see score breakdowns, evidence, and improvement focus instead of a black-box score.
+- Human-AI revision: users actively accept, reject, or edit AI suggestions instead of passively copying a rewrite.
+- Deterministic demo: portfolio visitors can try the core loop without login, paid AI calls, or external services.
 
-## Product Flow
+## Try the Demo
 
-Current user flow:
+STG includes a portfolio demo route:
 
-1. Log in.
-2. Open the workspace.
-3. Read today's interview question.
-4. Write an answer.
-5. Submit the answer.
-6. Land on the result page after the attempt is saved.
+```text
+/training-demo
+```
 
-Target AI coaching flow:
+The demo uses the same Training Session screen and data contract as the live flow, but runs on deterministic in-memory data. It does not require login, OpenAI, Supabase, external API calls, or browser storage.
 
-1. Read an interview question.
-2. Write an answer.
-3. Submit the answer.
-4. Receive AI analysis.
-5. Read the AI rewrite.
-6. Understand why the rewrite is better.
-7. Save the training result and continue the 7-day loop.
+See [Demo Guide](docs/public/demo-guide.md) for what to try.
 
-## Learning System
+## Design Goals
 
-The MVP uses a 7-day question pack that trains one communication behavior at a time. The core abilities are:
+- Keep the product lightweight and practical.
+- Explain why feedback was given.
+- Turn AI suggestions into an active revision workflow.
+- Keep demo mode free and reliable.
+- Preserve the existing AI coaching pipeline while observing revision behavior.
 
-- Conclusion First
-- Categorization
-- Complete Case Structure
-- Evidence-Based Expression
-- Conflict Handling
-- Stakeholder Communication
-- Persuasive Final Pitch
+## Core Features
 
-The goal is not to teach communication theory as a course. The product should help users improve real interview answers through repeated practice, comparison, and revision.
+- Explainable score breakdown by communication dimension
+- Evidence-based feedback and improvement focus
+- AI suggestion for a stronger answer
+- Accept / reject / edit revision controls
+- Final answer display after revision
+- Shared demo and live training-session UI
+- Live architecture prepared for authenticated training sessions
 
-## AI Coach System
+## Architecture at a Glance
 
-The planned AI Coach system is split into four prompt engines:
+```text
+Presentation → Controller → Gateway → API → Service → Repository → Persistence
+```
 
-- Analysis Engine: scores and diagnoses the user's answer
-- Coaching Engine: creates feedback, rewrite, explanation, and next suggestion
-- Repair Engine: fixes invalid JSON output
-- Judge Engine: checks whether AI output is ready for production display
+Demo and live modes share one component tree through `TrainingSessionGateway`:
 
-The frontend should receive structured JSON so coaching results can be rendered consistently.
+```text
+DemoAdapter / LiveAdapter → Controller → TrainingSessionScreen
+```
 
-See [AI Coach Architecture](docs/AI_COACH_ARCHITECTURE.md) for the target design and current implementation status.
+See [Architecture Overview](docs/public/architecture-overview.md) for the layer responsibilities.
 
-## Tech Stack
+## System Design
 
-- Next.js App Router
-- React
-- TypeScript
-- Tailwind CSS
-- Supabase Auth
-- Supabase Database
-- OpenAI API for the planned AI Coach module
-- Vitest and Testing Library
+STG separates AI generation from user revision behavior. The system can show feedback, present an AI suggestion, record the user's revision decision, and re-score the final answer without adding another AI agent or creating a separate research workflow.
 
-## Local Development
+The same UI can run against a deterministic demo source or the live application workflow. That makes the public demo realistic while keeping it inexpensive to operate.
 
-Install dependencies from the repository root:
+## Design Principles
+
+- Explainability: scores should be understandable through evidence and improvement focus.
+- Human-in-the-loop: users decide whether to accept, reject, or edit AI suggestions.
+- Deterministic Demo: the public demo should work without paid services or external dependencies.
+- Separation of Concerns: UI, state management, transport, orchestration, and persistence stay separate.
+
+See [Design Principles](docs/public/design-principles.md) for the public-facing rationale.
+
+## Repository Structure
+
+```text
+apps/web/src/app/             Next.js routes and route handlers
+apps/web/src/components/      Shared presentation components
+apps/web/src/features/        Feature-level client logic and adapters
+apps/web/src/server/          Server-side application services
+apps/web/src/tests/           Vitest and Testing Library coverage
+docs/public/                  Public portfolio documentation
+docs/superpowers/specs/       Approved working specifications
+docs/superpowers/plans/       Implementation planning documents
+```
+
+The `docs/superpowers` folder is intentionally kept as working documentation. Public-facing explanations live under `docs/public`.
+
+## Developer Guide
 
 ```bash
 npm install
-```
-
-Create a local environment file for the web app:
-
-```bash
-cp .env.example apps/web/.env.local
-```
-
-Start the app:
-
-```bash
 npm run dev
 ```
 
 Open:
 
 ```text
-http://localhost:3000
+http://localhost:3000/training-demo
 ```
 
-Run tests:
+Verify:
 
 ```bash
 npm test
+npm run build
 ```
 
-## Local Dev Login
-
-For local development only:
-
-```text
-Email: test@123.com
-Password: 123
-```
-
-Do not use this account in production.
-
-## Repository Structure
-
-```text
-apps/web/src/app/            Next.js routes and API route handlers
-apps/web/src/components/     Shared React components
-apps/web/src/features/       Feature-level frontend code
-apps/web/src/lib/            Supabase, environment, and utility code
-apps/web/src/server/         Server-side services and repositories
-apps/web/src/prompts/        Planned AI Coach prompt templates
-apps/web/src/database/       Supabase migrations and seed data
-apps/web/src/tests/          Vitest test suite
-docs/                        Product and system documentation
-```
+Live mode uses the existing app environment configuration. Use `.env.example` as the template and never commit real secrets.
 
 ## Documentation
 
-- [Product Overview](docs/PRODUCT_OVERVIEW.md)
-- [AI Coach Architecture](docs/AI_COACH_ARCHITECTURE.md)
-- [Content System](docs/CONTENT_SYSTEM.md)
-- [Roadmap](docs/ROADMAP.md)
+Public documentation:
+
+- [System Overview](docs/public/system-overview.md)
+- [Design Principles](docs/public/design-principles.md)
+- [Architecture Overview](docs/public/architecture-overview.md)
+- [Demo Guide](docs/public/demo-guide.md)
+
+Working documentation remains under `docs/superpowers/specs` and `docs/superpowers/plans`.
 
 ## Security Notes
 
-Never commit real local environment files or secrets.
-
-Do not commit:
-
-- `.env`
-- `.env.local`
-- `.env.production`
-- Supabase service role keys
-- OpenAI API keys
+Never commit real local environment files or secrets, including `.env`, `.env.local`, `.env.production`, service role keys, or OpenAI API keys.
 
 Use `.env.example` only as a template.
 
 ## Status
 
-This project is under active development.
+STG V2 currently includes explainable feedback, a Human-AI revision loop, and a deterministic `/training-demo` route. Delta tracking, feedback-mode gating, and a learning dashboard are intentionally future phases.
