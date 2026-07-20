@@ -5,7 +5,8 @@ test("首页进入公开 Demo，并完成一次采用建议的训练闭环", asy
   baseURL
 }) => {
   const forbiddenRequests: string[] = [];
-  const appOrigin = new URL(baseURL!).origin;
+  const publicDemoUrl = process.env.PUBLIC_DEMO_URL;
+  const appOrigin = new URL(publicDemoUrl ?? baseURL!).origin;
 
   page.on("request", (request) => {
     const url = new URL(request.url());
@@ -21,13 +22,17 @@ test("首页进入公开 Demo，并完成一次采用建议的训练闭环", asy
     }
   });
 
-  await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: /把“我知道”练成/ })
-  ).toBeVisible();
-  await page.getByRole("link", { name: "立即体验公开演示" }).click();
+  if (publicDemoUrl) {
+    await page.goto(publicDemoUrl);
+  } else {
+    await page.goto("/");
+    await expect(
+      page.getByRole("heading", { name: /把“我知道”练成/ })
+    ).toBeVisible();
+    await page.getByRole("link", { name: "立即体验公开演示" }).click();
+  }
 
-  await expect(page).toHaveURL(/\/training-demo$/);
+  await expect(page).toHaveURL(/\/training-demo\/?$/);
   await expect(page.getByRole("heading", { name: "训练体验题" })).toBeVisible();
   const answer = page.getByLabel("你的回答");
   const submitDraft = page.getByRole("button", { name: "提交回答" });

@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const port = Number(process.env.PLAYWRIGHT_PORT ?? "3100");
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
 const useSystemChrome = process.env.PLAYWRIGHT_USE_SYSTEM_CHROME === "1";
+const testsPublishedDemo = Boolean(process.env.PUBLIC_DEMO_URL);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -37,19 +38,21 @@ export default defineConfig({
       }
     }
   ],
-  webServer: {
-    command: `npm --workspace apps/web run dev -- --hostname 127.0.0.1 --port ${port}`,
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: {
-      ...process.env,
-      NEXT_TELEMETRY_DISABLED: "1",
-      STG_AI_MODE: "mock",
-      STG_AI_EXECUTION_MODE: "sync",
-      LIVE_TRAINING_V2: "true",
-      STG_ENABLE_DEV_AUTH: "true",
-      STG_ENABLE_DEV_ADMIN: "false"
-    }
-  }
+  webServer: testsPublishedDemo
+    ? undefined
+    : {
+        command: `npm --workspace apps/web run dev -- --hostname 127.0.0.1 --port ${port}`,
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+        env: {
+          ...process.env,
+          NEXT_TELEMETRY_DISABLED: "1",
+          STG_AI_MODE: "mock",
+          STG_AI_EXECUTION_MODE: "sync",
+          LIVE_TRAINING_V2: "true",
+          STG_ENABLE_DEV_AUTH: "true",
+          STG_ENABLE_DEV_ADMIN: "false"
+        }
+      }
 });
