@@ -13,8 +13,9 @@
   "scripts": {
     "dev": "npm --workspace apps/web run dev",
     "build": "npm --workspace apps/web run build",
+    "build:demo": "vite build --config apps/demo/vite.config.ts",
     "lint": "npm --workspace apps/web run lint",
-    "typecheck": "npm --workspace apps/web run typecheck",
+    "typecheck": "npm --workspace apps/web run typecheck && tsc -p apps/demo/tsconfig.json --noEmit",
     "test": "npm --workspace apps/web run test",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
@@ -27,6 +28,7 @@
     "@supabase/supabase-js": "^2.108.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1"
+    "@playwright/test": "^1.61.1",
+    "vite": "^5.4.21"
   }
 }

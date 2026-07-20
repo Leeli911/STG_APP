@@ -1,0 +1,62 @@
+name: Deploy public demo to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "apps/demo/**"
+      - "apps/web/src/app/training-demo/**"
+      - "apps/web/src/components/training/**"
+      - "apps/web/src/features/training-session/**"
+      - "apps/web/src/lib/validation/revision.ts"
+      - "apps/web/src/server/training-sessions/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/pages.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build deterministic public demo
+        run: npm run build:demo
+      - name: Preserve the public training-demo route
+        run: |
+          mkdir -p apps/demo/dist/training-demo
+          cp apps/demo/dist/index.html apps/demo/dist/training-demo/index.html
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/demo/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
