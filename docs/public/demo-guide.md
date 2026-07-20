@@ -6,6 +6,14 @@ STG includes a deterministic demo route for public portfolio review:
 /training-demo
 ```
 
+The free static deployment is available at:
+
+```text
+https://leeli911.github.io/STG_APP/training-demo/
+```
+
+The GitHub Pages entry imports the same `DemoAdapter`, Controller, DTOs, and training screen as the Next.js route. It is a static hosting shell, not a copied scoring implementation.
+
 The demo is designed for GitHub reviewers, portfolio visitors, interviewers, and PhD advisors who want to understand the system quickly without setting up paid services.
 
 ## What the Demo Shows

@@ -26,6 +26,8 @@
 
 免费公开 Demo 的 `vercel.json` 不配置 Cron，因为 Mock/Sync 模式不需要 Reconciler。启用隔离 Staging 的 Live Background 模式时，再在 Vercel 项目或外部调度器中每 5 分钟 GET `/api/internal/ai/reconcile`；调度请求使用 `CRON_SECRET` Bearer Token。Endpoint 也兼容手工 POST 和旧 `STG_CRON_SECRET`。当 `STG_AI_MODE` 不是 `live` 或执行模式不是 `background` 时，它返回 `200 skipped`。
 
+免费公开 Demo 同时由 GitHub Pages 承载：`npm run build:demo` 使用 Vite 静态打包，但直接导入 Next 主应用的 `DemoAdapter`、`TrainingSessionController`、DTO 与 `TrainingSessionScreen`。`.github/workflows/pages.yml` 在 `main` 更新相关源文件时发布到 `https://leeli911.github.io/STG_APP/training-demo/`。该入口没有登录、Supabase、OpenAI、App API 或 Cron；Vercel 仍用于完整 Next.js Preview/Live 环境。
+
 Feature/operational switch 规则：
 
 | Switch | 默认 | 用途 | 回退 |
@@ -141,4 +143,4 @@ supabase db push
 
 ## 8. 发布证据
 
-每次 Beta 发布保存：Commit SHA、CI URL、Vercel Deployment URL、Migration Version、环境检查人、Smoke 结果、已知问题、回滚目标和脱敏指标截图。履历数字只能从这些记录或产品事件中提取。
+每次 Beta 发布保存：Commit SHA、CI URL、GitHub Pages/Vercel Deployment URL、Migration Version、环境检查人、Smoke 结果、已知问题、回滚目标和脱敏指标截图。履历数字只能从这些记录或产品事件中提取。
