@@ -235,6 +235,16 @@ export type AnalysisOutput = z.infer<typeof AnalysisOutputSchema>;
 export type CoachingOutput = z.infer<typeof CoachingOutputSchema>;
 export type JudgeOutput = z.infer<typeof JudgeOutputSchema>;
 
+export const AnalysisStructuredOutput = {
+  name: "stg_analysis_v1",
+  schema: toOpenAiJsonSchema(AnalysisOutputSchema)
+} as const;
+
+export const CoachingStructuredOutput = {
+  name: "stg_coaching_v1",
+  schema: toOpenAiJsonSchema(CoachingOutputSchema)
+} as const;
+
 export function validateCoachingMatchesAnalysis(
   coaching: CoachingOutput,
   analysis: AnalysisOutput
@@ -296,4 +306,13 @@ function sumDimensionScores(
   dimensions: Array<{ score: number }>
 ) {
   return dimensions.reduce((total, item) => total + item.score, 0);
+}
+
+function toOpenAiJsonSchema(schema: z.ZodType) {
+  const jsonSchema = z.toJSONSchema(schema, {
+    target: "draft-7",
+    io: "output"
+  });
+  delete jsonSchema.$schema;
+  return jsonSchema;
 }

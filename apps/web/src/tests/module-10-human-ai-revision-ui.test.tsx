@@ -10,7 +10,6 @@ import type {
   FeedbackReadyTrainingSessionDto,
   RescoreFailedTrainingSessionDto,
   RescoringTrainingSessionDto,
-  TrainingSessionDto
 } from "@/server/training-sessions/types";
 
 const initialAttemptId = "00000000-0000-4000-8000-000000000101";
@@ -26,37 +25,37 @@ describe("Module 10 Human-AI Revision presentation UI", () => {
   it("renders the draft, score breakdown, and suggestion without DeltaSummary", () => {
     render(<TrainingSessionScreen viewModel={viewModel()} />);
 
-    expect(screen.getByRole("heading", { name: "Training Feedback" }))
+    expect(screen.getByRole("heading", { name: "训练反馈" }))
       .toBeInTheDocument();
-    expect(screen.getByText("Draft")).toBeInTheDocument();
+    expect(screen.getByText("原始回答")).toBeInTheDocument();
     expect(screen.getByText(draftText)).toBeInTheDocument();
-    expect(screen.getByText("Score Breakdown")).toBeInTheDocument();
+    expect(screen.getByText("评分明细")).toBeInTheDocument();
     expect(screen.getByText("68")).toBeInTheDocument();
-    expect(screen.getByText("AI Suggestion")).toBeInTheDocument();
-    expect(screen.getByText("Conclusion First")).toBeInTheDocument();
+    expect(screen.getByText("智能教练修改建议")).toBeInTheDocument();
+    expect(screen.getByText("结论先行")).toBeInTheDocument();
     expect(screen.getByText(suggestionText)).toBeInTheDocument();
     expect(screen.queryByText(/DeltaSummary/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Score Delta/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("分数变化")).not.toBeInTheDocument();
   });
 
   it("renders the suggestion panel with why-better evidence", () => {
     render(<SuggestionPanel suggestion={feedbackReadySession().suggestion} />);
 
-    expect(screen.getByText("AI Suggestion")).toBeInTheDocument();
-    expect(screen.getByText("Conclusion First")).toBeInTheDocument();
+    expect(screen.getByText("智能教练修改建议")).toBeInTheDocument();
+    expect(screen.getByText("结论先行")).toBeInTheDocument();
     expect(screen.getByText(suggestionText)).toBeInTheDocument();
-    expect(screen.getByText("Why this is stronger")).toBeInTheDocument();
-    expect(screen.getByText("Moved the main point earlier.")).toBeInTheDocument();
+    expect(screen.getByText("为什么这样表达更清楚")).toBeInTheDocument();
+    expect(screen.getByText("把核心观点提前到了第一句话。")).toBeInTheDocument();
   });
 
   it("renders Accept, Reject, and Edit controls", () => {
     render(<TrainingSessionScreen viewModel={viewModel()} />);
 
-    expect(screen.getByRole("button", { name: "Accept suggestion" }))
+    expect(screen.getByRole("button", { name: "采用修改建议" }))
       .toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Keep original" }))
+    expect(screen.getByRole("button", { name: "保留原稿" }))
       .toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Edit myself" }))
+    expect(screen.getByRole("button", { name: "自主编辑" }))
       .toBeInTheDocument();
   });
 
@@ -73,7 +72,7 @@ describe("Module 10 Human-AI Revision presentation UI", () => {
       />
     );
 
-    const textarea = screen.getByLabelText("Edited final answer");
+    const textarea = screen.getByLabelText("编辑最终稿");
     expect(textarea).toHaveAttribute("maxLength", "6000");
     expect(screen.getByText("3 / 6000")).toBeInTheDocument();
   });
@@ -104,13 +103,13 @@ describe("Module 10 Human-AI Revision presentation UI", () => {
       />
     );
 
-    expect(screen.getByRole("button", { name: "Accept suggestion" }))
+    expect(screen.getByRole("button", { name: "采用修改建议" }))
       .toBeDisabled();
-    expect(screen.getByRole("button", { name: "Keep original" }))
+    expect(screen.getByRole("button", { name: "保留原稿" }))
       .toBeDisabled();
-    expect(screen.getByRole("button", { name: "Edit myself" }))
+    expect(screen.getByRole("button", { name: "自主编辑" }))
       .toBeDisabled();
-    expect(screen.getByLabelText("Edited final answer")).toBeDisabled();
+    expect(screen.getByLabelText("编辑最终稿")).toBeDisabled();
   });
 
   it("shows the completed final answer", () => {
@@ -120,15 +119,19 @@ describe("Module 10 Human-AI Revision presentation UI", () => {
       />
     );
 
-    expect(screen.getByText("Re-score complete")).toBeInTheDocument();
-    expect(screen.getByText("Final Answer")).toBeInTheDocument();
+    expect(screen.getByText("重新评分已完成")).toBeInTheDocument();
+    expect(screen.getByText("最终稿")).toBeInTheDocument();
     expect(screen.getByText(finalText)).toBeInTheDocument();
+    expect(screen.getAllByText("初始规则得分")).toHaveLength(2);
+    expect(screen.getByText("最终规则得分")).toBeInTheDocument();
+    expect(screen.getByText("分数变化")).toBeInTheDocument();
+    expect(screen.getByText("+14")).toBeInTheDocument();
   });
 
   it("shows the rescoring status", () => {
     render(<RescoreStatus session={rescoringSession()} />);
 
-    expect(screen.getByText("Re-scoring your final answer…"))
+    expect(screen.getByText("正在重新评分最终稿…"))
       .toBeInTheDocument();
   });
 
@@ -144,9 +147,9 @@ describe("Module 10 Human-AI Revision presentation UI", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Retry scoring" }));
+    fireEvent.click(screen.getByRole("button", { name: "重新评分" }));
 
-    expect(screen.getByText("Scoring could not finish.")).toBeInTheDocument();
+    expect(screen.getByText("重新评分暂未完成")).toBeInTheDocument();
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
@@ -168,8 +171,8 @@ describe("Module 10 Human-AI Revision presentation UI", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Accept suggestion" }));
-    fireEvent.click(screen.getByRole("button", { name: "Submit revision" }));
+    fireEvent.click(screen.getByRole("button", { name: "采用修改建议" }));
+    fireEvent.click(screen.getByRole("button", { name: "提交修订" }));
 
     expect(selectAction).toHaveBeenCalledWith("accepted");
     expect(submitRevision).toHaveBeenCalledTimes(1);
@@ -208,6 +211,9 @@ function feedbackReadySession(): FeedbackReadyTrainingSessionDto {
     sourceMode: "demo",
     feedbackMode: "D",
     practiceDay: 1,
+    promptVersion: "analysis-v1|coaching-v1",
+    rubricVersion: "stg-rubric-v1",
+    modelVersion: "test-model",
     status: "feedback_ready",
     draft: {
       text: draftText,
@@ -218,19 +224,19 @@ function feedbackReadySession(): FeedbackReadyTrainingSessionDto {
       {
         issue_type: "late_core_message",
         severity: "medium",
-        evidence: "Main point appears after background context.",
-        why_it_matters: "Interviewers need the main message early.",
-        fix_direction: "Lead with the conclusion before details."
+        evidence: "核心观点出现在背景说明之后。",
+        why_it_matters: "面试官需要尽早听到回答的核心观点。",
+        fix_direction: "先说结论，再补充细节。"
       }
     ],
     suggestion: {
       text: suggestionText,
-      structureUsed: "Conclusion First",
+      structureUsed: "结论先行",
       whyBetter: [
         {
-          changed_what: "Moved the main point earlier.",
-          why_changed: "It reduces waiting time for the interviewer.",
-          impact: "The answer is easier to evaluate quickly."
+          changed_what: "把核心观点提前到了第一句话。",
+          why_changed: "减少面试官等待关键信息的时间。",
+          impact: "回答更直接，也更容易被快速理解和判断。"
         }
       ]
     },
@@ -239,12 +245,12 @@ function feedbackReadySession(): FeedbackReadyTrainingSessionDto {
       dimensions: [
         {
           dimension: "core_message",
-          displayName: "Core Message",
+          displayName: "核心信息",
           score: 12,
           maxScore: 20,
-          evidence: "Main point appears after background context.",
+          evidence: "核心观点出现在背景说明之后。",
           deductions: [],
-          improvementFocus: "Lead with the conclusion before details."
+          improvementFocus: "先说结论，再补充细节。"
         }
       ]
     },

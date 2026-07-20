@@ -269,8 +269,14 @@ describe("Module 8 real AI pipeline", () => {
 
     expect(analysis.version).toBe("analysis/v1");
     expect(analysis.system).toContain("STG Analysis Engine v1");
+    expect(analysis.userTemplate).toContain(
+      "Do not mix Chinese and English in user-facing feedback"
+    );
     expect(coaching.version).toBe("coaching/v1");
     expect(coaching.userTemplate).toContain("{{analysis\\_json}}");
+    expect(coaching.userTemplate).toContain(
+      "Do not mix Chinese and English in user-facing feedback"
+    );
   });
 
   it("validates Analysis output and rejects rewrite fields", () => {

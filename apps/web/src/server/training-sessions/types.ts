@@ -31,6 +31,16 @@ export type ScoreSnapshotDto = {
   dimensions: ExplainableDimensionDto[];
 };
 
+export type ScoreDeltaDto = {
+  total: number;
+  dimensions: Array<{
+    dimension: DimensionKey;
+    before: number;
+    after: number;
+    delta: number;
+  }>;
+};
+
 export type RevisionAction = "accepted" | "rejected" | "edited";
 
 export type PracticeSessionStatus =
@@ -68,6 +78,10 @@ type SharedFeedbackTrainingSessionDto = {
   sourceMode: SourceMode;
   feedbackMode: "D";
   practiceDay: number;
+  /** Version snapshot used to make before/after scores auditable. */
+  promptVersion: string;
+  rubricVersion: string;
+  modelVersion: string;
   draft: {
     text: string;
     attemptId: string;
@@ -127,7 +141,8 @@ export type CompletedTrainingSessionDto = SharedFeedbackTrainingSessionDto & {
   decision: TrainingSessionDecisionDto;
   final: TrainingSessionFinalDto;
   scoreAfter: ScoreSnapshotDto;
-  delta: null;
+  /** Always derived from immutable score snapshots; never persisted as authority. */
+  delta: ScoreDeltaDto | null;
 };
 
 export type TrainingSessionDto =

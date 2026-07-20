@@ -2,8 +2,13 @@ import type { TrainingDayNumber } from "@/server/questions";
 
 export type AttemptStatus =
   | "submitted"
+  | "queued"
+  | "analyzing"
   | "analysis_running"
+  | "coaching"
   | "coaching_running"
+  | "feedback_ready"
+  | "rescoring"
   | "mock_result_generating"
   | "completed"
   | "failed";
@@ -33,6 +38,7 @@ export type AttemptRow = {
   analysis_prompt_version?: string | null;
   coaching_prompt_version?: string | null;
   ai_model?: string | null;
+  rubric_version?: string | null;
   repair_count?: number | null;
   error_code?: string | null;
   analysis_latency_ms?: number | null;
@@ -117,7 +123,33 @@ export type AiFeedbackRow = {
 
 export type AiFeedbackInsert = Omit<AiFeedbackRow, "created_at">;
 
+export type CompleteAiAttemptInput = {
+  userId: string;
+  attemptId: string;
+  score: ScoreInsert;
+  feedback: AiFeedbackInsert;
+  metadata: {
+    analysis_prompt_version: string;
+    coaching_prompt_version: string;
+    ai_model: string;
+    rubric_version: string;
+    repair_count: number;
+    analysis_latency_ms?: number;
+    coaching_latency_ms?: number;
+    total_latency_ms?: number;
+    provider_response_id?: string;
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+    job_stage?: "coaching" | "rescore";
+    job_output?: Record<string, unknown>;
+  };
+  jobId?: string;
+  leaseToken?: string;
+};
+
 export type CompletedAttemptResultDto = {
+  sessionId?: string;
   attempt: {
     status: "completed";
     originalAnswer: string;
@@ -147,7 +179,19 @@ export type FailedAttemptResultDto = {
   };
 };
 
-export type AttemptResultDto = CompletedAttemptResultDto | FailedAttemptResultDto;
+export type ProcessingAttemptResultDto = {
+  attempt: {
+    status: Exclude<AttemptStatus, "completed" | "failed">;
+    originalAnswer: string;
+    submittedAt: string;
+    retryAfterMs: number;
+  };
+};
+
+export type AttemptResultDto =
+  | ProcessingAttemptResultDto
+  | CompletedAttemptResultDto
+  | FailedAttemptResultDto;
 
 export type AttemptRepository = {
   findActiveQuestionById: (questionId: string) => Promise<AttemptQuestionRow | null>;
@@ -170,7 +214,12 @@ export type AttemptRepository = {
   findAiFeedbackByAttemptId: (
     attemptId: string
   ) => Promise<AiFeedbackRow | null>;
+  findTrainingSessionIdByInitialAttemptId?: (
+    userId: string,
+    attemptId: string
+  ) => Promise<string | null>;
   createAiFeedback: (feedback: AiFeedbackInsert) => Promise<AiFeedbackRow>;
+  completeAiAttempt?: (input: CompleteAiAttemptInput) => Promise<AttemptRow>;
   updateAttemptPipelineMetadata?: (
     userId: string,
     attemptId: string,
@@ -180,6 +229,7 @@ export type AttemptRepository = {
         | "analysis_prompt_version"
         | "coaching_prompt_version"
         | "ai_model"
+        | "rubric_version"
         | "repair_count"
         | "error_code"
         | "analysis_latency_ms"

@@ -12,7 +12,9 @@ import type { QuestionDto } from "@/server/questions";
 type QuestionEnvelope = {
   ok: true;
   data: {
-    question: QuestionDto;
+    question: QuestionDto | null;
+    courseCompleted?: boolean;
+    liveTrainingV2Enabled?: boolean;
   };
 };
 
@@ -38,6 +40,8 @@ export default function WorkspacePage() {
   const idempotencyKey = useRef(createIdempotencyKey());
   const clientStartedAt = useRef(new Date().toISOString());
   const [question, setQuestion] = useState<QuestionDto | null>(null);
+  const [courseCompleted, setCourseCompleted] = useState(false);
+  const [liveTrainingV2Enabled, setLiveTrainingV2Enabled] = useState(true);
   const [answer, setAnswer] = useState("");
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,18 +59,24 @@ export default function WorkspacePage() {
         const body = (await response.json()) as QuestionEnvelope | ErrorEnvelope;
 
         if (!response.ok || !body.ok) {
-          throw new Error(body.ok ? "Unable to load question." : body.error.message);
+          throw new Error(body.ok ? "无法加载今日题目。" : body.error.message);
         }
 
         if (isMounted) {
           setQuestion(body.data.question);
+          setCourseCompleted(
+            body.data.courseCompleted === true || body.data.question === null
+          );
+          setLiveTrainingV2Enabled(
+            body.data.liveTrainingV2Enabled !== false
+          );
         }
       } catch (loadError) {
         if (isMounted) {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Unable to load question."
+              : "无法加载今日题目。"
           );
         }
       } finally {
@@ -87,7 +97,7 @@ export default function WorkspacePage() {
     event.preventDefault();
 
     if (!question) {
-      setError("Unable to submit before the question has loaded.");
+      setError("题目尚未加载完成，暂时不能提交。 ");
       return;
     }
 
@@ -99,7 +109,7 @@ export default function WorkspacePage() {
     }
 
     if (answer.trim().length > MAX_ANSWER_LENGTH) {
-      setError("answer_text must be 6000 characters or fewer.");
+      setError("回答不能超过 6000 个字符。 ");
       return;
     }
 
@@ -122,15 +132,19 @@ export default function WorkspacePage() {
       const body = (await response.json()) as AttemptEnvelope | ErrorEnvelope;
 
       if (!response.ok || !body.ok) {
-        throw new Error(body.ok ? "Unable to submit answer." : body.error.message);
+        throw new Error(body.ok ? "无法提交回答。" : body.error.message);
       }
 
-      router.push(`/result/${body.data.attempt.id}`);
+      router.push(
+        liveTrainingV2Enabled
+          ? `/training/${body.data.attempt.id}`
+          : `/result/${body.data.attempt.id}`
+      );
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Unable to submit answer."
+          : "无法提交回答。"
       );
       setIsSubmitting(false);
     }
@@ -139,14 +153,32 @@ export default function WorkspacePage() {
   return (
     <main className="space-y-6">
       <section className="space-y-2">
-        <h1 className="text-3xl font-semibold">Workspace</h1>
+        <h1 className="text-3xl font-semibold">今日训练</h1>
         <p className="max-w-2xl text-slate-600">
-          Complete today&apos;s structured interview communication training.
+          专注完成今天的一项结构化面试表达练习。
         </p>
       </section>
 
       {isLoadingQuestion ? (
-        <p className="text-slate-600">Loading question...</p>
+        <p className="text-slate-600">正在加载题目…</p>
+      ) : null}
+
+      {!isLoadingQuestion && courseCompleted ? (
+        <section className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-6">
+          <h2 className="text-2xl font-semibold text-emerald-950">
+            七天训练已完成
+          </h2>
+          <p className="max-w-2xl leading-7 text-emerald-900">
+            你已经完成当前课程。可以前往 Dashboard 查看七天进度与真实训练记录。
+          </p>
+          <button
+            type="button"
+            className="rounded-md bg-focus px-4 py-2 text-sm font-medium text-white"
+            onClick={() => router.push("/dashboard")}
+          >
+            查看训练总结
+          </button>
+        </section>
       ) : null}
 
       {question ? (
@@ -154,18 +186,18 @@ export default function WorkspacePage() {
           <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-500">
-                Day {question.dayNumber}
+                第 {question.dayNumber} 天
               </p>
               <h2 className="text-2xl font-semibold">{question.title}</h2>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-700">Scenario</h3>
+              <h3 className="text-sm font-semibold text-slate-700">情境</h3>
               <p className="text-slate-700">{question.scenario}</p>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-700">Question</h3>
+              <h3 className="text-sm font-semibold text-slate-700">问题</h3>
               <p className="text-lg font-medium text-ink">{question.prompt}</p>
             </div>
           </section>
@@ -178,7 +210,7 @@ export default function WorkspacePage() {
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-4">
               <label htmlFor="answer" className="text-sm font-semibold">
-                Your answer
+                你的回答
               </label>
               <span className="text-sm text-slate-500">
                 {answer.length} / {MAX_ANSWER_LENGTH}
@@ -192,7 +224,7 @@ export default function WorkspacePage() {
               maxLength={MAX_ANSWER_LENGTH}
               rows={10}
               className="w-full resize-y rounded-lg border border-slate-300 bg-white p-4 leading-7 outline-none focus:border-focus"
-              placeholder="Write your answer here..."
+              placeholder="先直接回答问题，再补充理由或证据…"
             />
             {answer.length >= MAX_ANSWER_LENGTH ? (
               <p className="text-sm text-amber-700">已达到 6000 字符上限</p>
@@ -210,7 +242,7 @@ export default function WorkspacePage() {
             disabled={isSubmitting || answer.trim().length === 0}
             className="rounded-md bg-focus px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Submitting..." : "Submit answer"}
+            {isSubmitting ? "提交中…" : "提交回答"}
           </button>
         </form>
       ) : null}

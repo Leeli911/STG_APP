@@ -10,17 +10,19 @@ The demo is designed for GitHub reviewers, portfolio visitors, interviewers, and
 
 ## What the Demo Shows
 
-The demo walks through the Human-AI revision loop:
+The demo walks through the complete deterministic Human-AI revision loop:
 
 ```text
-Draft
+Question
+→ Draft
 → Explainable feedback
 → AI suggestion
 → Accept / reject / edit
 → Final answer
+→ Re-score and delta
 ```
 
-You can review the initial answer, inspect the score breakdown, compare the AI suggestion, and choose one of three revision actions.
+You first submit a draft answer, then inspect the score breakdown, compare the AI suggestion, choose one of three revision actions, and review the final score delta.
 
 ## How to Run Locally
 
@@ -46,6 +48,7 @@ Try each decision path:
 1. Accept the AI suggestion and confirm the final answer matches the suggestion.
 2. Reject the suggestion and confirm the final answer stays as the original draft.
 3. Edit the answer and confirm the final answer reflects your edited text.
+4. Confirm the final score and dimension changes are shown with the disclaimer that a system score delta is not validated learning impact.
 
 The route uses the same training-session screen as the live product, so the demo is not a separate mock page.
 
@@ -83,5 +86,6 @@ The demo currently shows:
 - AI suggestion
 - accept / reject / edit controls
 - final answer after revision
+- total and per-dimension score changes
 
-It does not yet show delta tracking, feedback-mode gating, or a learning dashboard. Those are future phases.
+It intentionally does not show authenticated history, long-term progress, or live AI latency. Those belong to the live product rather than the public deterministic route.

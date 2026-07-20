@@ -8,17 +8,20 @@ import type {
 export function toAttemptResultDto({
   attempt,
   score,
-  feedback
+  feedback,
+  sessionId
 }: {
   attempt: AttemptRow;
   score: ScoreRow;
   feedback: AiFeedbackRow;
+  sessionId?: string | null;
 }): AttemptResultDto {
   if (attempt.status !== "completed") {
     throw new Error("Attempt result is only available for completed attempts.");
   }
 
   return {
+    ...(sessionId ? { sessionId } : {}),
     attempt: {
       status: "completed",
       originalAnswer: attempt.original_answer,
@@ -55,6 +58,27 @@ export function toFailedAttemptResultDto({
       originalAnswer: attempt.original_answer,
       submittedAt: attempt.created_at,
       retryAvailable: true
+    }
+  };
+}
+
+export function toProcessingAttemptResultDto({
+  attempt,
+  retryAfterMs = 1_500
+}: {
+  attempt: AttemptRow;
+  retryAfterMs?: number;
+}): AttemptResultDto {
+  if (attempt.status === "completed" || attempt.status === "failed") {
+    throw new Error("Processing result requires a non-terminal attempt.");
+  }
+
+  return {
+    attempt: {
+      status: attempt.status,
+      originalAnswer: attempt.original_answer,
+      submittedAt: attempt.created_at,
+      retryAfterMs
     }
   };
 }

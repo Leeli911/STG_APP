@@ -8,11 +8,20 @@ import type {
   AttemptRepository,
   AttemptRow
 } from "@/server/attempts/types";
+import type {
+  PipelineInput,
+  PipelineProfileContext
+} from "@/server/ai/pipeline";
+import { runAiRescorePipeline } from "@/server/ai/pipeline";
 import { toTrainingSessionDto } from "@/server/training-sessions/trainingSessionDto";
 import type {
   TrainingSessionRepository
 } from "@/server/training-sessions/trainingSessionRepository";
 import type { TrainingSessionDto } from "@/server/training-sessions/types";
+import {
+  recordProductEventBestEffort,
+  type ProductEventRecorder
+} from "@/server/product-events";
 
 export type TrainingSessionServiceErrorCode =
   | "VALIDATION_ERROR"
@@ -52,6 +61,10 @@ export type TrainingSessionService = {
     idempotencyKey: string | null;
   }): Promise<TrainingSessionDto>;
   getSession(userId: string, sessionId: string): Promise<TrainingSessionDto>;
+  markFeedbackViewed(
+    userId: string,
+    sessionId: string
+  ): Promise<TrainingSessionDto>;
   commitRevision(input: {
     userId: string;
     sessionId: string;
@@ -68,17 +81,33 @@ const UUID_PATTERN =
 export function createTrainingSessionService({
   sessionRepository,
   attemptRepository,
+  profileContextResolver = async () => undefined,
+  processRescoreAttempt = runAiRescorePipeline,
+  deferRescore = false,
   attemptServiceFactory = (practiceDay) =>
     createAttemptService({
       repository: attemptRepository,
-      currentDayResolver: async () => practiceDay as 1 | 2 | 3 | 4 | 5 | 6 | 7
+      currentDayResolver: async () => practiceDay as 1 | 2 | 3 | 4 | 5 | 6 | 7,
+      profileContextResolver,
+      processAttempt: processRescoreAttempt,
+      deferInFlightAttempts: deferRescore,
+      retryFailedAttempts: true
     }),
-  now = () => new Date().toISOString()
+  now = () => new Date().toISOString(),
+  recordProductEvent
 }: {
   sessionRepository: TrainingSessionRepository;
   attemptRepository: AttemptRepository;
+  profileContextResolver?: (
+    userId: string
+  ) => Promise<PipelineProfileContext | undefined>;
+  processRescoreAttempt?: (
+    input: PipelineInput
+  ) => Promise<AttemptRow>;
+  deferRescore?: boolean;
   attemptServiceFactory?: AttemptServiceFactory;
   now?: () => string;
+  recordProductEvent?: ProductEventRecorder;
 }): TrainingSessionService {
   async function getSession(
     userId: string,
@@ -234,7 +263,7 @@ export function createTrainingSessionService({
           initialAttemptId: initialAttempt.id,
           idempotencyKey: validated.idempotencyKey,
           practiceDay: initialAttempt.day_number,
-          feedbackShownAt: createdAt,
+          feedbackShownAt: null,
           createdAt
         })
       );
@@ -242,6 +271,53 @@ export function createTrainingSessionService({
     },
 
     getSession,
+
+    async markFeedbackViewed(userId, sessionId) {
+      if (!UUID_PATTERN.test(sessionId)) {
+        throw new TrainingSessionServiceError(
+          "VALIDATION_ERROR",
+          "session_id must be a valid UUID.",
+          400
+        );
+      }
+      if (!sessionRepository.markFeedbackViewed) {
+        throw new TrainingSessionServiceError(
+          "DATABASE_ERROR",
+          "Feedback viewed persistence is unavailable.",
+          500
+        );
+      }
+      const existing = await read(() =>
+        sessionRepository.findById(userId, sessionId)
+      );
+      if (!existing) {
+        throw new TrainingSessionServiceError(
+          "NOT_FOUND",
+          "Training session was not found.",
+          404,
+          { session_id: sessionId }
+        );
+      }
+      await read(() => sessionRepository.markFeedbackViewed!(userId, sessionId));
+      const viewed = await getSession(userId, sessionId);
+      if (!existing.feedback_shown_at) {
+        await recordProductEventBestEffort(
+          recordProductEvent,
+          {
+            userId,
+            event_name: "feedback_viewed",
+            session_id: viewed.id,
+            attempt_id: viewed.draft.attemptId,
+            metadata: {
+              practice_day: toPracticeDay(viewed.practiceDay),
+              feedback_mode: "D"
+            }
+          },
+          "training.feedback_viewed"
+        );
+      }
+      return viewed;
+    },
 
     async commitRevision(input) {
       const session = await read(() =>
@@ -307,22 +383,90 @@ export function createTrainingSessionService({
       }
       if (outcome.outcome === "replayed") {
         const current = await getSession(input.userId, session.id);
+        if (current.status !== "rescoring") {
+          return {
+            session: current,
+            httpStatus: 200
+          };
+        }
+
+        const finalAttempt = await read(() =>
+          attemptRepository.findAttemptById(
+            input.userId,
+            outcome.finalAttemptId ?? current.final.attemptId
+          )
+        );
+        if (!finalAttempt) {
+          throw new TrainingSessionServiceError(
+            "SESSION_DATA_INCOMPLETE",
+            "Training session is missing its final attempt.",
+            500,
+            { session_id: session.id }
+          );
+        }
+
+        // `submitted` is the durable crash window: the revision transaction
+        // committed, but no AI Job was enqueued. Active states are already owned
+        // by the Job/Webhook pipeline and must remain an idempotent 202 replay.
+        if (finalAttempt.status !== "submitted") {
+          return {
+            session: current,
+            httpStatus: 202
+          };
+        }
+      }
+
+      if (outcome.outcome === "committed") {
+        await recordProductEventBestEffort(
+          recordProductEvent,
+          {
+            userId: input.userId,
+            event_name: "revision_committed",
+            session_id: session.id,
+            attempt_id: session.initial_attempt_id,
+            metadata: {
+              practice_day: toPracticeDay(session.practice_day),
+              action: validated.action
+            }
+          },
+          "training.revision_committed"
+        );
+      }
+
+      if (validated.action === "rejected") {
+        const completed = await getSession(input.userId, session.id);
+        await recordCompletedTrainingEvents(
+          recordProductEvent,
+          input.userId,
+          completed
+        );
         return {
-          session: current,
-          httpStatus: current.status === "rescoring" ? 202 : 200
+          session: completed,
+          httpStatus: 200
         };
       }
 
       const finalAttemptKey = `revision:${session.id}`;
       const attemptService = attemptServiceFactory(session.practice_day);
       try {
-        await attemptService.submitAttempt({
+        const rescoredAttempt = await attemptService.submitAttempt({
           userId: input.userId,
           questionId: initialAttempt.question_id,
           answerText: validated.finalText,
           idempotencyKey: finalAttemptKey,
           clientStartedAt: validated.clientDecidedAt
         });
+        if (rescoredAttempt.status === "failed") {
+          throw new Error(
+            "Final answer re-score could not be enqueued or exhausted its retry limit."
+          );
+        }
+        if (rescoredAttempt.status !== "completed") {
+          return {
+            session: await getSession(input.userId, session.id),
+            httpStatus: 202
+          };
+        }
         await read(() =>
           sessionRepository.setRescoreOutcome(
             input.userId,
@@ -349,12 +493,62 @@ export function createTrainingSessionService({
         );
       }
 
+      const completed = await getSession(input.userId, session.id);
+      await recordCompletedTrainingEvents(
+        recordProductEvent,
+        input.userId,
+        completed
+      );
       return {
-        session: await getSession(input.userId, session.id),
+        session: completed,
         httpStatus: 200
       };
     }
   };
+}
+
+async function recordCompletedTrainingEvents(
+  recorder: ProductEventRecorder | undefined,
+  userId: string,
+  session: TrainingSessionDto
+) {
+  if (session.status !== "completed") return;
+  const practiceDay = toPracticeDay(session.practiceDay);
+  const scoreDelta = session.scoreAfter.total - session.scoreBefore.total;
+
+  await recordProductEventBestEffort(
+    recorder,
+    {
+      userId,
+      event_name: "session_completed",
+      session_id: session.id,
+      attempt_id: session.final.attemptId,
+      metadata: {
+        practice_day: practiceDay,
+        action: session.decision.action,
+        score_delta: scoreDelta
+      }
+    },
+    "training.session_completed"
+  );
+  await recordProductEventBestEffort(
+    recorder,
+    {
+      userId,
+      event_name: "day_completed",
+      session_id: session.id,
+      attempt_id: session.final.attemptId,
+      metadata: {
+        practice_day: practiceDay,
+        curriculum_slug: "stg-7day-v1"
+      }
+    },
+    "training.day_completed"
+  );
+}
+
+function toPracticeDay(value: number): 1 | 2 | 3 | 4 | 5 | 6 | 7 {
+  return value as 1 | 2 | 3 | 4 | 5 | 6 | 7;
 }
 
 function validateCreateSessionInput(input: {

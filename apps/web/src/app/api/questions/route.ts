@@ -10,6 +10,12 @@ import {
 import { jsonError } from "@/server/api/envelope";
 import { handleGetQuestions } from "@/server/questions/questionApi";
 import type { SupabaseLikeClient } from "@/server/questions/questionRepository";
+import {
+  createSupabaseTrainingOverviewRepository,
+  createTrainingOverviewService,
+  type SupabaseTrainingOverviewClient
+} from "@/server/training-overview";
+import { isLiveTrainingV2Enabled } from "@/server/features/liveTrainingV2";
 
 export async function GET(request: Request) {
   let supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
@@ -28,7 +34,8 @@ export async function GET(request: Request) {
             id: devUser.id
           };
         },
-        questionService: createQuestionService(createStaticQuestionRepository())
+        questionService: createQuestionService(createStaticQuestionRepository()),
+        liveTrainingV2Enabled: isLiveTrainingV2Enabled()
       });
     }
 
@@ -42,6 +49,11 @@ export async function GET(request: Request) {
 
   const questionService = createQuestionService(
     createSupabaseQuestionRepository(supabase as unknown as SupabaseLikeClient)
+  );
+  const overviewService = createTrainingOverviewService(
+    createSupabaseTrainingOverviewRepository(
+      supabase as unknown as SupabaseTrainingOverviewClient
+    )
   );
 
   return handleGetQuestions(request, {
@@ -58,6 +70,15 @@ export async function GET(request: Request) {
         id: user.id
       };
     },
-    questionService
+    questionService,
+    liveTrainingV2Enabled: isLiveTrainingV2Enabled(),
+    async resolveProgress(userId) {
+      const progress = await overviewService.getProgress(userId);
+      return {
+        currentDay: progress.currentDay,
+        completedDays: progress.completedDays,
+        isComplete: progress.isComplete
+      };
+    }
   });
 }

@@ -10,6 +10,8 @@ import type {
   FeedbackReadyTrainingSessionDto,
   PracticeSessionRow,
   RevisionEventRow,
+  ScoreDeltaDto,
+  ScoreSnapshotDto,
   SourceMode
 } from "@/server/training-sessions/types";
 import type { TrainingSessionDto } from "@/server/training-sessions/types";
@@ -75,6 +77,9 @@ export function toFeedbackReadyTrainingSessionDto({
     sourceMode,
     feedbackMode: "D",
     practiceDay: attempt.day_number,
+    promptVersion: formatPromptVersion(attempt),
+    rubricVersion: attempt.rubric_version ?? "stg-rubric-v1",
+    modelVersion: attempt.ai_model ?? "unknown",
     status: "feedback_ready",
     draft: {
       text: attempt.original_answer,
@@ -97,6 +102,12 @@ export function toFeedbackReadyTrainingSessionDto({
     delta: null,
     feedbackShownAt: null
   };
+}
+
+function formatPromptVersion(attempt: AttemptRow) {
+  const analysis = attempt.analysis_prompt_version ?? "unknown-analysis";
+  const coaching = attempt.coaching_prompt_version ?? "unknown-coaching";
+  return `${analysis}|${coaching}`;
 }
 
 export function toTrainingSessionDto({
@@ -156,13 +167,15 @@ export function toTrainingSessionDto({
       throw new Error("Completed revision session is missing its final result.");
     }
 
+    const scoreAfter = toScoreSnapshot(finalScore, finalFeedback);
+
     return {
       ...shared,
       status: "completed",
       decision,
       final,
-      scoreAfter: toScoreSnapshot(finalScore, finalFeedback),
-      delta: null
+      scoreAfter,
+      delta: deriveScoreDelta(shared.scoreBefore, scoreAfter)
     };
   }
 
@@ -180,6 +193,28 @@ function toScoreSnapshot(score: ScoreRow, feedback: AiFeedbackRow) {
   return {
     total: score.total_score,
     dimensions: toExplainableDimensions(score, feedback)
+  };
+}
+
+export function deriveScoreDelta(
+  before: ScoreSnapshotDto,
+  after: ScoreSnapshotDto
+): ScoreDeltaDto {
+  const beforeByDimension = new Map(
+    before.dimensions.map((item) => [item.dimension, item.score])
+  );
+
+  return {
+    total: after.total - before.total,
+    dimensions: after.dimensions.map((item) => {
+      const beforeScore = beforeByDimension.get(item.dimension) ?? 0;
+      return {
+        dimension: item.dimension,
+        before: beforeScore,
+        after: item.score,
+        delta: item.score - beforeScore
+      };
+    })
   };
 }
 

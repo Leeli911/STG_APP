@@ -198,7 +198,7 @@ describe("Module 9 ExplainableRubric", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Evidence" })
+      screen.getByRole("heading", { name: "事实证据" })
     ).toBeInTheDocument();
     expect(screen.getByText("13 / 20")).toBeInTheDocument();
     expect(screen.getByText("有原因但缺少具体经历。")).toBeInTheDocument();
@@ -223,9 +223,9 @@ describe("Module 9 ExplainableRubric", () => {
 
     render(<ExplainableRubric dimensions={[relevance]} />);
 
-    expect(screen.getByText("No deductions recorded.")).toBeInTheDocument();
+    expect(screen.getByText("未记录扣分项。")).toBeInTheDocument();
     expect(
-      screen.getByText("No primary improvement focus.")
+      screen.getByText("当前没有首要改进项。")
     ).toBeInTheDocument();
   });
 
@@ -233,7 +233,7 @@ describe("Module 9 ExplainableRubric", () => {
     render(<ExplainableRubric dimensions={[]} />);
 
     expect(
-      screen.getByText("Detailed rubric is unavailable for this earlier attempt.")
+      screen.getByText("这份早期训练暂无详细评分证据。")
     ).toBeInTheDocument();
   });
 });
@@ -244,10 +244,10 @@ describe("Module 9 TrainingSessionScreen", () => {
 
     expect(screen.getByText("68")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Score Breakdown" })
+      screen.getByRole("heading", { name: "评分明细" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Core Message" })
+      screen.getByRole("heading", { name: "核心信息" })
     ).toBeInTheDocument();
   });
 });

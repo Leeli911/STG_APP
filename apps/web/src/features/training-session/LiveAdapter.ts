@@ -58,6 +58,15 @@ class LiveTrainingSessionGateway implements TrainingSessionGateway {
     return session;
   }
 
+  async markFeedbackViewed(sessionId: string) {
+    const { session } = await this.request<{ session: TrainingSessionDto }>(
+      `/api/training-sessions/${encodeURIComponent(sessionId)}/viewed`,
+      { method: "POST" }
+    );
+
+    return session;
+  }
+
   async commitRevision(input: CommitTrainingSessionRevisionInput) {
     try {
       const { session } = await this.request<{ session: TrainingSessionDto }>(

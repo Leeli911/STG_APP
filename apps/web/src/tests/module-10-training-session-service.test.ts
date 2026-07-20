@@ -22,7 +22,6 @@ import type {
 } from "@/server/attempts";
 import type {
   PracticeSessionRow,
-  PracticeSessionStatus,
   RevisionEventRow
 } from "@/server/training-sessions";
 import { validateRevisionDecision } from "@/lib/validation/revision";
@@ -48,7 +47,11 @@ const initialAttempt: AttemptRow = {
   status: "completed",
   idempotency_key: "initial-attempt-key",
   client_started_at: null,
-  created_at: "2026-06-24T00:00:00.000Z"
+  created_at: "2026-06-24T00:00:00.000Z",
+  analysis_prompt_version: "analysis-v1",
+  coaching_prompt_version: "coaching-v1",
+  ai_model: "model-v1",
+  rubric_version: "stg-rubric-v1"
 };
 
 const initialScore: ScoreRow = {
@@ -196,6 +199,9 @@ describe("Module 10 TrainingSessionService", () => {
     expect(first).toMatchObject({
       sourceMode: "live",
       feedbackMode: "D",
+      promptVersion: "analysis-v1|coaching-v1",
+      rubricVersion: "stg-rubric-v1",
+      modelVersion: "model-v1",
       status: "feedback_ready",
       decision: null,
       final: null,
@@ -303,24 +309,32 @@ describe("Module 10 TrainingSessionService", () => {
     {
       action: "accepted" as const,
       editedText: null,
-      expectedText: initialFeedback.rewrite.text
+      expectedText: initialFeedback.rewrite.text,
+      expectedScore: 74,
+      expectedSubmitCount: 1
     },
     {
       action: "rejected" as const,
       editedText: null,
-      expectedText: initialAttempt.original_answer
+      expectedText: initialAttempt.original_answer,
+      expectedScore: 68,
+      expectedSubmitCount: 0
     },
     {
       action: "edited" as const,
       editedText:
         "  我想做数据分析，因为我擅长梳理复杂问题，也希望用清晰的分析支持业务团队做出更好的判断。  ",
       expectedText:
-        "我想做数据分析，因为我擅长梳理复杂问题，也希望用清晰的分析支持业务团队做出更好的判断。"
+        "我想做数据分析，因为我擅长梳理复杂问题，也希望用清晰的分析支持业务团队做出更好的判断。",
+      expectedScore: 74,
+      expectedSubmitCount: 1
     }
-  ])("commits $action and re-scores its exact final text", async ({
+  ])("commits $action with the correct final-answer scoring behavior", async ({
     action,
     editedText,
-    expectedText
+    expectedText,
+    expectedScore,
+    expectedSubmitCount
   }) => {
     const fixture = createFixture();
     const session = await createSession(fixture);
@@ -345,15 +359,21 @@ describe("Module 10 TrainingSessionService", () => {
         text: expectedText
       },
       scoreAfter: {
-        total: 74
+        total: expectedScore
       },
-      delta: null
+      delta: {
+        total: expectedScore - 68
+      }
     });
-    expect(fixture.attemptService.submitCount).toBe(1);
-    expect(fixture.attemptService.submittedAnswers).toEqual([expectedText]);
-    expect(fixture.attemptService.factoryDays).toEqual([1]);
+    expect(fixture.attemptService.submitCount).toBe(expectedSubmitCount);
+    expect(fixture.attemptService.submittedAnswers).toEqual(
+      expectedSubmitCount ? [expectedText] : []
+    );
+    expect(fixture.attemptService.factoryDays).toEqual(
+      expectedSubmitCount ? [1] : []
+    );
     expect(fixture.sessions.revisionCount).toBe(1);
-    expect(fixture.attempts.finalAttemptCount()).toBe(1);
+    expect(fixture.attempts.finalAttemptCount()).toBe(expectedSubmitCount);
   });
 
   it("rejects an invalid Edit before committing a decision or re-scoring", async () => {
@@ -394,7 +414,7 @@ describe("Module 10 TrainingSessionService", () => {
     expect(fixture.attemptService.submitCount).toBe(1);
   });
 
-  it("returns 202 for an identical replay that is already rescoring", async () => {
+  it("recovers the crash window after the revision commits but before enqueue", async () => {
     const fixture = createFixture();
     const session = await createSession(fixture);
     const input = revisionInput(session.id, "accepted", null, "same-key");
@@ -407,6 +427,33 @@ describe("Module 10 TrainingSessionService", () => {
       editedText: input.editedText,
       clientDecidedAt: input.clientDecidedAt
     });
+
+    const replay = await fixture.service.commitRevision(input);
+
+    expect(replay.httpStatus).toBe(200);
+    expect(replay.session.status).toBe("completed");
+    expect(fixture.attemptService.submitCount).toBe(1);
+    expect(fixture.sessions.revisionCount).toBe(1);
+  });
+
+  it("returns 202 without duplicate enqueue when the final attempt is already active", async () => {
+    const fixture = createFixture();
+    const session = await createSession(fixture);
+    const input = revisionInput(session.id, "accepted", null, "same-key");
+
+    const committed = await fixture.sessions.commitRevision({
+      userId,
+      sessionId: session.id,
+      idempotencyKey: input.idempotencyKey,
+      action: input.action,
+      editedText: input.editedText,
+      clientDecidedAt: input.clientDecidedAt
+    });
+    await fixture.attempts.updateAttemptStatus(
+      userId,
+      committed.finalAttemptId!,
+      "rescoring"
+    );
 
     const replay = await fixture.service.commitRevision(input);
 
@@ -459,18 +506,38 @@ describe("Module 10 TrainingSessionService", () => {
       fixture.attemptService.submittedAttemptIds[1]
     );
   });
+
+  it("returns the Session to rescore_failed when a bounded retry cannot enqueue", async () => {
+    const fixture = createFixture({ returnFailedRescore: true });
+    const session = await createSession(fixture);
+
+    await expect(
+      fixture.service.commitRevision(
+        revisionInput(session.id, "accepted", null, "bounded-retry-key")
+      )
+    ).rejects.toMatchObject({
+      code: "RESCORE_FAILED",
+      status: 502
+    });
+
+    expect((await fixture.service.getSession(userId, session.id)).status).toBe(
+      "rescore_failed"
+    );
+  });
 });
 
 function createFixture({
   attemptStatus = "completed",
   includeScore = true,
   includeFeedback = true,
-  failFirstRescore = false
+  failFirstRescore = false,
+  returnFailedRescore = false
 }: {
   attemptStatus?: AttemptStatus;
   includeScore?: boolean;
   includeFeedback?: boolean;
   failFirstRescore?: boolean;
+  returnFailedRescore?: boolean;
 } = {}) {
   const attempts = new MemoryAttemptRepository({
     attempt: {
@@ -483,7 +550,8 @@ function createFixture({
   const sessions = new MemoryTrainingSessionRepository(attempts);
   const attemptService = new RecordingAttemptServiceFactory(
     attempts,
-    failFirstRescore
+    failFirstRescore,
+    returnFailedRescore
   );
   const service = createTrainingSessionService({
     sessionRepository: sessions,
@@ -627,12 +695,36 @@ class MemoryTrainingSessionRepository implements TrainingSessionRepository {
       throw new Error("Initial result is missing.");
     }
 
+    if (input.action === "rejected") {
+      const revision: RevisionEventRow = {
+        id: `revision-${session.id}`,
+        session_id: session.id,
+        idempotency_key: input.idempotencyKey,
+        action: input.action,
+        edited_text: null,
+        client_decided_at: input.clientDecidedAt,
+        created_at: input.clientDecidedAt
+      };
+      this.revisions.set(session.id, revision);
+      this.rows.set(session.id, {
+        ...session,
+        final_attempt_id: initial.id,
+        status: "completed",
+        completed_at: "2026-06-24T00:10:00.000Z"
+      });
+      return {
+        outcome: "committed",
+        sessionId: session.id,
+        revisionEventId: revision.id,
+        finalAttemptId: initial.id,
+        status: "completed"
+      };
+    }
+
     const finalText =
       input.action === "accepted"
         ? feedback.rewrite.text
-        : input.action === "rejected"
-          ? initial.original_answer
-          : input.editedText!;
+        : input.editedText!;
     const finalAttempt = this.attempts.ensureFinalAttempt(
       input.userId,
       initial,
@@ -780,7 +872,7 @@ class MemoryAttemptRepository implements AttemptRepository {
     this.saveAttempt(updated);
     return updated;
   }
-  async updateAttemptPipelineMetadata() {
+  async updateAttemptPipelineMetadata(): Promise<AttemptRow> {
     throw new Error("Not used by this service test.");
   }
   async findAttemptById(ownerId: string, attemptId: string) {
@@ -814,7 +906,8 @@ class RecordingAttemptServiceFactory {
 
   constructor(
     private readonly attempts: MemoryAttemptRepository,
-    failFirst: boolean
+    failFirst: boolean,
+    private readonly returnFailed: boolean
   ) {
     this.shouldFail = failFirst;
   }
@@ -835,6 +928,17 @@ class RecordingAttemptServiceFactory {
           this.shouldFail = false;
           this.attempts.completeFinalAttempt(attempt.id, "failed");
           throw new Error("AI pipeline request failed.");
+        }
+        if (this.returnFailed) {
+          this.attempts.completeFinalAttempt(attempt.id, "failed");
+          return {
+            id: attempt.id,
+            questionId: attempt.question_id,
+            dayNumber: attempt.day_number as 1,
+            answerText: attempt.original_answer,
+            status: "failed" as const,
+            submittedAt: attempt.created_at
+          };
         }
         this.attempts.completeFinalAttempt(attempt.id, "completed");
         return {

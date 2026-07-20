@@ -21,6 +21,7 @@ export type TrainingSessionGateway = {
     input: CreateTrainingSessionGatewayInput
   ): Promise<TrainingSessionDto>;
   getSession(sessionId: string): Promise<TrainingSessionDto>;
+  markFeedbackViewed?(sessionId: string): Promise<TrainingSessionDto>;
   commitRevision(
     input: CommitTrainingSessionRevisionInput
   ): Promise<TrainingSessionDto>;

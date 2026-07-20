@@ -2,22 +2,19 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { AppShell } from "@/components/layout/AppShell";
-import { Providers } from "@/app/providers";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Structured Thinking Gym",
-  description: "AI Interview Communication Coach for structured thinking practice"
+  title: "结构化思维训练场",
+  description: "面向求职者的结构化表达训练工具"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body>
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

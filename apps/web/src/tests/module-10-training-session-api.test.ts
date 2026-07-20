@@ -30,6 +30,9 @@ const feedbackReadySession: FeedbackReadyTrainingSessionDto = {
   sourceMode: "live",
   feedbackMode: "D",
   practiceDay: 1,
+  promptVersion: "analysis-v1|coaching-v1",
+  rubricVersion: "stg-rubric-v1",
+  modelVersion: "test-model",
   status: "feedback_ready",
   draft: {
     text: "我希望通过数据分析帮助团队更清楚地理解业务问题。",
@@ -385,6 +388,7 @@ function createDependencies({
   const service: MockTrainingSessionService = {
     createSession: vi.fn().mockResolvedValue(feedbackReadySession),
     getSession: vi.fn().mockResolvedValue(feedbackReadySession),
+    markFeedbackViewed: vi.fn().mockResolvedValue(feedbackReadySession),
     commitRevision: vi.fn().mockResolvedValue({
       session: completedSession,
       httpStatus: 200

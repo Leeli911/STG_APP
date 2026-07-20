@@ -13,6 +13,7 @@ export type {
   AttemptInsert,
   AttemptQuestionRow,
   CompletedAttemptResultDto,
+  CompleteAiAttemptInput,
   AttemptResultDto,
   AttemptRepository,
   AttemptRow,

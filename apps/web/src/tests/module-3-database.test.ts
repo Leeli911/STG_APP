@@ -158,21 +158,29 @@ describe("Module 3 database layer", () => {
 
     expect(seed).toContain("insert into public.questions");
     expect(migration).toContain("insert into public.questions");
-    expect(seed).toContain("on conflict (day_number)");
+    expect(seed).toContain(
+      "on conflict (content_key) where content_key is not null"
+    );
+    expect(seed).toContain("insert into public.curriculum_items");
     expect(migration).toContain("on conflict (day_number)");
 
     for (const [day, title] of [
-      [1, "conclusion first"],
-      [2, "categorization"],
-      [3, "star"],
-      [4, "evidence"],
-      [5, "conflict handling"],
-      [6, "stakeholder communication"],
-      [7, "final pitch"]
+      [1, "结论先行"],
+      [2, "分类表达"],
+      [3, "完整案例"],
+      [4, "事实证据"],
+      [5, "冲突处理"],
+      [6, "向上沟通"],
+      [7, "最终自我推荐"]
     ] as const) {
-      expect(seed).toMatch(new RegExp(`\\(\\s*${day},\\s*'${title}'`));
-      expect(migration).toMatch(new RegExp(`\\(\\s*${day},\\s*'${title}'`));
+      expect(seed).toMatch(
+        new RegExp(`'stg-7day-v1-day-${day}',\\s*${day},\\s*'${title}'`)
+      );
     }
+
+    // The original migration is immutable; the seed and the dedicated
+    // localization migration update existing databases to Chinese titles.
+    expect(migration).toMatch(/\(\s*1,\s*'conclusion first'/);
 
     for (const value of [
       "你为什么想做数据分析这份工作？",

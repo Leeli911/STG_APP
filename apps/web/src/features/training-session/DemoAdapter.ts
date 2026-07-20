@@ -8,6 +8,7 @@ import type {
   TrainingSessionDecisionDto,
   TrainingSessionDto
 } from "@/server/training-sessions/types";
+import { deriveScoreDelta } from "@/server/training-sessions/trainingSessionDto";
 import {
   TrainingSessionGatewayError,
   type CommitTrainingSessionRevisionInput,
@@ -17,6 +18,7 @@ import {
 
 export type DemoTrainingSessionGatewayOptions = {
   failFirstRescore?: boolean;
+  draftText?: string;
 };
 
 export function createDemoTrainingSessionGateway(
@@ -40,7 +42,7 @@ class DemoTrainingSessionGateway implements TrainingSessionGateway {
       ) {
         throw new TrainingSessionGatewayError(
           "IDEMPOTENCY_KEY_REUSED",
-          "This idempotency key already created a different demo session.",
+          "这个幂等键已经用于创建另一条演示训练记录。",
           { status: 409 }
         );
       }
@@ -51,7 +53,14 @@ class DemoTrainingSessionGateway implements TrainingSessionGateway {
     }
 
     this.createInput = { ...input };
-    this.session = createFeedbackReadyDemoSession(input.initialAttemptId);
+    const evaluation = this.options.draftText
+      ? evaluateDayOneAnswer(this.options.draftText)
+      : defaultDemoEvaluation;
+    this.session = createFeedbackReadyDemoSession(
+      input.initialAttemptId,
+      this.options.draftText,
+      evaluation
+    );
     return this.session;
   }
 
@@ -70,7 +79,10 @@ class DemoTrainingSessionGateway implements TrainingSessionGateway {
       if (current.status === "rescore_failed") {
         this.session = toRescoringSession(current);
         await Promise.resolve();
-        this.session = toCompletedSession(this.session);
+        this.session = toCompletedSession(
+          this.session,
+          this.options.draftText ? undefined : demoScoreAfter
+        );
       }
 
       return this.session ?? current;
@@ -113,6 +125,12 @@ class DemoTrainingSessionGateway implements TrainingSessionGateway {
       scoreAfter: null,
       delta: null
     };
+
+    if (validated.value.action === "rejected") {
+      this.session = toCompletedSession(this.session);
+      return this.session;
+    }
+
     await Promise.resolve();
 
     if (this.options.failFirstRescore && !this.failedOnce) {
@@ -126,7 +144,10 @@ class DemoTrainingSessionGateway implements TrainingSessionGateway {
       return this.session;
     }
 
-    this.session = toCompletedSession(this.session);
+    this.session = toCompletedSession(
+      this.session,
+      this.options.draftText ? undefined : demoScoreAfter
+    );
     return this.session;
   }
 
@@ -134,7 +155,7 @@ class DemoTrainingSessionGateway implements TrainingSessionGateway {
     if (!this.session || this.session.id !== sessionId) {
       throw new TrainingSessionGatewayError(
         "NOT_FOUND",
-        "Demo training session was not found.",
+        "未找到对应的演示训练记录。",
         {
           status: 404,
           details: {
@@ -171,7 +192,7 @@ function isSameDecision(
 function revisionConflict(sessionId: string) {
   return new TrainingSessionGatewayError(
     "REVISION_ALREADY_COMMITTED",
-    "A different revision decision is already committed.",
+    "这条训练记录已经提交了其他修订决定。",
     {
       status: 409,
       details: {
@@ -193,51 +214,44 @@ function toRescoringSession(
 }
 
 function toCompletedSession(
-  session: RescoringTrainingSessionDto | RescoreFailedTrainingSessionDto
+  session: RescoringTrainingSessionDto | RescoreFailedTrainingSessionDto,
+  scoreAfterOverride?: ScoreSnapshotDto
 ): CompletedTrainingSessionDto {
+  const scoreAfter =
+    session.decision.action === "rejected"
+      ? session.scoreBefore
+      : scoreAfterOverride ?? evaluateDayOneAnswer(session.final.text).scoreBefore;
+
   return {
     ...session,
     status: "completed",
-    scoreAfter: demoScoreAfter,
-    delta: null
+    scoreAfter,
+    delta: deriveScoreDelta(session.scoreBefore, scoreAfter)
   };
 }
 
 function createFeedbackReadyDemoSession(
-  initialAttemptId: string
+  initialAttemptId: string,
+  draftText = demoDraftText,
+  evaluation: DemoEvaluation = defaultDemoEvaluation
 ): FeedbackReadyTrainingSessionDto {
   return {
     id: demoSessionId,
     sourceMode: "demo",
     feedbackMode: "D",
     practiceDay: 1,
+    promptVersion: "demo-analysis-v1|demo-coaching-v1",
+    rubricVersion: "stg-rubric-v1",
+    modelVersion: "deterministic-demo-v1",
     status: "feedback_ready",
     draft: {
-      text: demoDraftText,
+      text: draftText,
       attemptId: initialAttemptId,
       submittedAt: "2026-06-25T00:00:00.000Z"
     },
-    diagnosis: [
-      {
-        issue_type: "late_core_message",
-        severity: "medium",
-        evidence: "Main point appears after background context.",
-        why_it_matters: "Interviewers need the main message early.",
-        fix_direction: "Lead with the conclusion before details."
-      }
-    ],
-    suggestion: {
-      text: demoSuggestionText,
-      structureUsed: "Conclusion First",
-      whyBetter: [
-        {
-          changed_what: "Moved the main point earlier.",
-          why_changed: "It reduces waiting time for the interviewer.",
-          impact: "The answer is easier to evaluate quickly."
-        }
-      ]
-    },
-    scoreBefore: demoScoreBefore,
+    diagnosis: evaluation.diagnosis,
+    suggestion: evaluation.suggestion,
+    scoreBefore: evaluation.scoreBefore,
     decision: null,
     final: null,
     scoreAfter: null,
@@ -257,18 +271,18 @@ const demoScoreBefore: ScoreSnapshotDto = {
   dimensions: [
     {
       dimension: "core_message",
-      displayName: "Core Message",
+      displayName: "核心信息",
       score: 12,
       maxScore: 20,
-      evidence: "Main point appears after background context.",
+      evidence: "核心观点出现在背景说明之后。",
       deductions: [
         {
           rule: "conclusion_first",
           points: 4,
-          reason: "The interviewer must wait before hearing the main message."
+          reason: "面试官需要先听完背景，才能知道回答的核心观点。"
         }
       ],
-      improvementFocus: "Lead with the conclusion before details."
+      improvementFocus: "先说结论，再补充细节。"
     }
   ]
 };
@@ -278,18 +292,217 @@ const demoScoreAfter: ScoreSnapshotDto = {
   dimensions: [
     {
       dimension: "core_message",
-      displayName: "Core Message",
+      displayName: "核心信息",
       score: 17,
       maxScore: 20,
-      evidence: "The revised answer states the communication goal earlier.",
+      evidence: "修订后的回答更早说明了希望带来的价值。",
       deductions: [
         {
           rule: "specificity",
           points: 1,
-          reason: "The answer could still include a more concrete example."
+          reason: "回答还可以加入一个更具体的例子。"
         }
       ],
-      improvementFocus: "Add one measurable example to support the message."
+      improvementFocus: "补充一个可衡量的例子来支撑核心观点。"
     }
   ]
 };
+
+type DemoEvaluation = Pick<
+  FeedbackReadyTrainingSessionDto,
+  "diagnosis" | "suggestion" | "scoreBefore"
+>;
+
+const defaultDemoEvaluation: DemoEvaluation = {
+  diagnosis: [
+    {
+      issue_type: "late_core_message",
+      severity: "medium",
+      evidence: "核心观点出现在背景说明之后。",
+      why_it_matters: "面试官需要尽早听到回答的核心观点。",
+      fix_direction: "先说结论，再补充细节。"
+    }
+  ],
+  suggestion: {
+    text: demoSuggestionText,
+    structureUsed: "结论先行",
+    whyBetter: [
+      {
+        changed_what: "把核心观点提前到了第一句话。",
+        why_changed: "减少面试官等待关键信息的时间。",
+        impact: "回答更直接，也更容易被快速理解和判断。"
+      }
+    ]
+  },
+  scoreBefore: demoScoreBefore
+};
+
+function evaluateDayOneAnswer(answer: string): DemoEvaluation {
+  const sentences = splitSentences(answer);
+  const coreIndex = sentences.findIndex(isCoreMessage);
+  const suggestionText = buildConclusionFirstSuggestion(sentences, coreIndex);
+
+  if (coreIndex === 0) {
+    const hasSupport = sentences.length > 1;
+    return {
+      diagnosis: [
+        {
+          issue_type: hasSupport ? "other" : "lack_example",
+          severity: "low",
+          evidence: `第一句话已经直接说明核心价值：“${sentences[0]}”`,
+          why_it_matters: "结论先行能让面试官立即知道你想表达什么。",
+          fix_direction: hasSupport
+            ? "保留当前顺序，并检查后续内容是否都在支撑第一句话。"
+            : "保留第一句结论，再补充一个具体业务场景或行动。"
+        }
+      ],
+      suggestion: {
+        text: suggestionText,
+        structureUsed: "结论先行",
+        whyBetter: [
+          {
+            changed_what: hasSupport
+              ? "保留第一句结论，并明确后续内容的支撑关系。"
+              : "保留已经清楚的第一句结论。",
+            why_changed: "原回答已经满足结论先行，不需要为了改写而改写。",
+            impact: hasSupport
+              ? "面试官可以先理解结论，再顺着依据继续判断。"
+              : "当前版本易于理解；下一步应补充证据，而不是改动顺序。"
+          }
+        ]
+      },
+      scoreBefore: createRuleScore(hasSupport ? 17 : 15, hasSupport)
+    };
+  }
+
+  if (coreIndex > 0) {
+    return {
+      diagnosis: [
+        {
+          issue_type: "late_core_message",
+          severity: "medium",
+          evidence: `核心价值到第 ${coreIndex + 1} 句才出现：“${sentences[coreIndex]}”`,
+          why_it_matters: "面试官需要先听铺垫，才能知道回答的核心观点。",
+          fix_direction: "把这句核心价值移到开头，再补充背景。"
+        }
+      ],
+      suggestion: {
+        text: suggestionText,
+        structureUsed: "结论先行",
+        whyBetter: [
+          {
+            changed_what: `把第 ${coreIndex + 1} 句的核心价值移到了开头。`,
+            why_changed: "先回答问题，再解释背景，能减少理解等待。",
+            impact: "面试官可以先判断你的价值主张，再理解支撑信息。"
+          }
+        ]
+      },
+      scoreBefore: createRuleScore(12, true)
+    };
+  }
+
+  return {
+    diagnosis: [
+      {
+        issue_type: "missing_core_message",
+        severity: "high",
+        evidence: `当前回答没有明确出现“我希望为团队带来什么价值”的结论：“${sentences[0]}”`,
+        why_it_matters: "面试官听完后仍可能不知道你能为团队解决什么问题。",
+        fix_direction: "先用一句话直接说明你希望通过数据分析带来的团队价值。"
+      }
+    ],
+    suggestion: {
+      text: suggestionText,
+      structureUsed: "结论先行",
+      whyBetter: [
+        {
+          changed_what: "增加了一句直接回答题目的价值结论。",
+          why_changed: "原回答没有明确回答希望为团队带来什么价值。",
+          impact: "面试官能够先听到答案，再判断原有内容是否构成支撑。"
+        }
+      ]
+    },
+    scoreBefore: createRuleScore(8, sentences.length > 1)
+  };
+}
+
+function createRuleScore(
+  coreScore: number,
+  hasSupportingSentence: boolean
+): ScoreSnapshotDto {
+  const isConclusionFirst = coreScore >= 15;
+  return {
+    total: coreScore * 5,
+    dimensions: [
+      {
+        dimension: "core_message",
+        displayName: "核心信息",
+        score: coreScore,
+        maxScore: 20,
+        evidence: isConclusionFirst
+          ? "核心价值出现在第一句话。"
+          : coreScore === 12
+            ? "核心价值出现在背景说明之后。"
+            : "尚未识别到直接回答题目的价值结论。",
+        deductions: isConclusionFirst
+          ? hasSupportingSentence
+            ? [
+                {
+                  rule: "specificity",
+                  points: 1,
+                  reason: "还可以补充更具体的行动或结果。"
+                }
+              ]
+            : [
+                {
+                  rule: "supporting_evidence",
+                  points: 3,
+                  reason: "第一句结论之后还缺少具体支撑。"
+                }
+              ]
+          : [
+              {
+                rule: "conclusion_first",
+                points: coreScore === 12 ? 4 : 8,
+                reason:
+                  coreScore === 12
+                    ? "面试官需要先听铺垫，才能听到核心价值。"
+                    : "回答没有直接说明希望为团队带来的价值。"
+              }
+            ],
+        improvementFocus: isConclusionFirst
+          ? "保留结论先行，并补充具体支撑。"
+          : "第一句话直接说明希望为团队带来的价值。"
+      }
+    ]
+  };
+}
+
+function splitSentences(answer: string) {
+  const sentences = answer
+    .trim()
+    .split(/(?<=[。！？!?；;])|\n+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  return sentences.length > 0 ? sentences : [answer.trim()];
+}
+
+function isCoreMessage(sentence: string) {
+  return /(?:我希望|我能|我会|我可以|我能够|我的价值|通过数据分析|数据分析(?:可以|能够|能|会)|帮助团队|支持团队|为团队)/.test(
+    sentence
+  );
+}
+
+function buildConclusionFirstSuggestion(
+  sentences: string[],
+  coreIndex: number
+) {
+  if (coreIndex > 0) {
+    return [
+      sentences[coreIndex],
+      ...sentences.filter((_, index) => index !== coreIndex)
+    ].join("");
+  }
+  if (coreIndex === 0) return sentences.join("");
+  return `我希望通过数据分析帮助团队做出更有依据的判断。${sentences.join("")}`;
+}

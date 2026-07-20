@@ -1,144 +1,124 @@
 # Structured Thinking Gym
 
-Structured Thinking Gym (STG) is an AI-powered communication training system for practicing structured interview answers through assessment, guided revision, and progress-ready feedback.
-
-It is built as a production-quality portfolio project: practical for users, explainable in its feedback, and designed so future learning analytics can emerge from normal product use. It is not a research platform, survey tool, or course project.
-
-## Project Overview
-
-STG focuses on one high-value learning loop:
+Structured Thinking Gym (STG) 是一个面向求职者、转岗者和初入职场人群的结构化面试表达训练 App。它把一次回答变成可解释、可修订、可复评的训练闭环：
 
 ```text
-Question
-→ Draft answer
-→ Explainable feedback
-→ AI suggestion
-→ Accept / reject / edit
-→ Final answer
-→ Re-score
+题目 → 原始回答 → AI 反馈 → 接受 / 拒绝 / 编辑 → 最终回答 → 重新评分
 ```
 
-The goal is to help users communicate with a clearer main point, stronger structure, better evidence, and more audience-aware delivery.
+项目目标是交付一个可公开试用的文本型 Beta，并用真实、可复核的工程和产品证据形成 AI 产品案例。STG 不把系统分数变化描述为已经验证的学习效果。
 
-## Why STG is Different
+## 当前状态
 
-- Explainable feedback: users see score breakdowns, evidence, and improvement focus instead of a black-box score.
-- Human-AI revision: users actively accept, reject, or edit AI suggestions instead of passively copying a rewrite.
-- Deterministic demo: portfolio visitors can try the core loop without login, paid AI calls, or external services.
+| 能力 | 状态 | 说明 |
+| --- | --- | --- |
+| 确定性公开 Demo | Done | `/training-demo` 使用内存 Adapter，不调用 OpenAI、Supabase 或 App API。 |
+| AI Coach | Done（同步模式） | Analysis → Coaching、严格 JSON Schema、Zod 校验、一次 Repair、事实保护和运行元数据。 |
+| Human-in-the-loop | Done | 接受、拒绝、编辑、最终稿与前后评分均使用共享 Session DTO。 |
+| 真实训练入口 | Done in code | `/workspace` 提交后进入 `/training/[attemptId]`；部署后仍需真实 Supabase/OpenAI smoke test。 |
+| 七天课程与概览 | Partial | 版本化课程、Dashboard、History 和用户 Profile 已实现；迁移及跨设备验证待完成。 |
+| 异步 AI | Done in code | `202` 提交、Job/Lease、Background Analysis/Coaching/Repair、签名 Webhook、Reconciler 与 Cron 已接线；真实 OpenAI Staging 验证待完成。 |
+| 账户与数据 | Done in code | Settings、JSON 导出、训练数据删除和永久账户删除已实现；导出覆盖事件、配额及脱敏 AI Job，真实 Supabase 级联删除待 Staging 验证。 |
+| Beta 发布 | Planned | CI、Playwright 和部署手册已具备，云环境、监控与 5–20 人 Pilot 尚未执行。 |
 
-## Try the Demo
+Judge 不在生产推理链路中。现有 Judge 相关资源只用于离线评测；线上质量门由 Schema、Rubric、跨字段检查和事实保护组成。
 
-STG includes a portfolio demo route:
+## 产品差异
 
-```text
-/training-demo
-```
+- 反馈包含评分依据、原文证据和单一优先改进方向，而不只给黑盒总分。
+- 用户对 AI 建议的接受、拒绝或编辑是一等数据，AI 不替用户决定最终表达。
+- 前后评分固定在同一 Session、Rubric、Prompt 与模型版本语境下。
+- Demo 和 Live 通过同一 `TrainingSessionGateway`、Controller、DTO 与 Screen，降低演示和产品逻辑漂移。
+- 七天内容聚焦 Conclusion First、Categorization、STAR、Evidence、Conflict、Stakeholder 和 Final Pitch。
 
-The demo uses the same Training Session screen and data contract as the live flow, but runs on deterministic in-memory data. It does not require login, OpenAI, Supabase, external API calls, or browser storage.
+## 本地运行
 
-See [Demo Guide](docs/public/demo-guide.md) for what to try.
-
-## Design Goals
-
-- Keep the product lightweight and practical.
-- Explain why feedback was given.
-- Turn AI suggestions into an active revision workflow.
-- Keep demo mode free and reliable.
-- Preserve the existing AI coaching pipeline while observing revision behavior.
-
-## Core Features
-
-- Explainable score breakdown by communication dimension
-- Evidence-based feedback and improvement focus
-- AI suggestion for a stronger answer
-- Accept / reject / edit revision controls
-- Final answer display after revision
-- Shared demo and live training-session UI
-- Live architecture prepared for authenticated training sessions
-
-## Architecture at a Glance
-
-```text
-Presentation → Controller → Gateway → API → Service → Repository → Persistence
-```
-
-Demo and live modes share one component tree through `TrainingSessionGateway`:
-
-```text
-DemoAdapter / LiveAdapter → Controller → TrainingSessionScreen
-```
-
-See [Architecture Overview](docs/public/architecture-overview.md) for the layer responsibilities.
-
-## System Design
-
-STG separates AI generation from user revision behavior. The system can show feedback, present an AI suggestion, record the user's revision decision, and re-score the final answer without adding another AI agent or creating a separate research workflow.
-
-The same UI can run against a deterministic demo source or the live application workflow. That makes the public demo realistic while keeping it inexpensive to operate.
-
-## Design Principles
-
-- Explainability: scores should be understandable through evidence and improvement focus.
-- Human-in-the-loop: users decide whether to accept, reject, or edit AI suggestions.
-- Deterministic Demo: the public demo should work without paid services or external dependencies.
-- Separation of Concerns: UI, state management, transport, orchestration, and persistence stay separate.
-
-See [Design Principles](docs/public/design-principles.md) for the public-facing rationale.
-
-## Repository Structure
-
-```text
-apps/web/src/app/             Next.js routes and route handlers
-apps/web/src/components/      Shared presentation components
-apps/web/src/features/        Feature-level client logic and adapters
-apps/web/src/server/          Server-side application services
-apps/web/src/tests/           Vitest and Testing Library coverage
-docs/public/                  Public portfolio documentation
-docs/superpowers/specs/       Approved working specifications
-docs/superpowers/plans/       Implementation planning documents
-```
-
-The `docs/superpowers` folder is intentionally kept as working documentation. Public-facing explanations live under `docs/public`.
-
-## Developer Guide
+要求 Node.js 22 和 npm 10；仓库使用 npm workspaces。
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open:
+打开：
 
-```text
-http://localhost:3000/training-demo
-```
+- 首页：`http://localhost:3000`
+- 公开 Demo：`http://localhost:3000/training-demo`
 
-Verify:
+本地默认使用 Mock AI。需要开发账号时，在 `apps/web/.env.local` 中显式设置 `STG_ENABLE_DEV_AUTH=true`；该开关在生产环境中始终失效。
+完整 Revision/Delta 主流程由服务端 `LIVE_TRAINING_V2` 控制；本地示例为 `true`，Production 在 Staging Gate 通过前必须保持 `false`。
+
+## 验证命令
 
 ```bash
+npm run lint
+npm run typecheck
 npm test
 npm run build
+npm run test:e2e:install
+npm run test:e2e
 ```
 
-Live mode uses the existing app environment configuration. Use `.env.example` as the template and never commit real secrets.
+Playwright 使用 Mock AI 和本地开发认证，覆盖首页到 Demo 完整修订、Demo 无外部 API、登录/Onboarding 和受保护路由跳转。浏览器产物写入 `output/playwright/`，不会提交到 Git。
 
-## Documentation
+当前本地验收基线：27 个 Vitest 文件、225 项单元/组件测试，以及 Desktop Chrome + Pixel 7 共 6 项 Playwright 测试全部通过；生产构建无运行时警告。
 
-Public documentation:
+本机已有 Google Chrome 时可用 `PLAYWRIGHT_USE_SYSTEM_CHROME=1 npm run test:e2e` 跳过浏览器下载；CI 始终安装并使用固定 Playwright Chromium。
 
-- [System Overview](docs/public/system-overview.md)
-- [Design Principles](docs/public/design-principles.md)
-- [Architecture Overview](docs/public/architecture-overview.md)
-- [Demo Guide](docs/public/demo-guide.md)
+## 架构
 
-Working documentation remains under `docs/superpowers/specs` and `docs/superpowers/plans`.
+```text
+Presentation → Controller → Gateway → API → Service → Repository → Persistence
 
-## Security Notes
+DemoAdapter ──┐
+              ├── TrainingSessionGateway → TrainingSessionController → TrainingSessionScreen
+LiveAdapter ──┘
+```
 
-Never commit real local environment files or secrets, including `.env`, `.env.local`, `.env.production`, service role keys, or OpenAI API keys.
+AI 主链路当前为：
 
-Use `.env.example` only as a template.
+```text
+Attempt → Analysis → Coaching → Structured validation
+        → Repair（仅校验失败时）→ Fact / quality gates
+        → Atomic persistence → Training Session
+```
 
-## Status
+Live AI 可在 `sync` 与 `background` 间切换。Background 模式会快速返回处理中 Attempt，通过签名 Webhook 推进 Analysis/Coaching/Repair，并由受 Cron Secret 保护的 Reconciler 恢复遗漏事件。该链路已完成代码和自动化测试，但在真实 OpenAI Staging 验证前不能描述为“生产运行中”。
 
-STG V2 currently includes explainable feedback, a Human-AI revision loop, and a deterministic `/training-demo` route. Delta tracking, feedback-mode gating, and a learning dashboard are intentionally future phases.
+## 仓库结构
+
+```text
+apps/web/src/app/             Next.js 页面与 API
+apps/web/src/features/        Controller、Gateway、Adapter 与 feature hooks
+apps/web/src/server/          AI、Attempt、Session、Profile 与 Overview 服务
+apps/web/src/database/        Supabase schema 与 migrations
+apps/web/src/tests/           Vitest / Testing Library
+e2e/                          Playwright 浏览器测试
+docs/                         产品、架构、部署、发布和履历证据文档
+```
+
+## 部署与发布
+
+- [Deployment Runbook](docs/DEPLOYMENT.md)
+- [Beta Release Checklist](docs/BETA_RELEASE_CHECKLIST.md)
+- [Resume Evidence Ledger](docs/RESUME_EVIDENCE_LEDGER.md)
+- [Product Overview](docs/PRODUCT_OVERVIEW.md)
+- [Roadmap](docs/ROADMAP.md)
+- [AI Coach Architecture](docs/AI_COACH_ARCHITECTURE.md)
+- [Public Demo Guide](docs/public/demo-guide.md)
+
+`vercel.json` 每 5 分钟调用真实的 `/api/internal/ai/reconcile`。Vercel 使用 `CRON_SECRET` 生成 Bearer Token；当 Background AI 未启用时，Endpoint 返回安全的 `skipped` 结果。
+
+## 安全边界
+
+- 永不提交 `.env.local`、OpenAI Key、Supabase Service Role Key 或 Webhook Secret。
+- 生产必须使用真实 Supabase Auth，且 `STG_ENABLE_DEV_AUTH=false`、`STG_ENABLE_DEV_ADMIN=false`。
+- 浏览器不应直接写入 AI 权威表；相关写入由服务端或受控 RPC 完成。
+- Funnel Event 只能由已认证业务 API 通过 Service Role 记录；不存在通用浏览器事件写入口，业务重试由唯一事件身份去重。
+- 日志、产品事件和 Eval 数据不得包含完整回答、凭据或可直接识别用户的信息。
+
+## 可安全陈述的项目证据
+
+目前可陈述：已构建 Next.js/TypeScript/Supabase 训练原型、两阶段 AI Coach、结构化校验与 Repair、Human-in-the-loop 修订、分层 Demo/Live 架构、原子修订和自动化测试。
+
+真实使用人数、完成率、留存率、AI 失败率、延迟、成本和用户效果，只能在 Beta 部署并收集数据后写入履历。详见 [Resume Evidence Ledger](docs/RESUME_EVIDENCE_LEDGER.md)。

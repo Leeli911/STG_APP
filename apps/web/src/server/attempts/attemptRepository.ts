@@ -1,7 +1,7 @@
 import type {
   AiFeedbackInsert,
   AiFeedbackRow,
-  AttemptInsert,
+  CompleteAiAttemptInput,
   AttemptQuestionRow,
   AttemptRepository,
   AttemptRow,
@@ -44,20 +44,21 @@ export type SupabaseAttemptClient = {
     insert: (values: Record<string, unknown>) => SupabaseInsertBuilder<unknown>;
     update: (values: Record<string, unknown>) => SupabaseUpdateBuilder<unknown>;
   };
+  rpc?: (
+    functionName: string,
+    parameters: Record<string, unknown>
+  ) => QueryResult<unknown>;
 };
 
 const attemptSelectColumns =
-  "id, user_id, question_id, original_answer, status, idempotency_key, client_started_at, created_at, analysis_prompt_version, coaching_prompt_version, ai_model, repair_count, error_code, analysis_latency_ms, coaching_latency_ms, total_latency_ms, questions(day_number)";
+  "id, user_id, question_id, practice_day, original_answer, status, idempotency_key, client_started_at, created_at, analysis_prompt_version, coaching_prompt_version, ai_model, rubric_version, repair_count, error_code, analysis_latency_ms, coaching_latency_ms, total_latency_ms";
 
 type AttemptRowWithQuestion = Omit<AttemptRow, "day_number"> & {
-  questions:
-    | {
-        day_number: number;
-      }
-    | {
-        day_number: number;
-      }[]
-    | null;
+  practice_day: number;
+};
+
+type AttemptSessionRow = {
+  id: string;
 };
 
 export function createSupabaseAttemptRepository(
@@ -66,7 +67,7 @@ export function createSupabaseAttemptRepository(
   return {
     async findActiveQuestionById(questionId) {
       const query = supabase
-        .from("questions")
+        .from("stg_active_curriculum_questions")
         .select(
           "id, day_number, title, scenario, prompt, learning_goal, expected_structure, evaluation_focus, is_active"
         ) as SupabaseFilterBuilder<AttemptQuestionRow>;
@@ -205,6 +206,18 @@ export function createSupabaseAttemptRepository(
       return data;
     },
 
+    async findTrainingSessionIdByInitialAttemptId(userId, attemptId) {
+      const query = supabase
+        .from("practice_sessions")
+        .select("id")
+        .eq("user_id", userId) as SupabaseFilterBuilder<AttemptSessionRow>;
+      const { data, error } = await query
+        .eq("initial_attempt_id", attemptId)
+        .maybeSingle();
+      ensureNoRepositoryError(error);
+      return data?.id ?? null;
+    },
+
     async createAiFeedback(feedback) {
       const values = feedback satisfies AiFeedbackInsert;
       const query = supabase
@@ -225,6 +238,36 @@ export function createSupabaseAttemptRepository(
       }
 
       return data;
+    },
+
+    async completeAiAttempt(input: CompleteAiAttemptInput) {
+      if (!supabase.rpc) {
+        throw new Error("Supabase RPC is required for atomic AI completion.");
+      }
+
+      const { error } = await supabase.rpc("complete_ai_attempt", {
+        p_attempt_id: input.attemptId,
+        p_score: input.score,
+        p_feedback: input.feedback,
+        p_metadata: input.metadata,
+        p_job_id: input.jobId ?? null,
+        p_lease_token: input.leaseToken ?? null
+      });
+      ensureNoRepositoryError(error);
+
+      const query = supabase
+        .from("attempts")
+        .select(attemptSelectColumns)
+        .eq("user_id", input.userId) as SupabaseFilterBuilder<AttemptRowWithQuestion>;
+      const { data, error: readError } = await query
+        .eq("id", input.attemptId)
+        .maybeSingle();
+      ensureNoRepositoryError(readError);
+
+      if (!data) {
+        throw new Error("Atomic AI completion did not return its attempt.");
+      }
+      return mapAttemptRow(data);
     },
 
     async updateAttemptPipelineMetadata(userId, attemptId, metadata) {
@@ -251,17 +294,11 @@ export function createSupabaseAttemptRepository(
 }
 
 function mapAttemptRow(row: AttemptRowWithQuestion): AttemptRow {
-  const question = Array.isArray(row.questions) ? row.questions[0] : row.questions;
-
-  if (!question) {
-    throw new Error("Attempt row is missing question day_number.");
-  }
-
   return {
     id: row.id,
     user_id: row.user_id,
     question_id: row.question_id,
-    day_number: question.day_number,
+    day_number: row.practice_day,
     original_answer: row.original_answer,
     status: row.status,
     idempotency_key: row.idempotency_key,
@@ -270,6 +307,7 @@ function mapAttemptRow(row: AttemptRowWithQuestion): AttemptRow {
     analysis_prompt_version: row.analysis_prompt_version ?? null,
     coaching_prompt_version: row.coaching_prompt_version ?? null,
     ai_model: row.ai_model ?? null,
+    rubric_version: row.rubric_version ?? null,
     repair_count: row.repair_count ?? null,
     error_code: row.error_code ?? null,
     analysis_latency_ms: row.analysis_latency_ms ?? null,

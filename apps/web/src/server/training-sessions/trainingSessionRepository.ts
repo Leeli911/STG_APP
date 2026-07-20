@@ -10,7 +10,7 @@ export type CreatePracticeSessionInput = {
   initialAttemptId: string;
   idempotencyKey: string;
   practiceDay: number;
-  feedbackShownAt: string;
+  feedbackShownAt: string | null;
   createdAt: string;
 };
 
@@ -57,6 +57,10 @@ export type TrainingSessionRepository = {
     sessionId: string,
     status: "completed" | "rescore_failed"
   ) => Promise<void>;
+  markFeedbackViewed?: (
+    userId: string,
+    sessionId: string
+  ) => Promise<string>;
 };
 
 type SupabaseError = {
@@ -174,6 +178,18 @@ export function createSupabaseTrainingSessionRepository(
         p_status: status
       });
       ensureNoError(error);
+    },
+
+    async markFeedbackViewed(_userId, sessionId) {
+      const { data, error } = await supabase.rpc(
+        "mark_training_session_feedback_viewed",
+        { p_session_id: sessionId }
+      );
+      ensureNoError(error);
+      if (typeof data !== "string") {
+        throw new Error("Feedback viewed function returned an invalid timestamp.");
+      }
+      return data;
     }
   };
 }

@@ -6,8 +6,6 @@ import {
 } from "@/features/training-session/TrainingSessionController";
 import {
   TrainingSessionGatewayError,
-  type CommitTrainingSessionRevisionInput,
-  type CreateTrainingSessionGatewayInput,
   type TrainingSessionGateway
 } from "@/features/training-session/TrainingSessionGateway";
 import type {
@@ -293,7 +291,7 @@ describe("Module 10 TrainingSessionController", () => {
 
     expect(viewModel().session?.status).toBe("feedback_ready");
     expect(viewModel().networkError).toBe(
-      "We could not confirm whether your revision was saved. Please try again."
+      "暂时无法确认修订是否已保存，请重试。"
     );
   });
 });
@@ -363,6 +361,9 @@ function feedbackReadySession(): FeedbackReadyTrainingSessionDto {
     sourceMode: "demo",
     feedbackMode: "D",
     practiceDay: 1,
+    promptVersion: "analysis-v1|coaching-v1",
+    rubricVersion: "stg-rubric-v1",
+    modelVersion: "test-model",
     status: "feedback_ready",
     draft: {
       text: draftText,
