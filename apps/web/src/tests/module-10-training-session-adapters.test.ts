@@ -16,6 +16,7 @@ import type {
   RescoreFailedTrainingSessionDto,
   TrainingSessionDto
 } from "@/server/training-sessions/types";
+import { deriveScoreDelta } from "@/server/training-sessions/trainingSessionDto";
 
 const initialAttemptId = "00000000-0000-4000-8000-000000000101";
 const sessionId = "00000000-0000-4000-8000-000000000201";
@@ -95,17 +96,26 @@ describe.each(harnesses)(
     });
 
     it.each([
-      ["accepted", "accepted" as const, null, suggestionText],
-      ["rejected", "rejected" as const, null, draftText],
+      ["accepted", "accepted" as const, null, suggestionText, 82, 14],
+      ["rejected", "rejected" as const, null, draftText, 68, 0],
       [
         "edited",
         "edited" as const,
         ` ${editedText} `,
-        editedText
+        editedText,
+        82,
+        14
       ]
     ])(
       "commits a deterministic %s decision and returns completed final answer",
-      async (_case, action, editedTextInput, expectedFinalText) => {
+      async (
+        _case,
+        action,
+        editedTextInput,
+        expectedFinalText,
+        expectedScore,
+        expectedDelta
+      ) => {
         const { gateway } = createHarness();
         const session = await createSession(gateway);
 
@@ -131,9 +141,11 @@ describe.each(harnesses)(
             text: expectedFinalText
           },
           scoreAfter: {
-            total: 82
+            total: expectedScore
           },
-          delta: null
+          delta: {
+            total: expectedDelta
+          }
         });
       }
     );
@@ -200,11 +212,60 @@ describe.each(harnesses)(
         scoreAfter: {
           total: 82
         },
-        delta: null
+        delta: {
+          total: 14
+        }
       });
     });
   }
 );
+
+describe("personalized zero-cost demo evaluation", () => {
+  it("quotes the submitted answer and moves a late value statement to the front", async () => {
+    const submitted =
+      "团队做决策时常遇到信息分散的问题。我希望通过数据分析帮助团队看清关键问题。";
+    const gateway = createDemoTrainingSessionGateway({ draftText: submitted });
+    const session = await gateway.createSession({
+      initialAttemptId,
+      idempotencyKey: "personalized-create"
+    });
+
+    expect(session.scoreBefore.total).toBe(60);
+    expect(session.diagnosis[0]?.evidence).toContain(
+      "我希望通过数据分析帮助团队看清关键问题。"
+    );
+    expect(session.suggestion.text).toBe(
+      "我希望通过数据分析帮助团队看清关键问题。团队做决策时常遇到信息分散的问题。"
+    );
+
+    const completed = await gateway.commitRevision({
+      sessionId: session.id,
+      idempotencyKey: "personalized-revision",
+      action: "accepted",
+      editedText: null,
+      clientDecidedAt: decidedAt
+    });
+
+    expect(completed.status).toBe("completed");
+    if (completed.status !== "completed") return;
+    expect(completed.scoreAfter.total).toBe(85);
+    expect(completed.delta?.total).toBe(25);
+  });
+
+  it("does not invent an ordering problem when the conclusion is already first", async () => {
+    const submitted =
+      "我希望通过数据分析帮助团队更快做出判断。随后我会说明判断依据。";
+    const gateway = createDemoTrainingSessionGateway({ draftText: submitted });
+    const session = await gateway.createSession({
+      initialAttemptId,
+      idempotencyKey: "already-clear-create"
+    });
+
+    expect(session.scoreBefore.total).toBe(85);
+    expect(session.diagnosis[0]?.evidence).toContain("第一句话已经直接说明核心价值");
+    expect(session.suggestion.text).toBe(submitted);
+  });
+});
 
 describe("Module 10 Training Session Gateway adapter boundaries", () => {
   it("DemoAdapter keeps the workflow fully in memory and never calls fetch", async () => {
@@ -405,6 +466,14 @@ function commitFakeRevision({
       typeof clientDecidedAt === "string" ? clientDecidedAt : decidedAt
   });
 
+  if (validated.value.action === "rejected") {
+    return {
+      session: completeSession(withDecision),
+      conflict: false,
+      failedThisAttempt: false
+    };
+  }
+
   if (failFirstRescore && !failedOnce) {
     return {
       session: {
@@ -457,11 +526,14 @@ function addDecision(
 function completeSession(
   session: Exclude<TrainingSessionDto, FeedbackReadyTrainingSessionDto>
 ): CompletedTrainingSessionDto {
+  const completedScore =
+    session.decision.action === "rejected" ? session.scoreBefore : scoreAfter;
+
   return {
     ...session,
     status: "completed",
-    scoreAfter: scoreAfter,
-    delta: null
+    scoreAfter: completedScore,
+    delta: deriveScoreDelta(session.scoreBefore, completedScore)
   };
 }
 
@@ -474,6 +546,9 @@ function createFeedbackReadySession(
     sourceMode,
     feedbackMode: "D",
     practiceDay: 1,
+    promptVersion: "analysis-v1|coaching-v1",
+    rubricVersion: "stg-rubric-v1",
+    modelVersion: "test-model",
     status: "feedback_ready",
     draft: {
       text: draftText,

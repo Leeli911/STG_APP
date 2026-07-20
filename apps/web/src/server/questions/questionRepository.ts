@@ -35,7 +35,7 @@ export function createSupabaseQuestionRepository(
   return {
     async listActiveQuestions() {
       const query = supabase
-        .from("questions")
+        .from("stg_active_curriculum_questions")
         .select(
           "id, day_number, title, scenario, prompt, learning_goal, expected_structure, evaluation_focus, knowledge_card, is_active, created_at, updated_at"
         ) as SupabaseFilterBuilder<QuestionRow>;
@@ -52,7 +52,7 @@ export function createSupabaseQuestionRepository(
       assertTrainingDayNumber(dayNumber);
 
       const query = supabase
-        .from("questions")
+        .from("stg_active_curriculum_questions")
         .select(
           "id, day_number, title, scenario, prompt, learning_goal, expected_structure, evaluation_focus, knowledge_card, is_active, created_at, updated_at"
         )
@@ -80,16 +80,16 @@ export function createSupabaseQuestionRepository(
     async listCompletedAttemptDayNumbers(userId: string) {
       const query = supabase
         .from("attempts")
-        .select("questions(day_number)")
+        .select("practice_day")
         .eq("user_id", userId) as SupabaseFilterBuilder<{
-        questions: { day_number: number } | null;
+        practice_day: number;
       }>;
 
       const { data, error } = await query.eq("status", "completed").order("created_at");
 
       ensureNoRepositoryError(error);
       return (data ?? [])
-        .map((row) => row.questions?.day_number)
+        .map((row) => row.practice_day)
         .filter((dayNumber): dayNumber is number => typeof dayNumber === "number");
     }
   };

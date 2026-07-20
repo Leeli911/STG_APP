@@ -1,4 +1,7 @@
+import Link from "next/link";
+
 import { loginAction } from "@/app/login/actions";
+import { isDevAuthEnabled } from "@/server/auth/dev-auth";
 import { getSafeRedirectPath } from "@/server/auth/protected-routes";
 
 type LoginPageProps = {
@@ -14,8 +17,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const hasLoginError = params.error === "invalid_credentials";
   const hasAuthUnavailableError = params.error === "auth_unavailable";
   const showDevelopmentAuthMessage =
-    hasAuthUnavailableError &&
-    (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test");
+    hasAuthUnavailableError && isDevAuthEnabled();
 
   return (
     <main className="mx-auto max-w-md space-y-6">
@@ -23,9 +25,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
           STG Account
         </p>
-        <h1 className="text-3xl font-semibold">Log in</h1>
+        <h1 className="text-3xl font-semibold">登录</h1>
         <p className="text-slate-600">
-          Sign in to continue your fixed 7-day interview communication training.
+          登录后继续固定七天的结构化面试表达训练。
         </p>
       </section>
 
@@ -36,7 +38,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <input type="hidden" name="redirectTo" value={redirectTo} />
 
         <label className="block space-y-2" htmlFor="email">
-          <span className="text-sm font-medium">Email</span>
+          <span className="text-sm font-medium">邮箱</span>
           <input
             id="email"
             name="email"
@@ -48,7 +50,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </label>
 
         <label className="block space-y-2" htmlFor="password">
-          <span className="text-sm font-medium">Password</span>
+          <span className="text-sm font-medium">密码</span>
           <input
             id="password"
             name="password"
@@ -61,7 +63,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
         {hasLoginError ? (
           <p className="text-sm text-red-600">
-            The email or password is incorrect.
+            邮箱或密码不正确。
           </p>
         ) : null}
 
@@ -81,9 +83,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           type="submit"
           className="w-full rounded-md bg-focus px-4 py-2 text-sm font-medium text-white"
         >
-          Log in
+          登录
         </button>
       </form>
+      <div className="flex justify-between text-sm">
+        <Link className="font-medium text-focus" href="/signup">创建账号</Link>
+        <Link className="text-slate-600" href="/forgot-password">忘记密码？</Link>
+      </div>
     </main>
   );
 }

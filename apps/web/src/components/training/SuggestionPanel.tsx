@@ -8,7 +8,7 @@ export function SuggestionPanel({ suggestion }: SuggestionPanelProps) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-6">
       <div className="space-y-2">
-        <p className="text-sm font-medium text-slate-500">AI Suggestion</p>
+        <p className="text-sm font-medium text-slate-500">智能教练修改建议</p>
         <p className="inline-flex rounded-full bg-focus/10 px-3 py-1 text-sm font-medium text-focus">
           {suggestion.structureUsed}
         </p>
@@ -20,7 +20,7 @@ export function SuggestionPanel({ suggestion }: SuggestionPanelProps) {
       {suggestion.whyBetter.length > 0 ? (
         <div className="mt-5 space-y-3">
           <h2 className="text-sm font-semibold text-slate-900">
-            Why this is stronger
+            为什么这样表达更清楚
           </h2>
           <ul className="space-y-3">
             {suggestion.whyBetter.map((item, index) => (

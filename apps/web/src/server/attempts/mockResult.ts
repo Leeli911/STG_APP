@@ -41,7 +41,7 @@ export function createDeterministicMockResult(
       ],
       rewrite: {
         rewrite_goal: "把核心原因提前，并保留原回答中的真实信息。",
-        structure_used: "Conclusion First + Supporting Reason",
+        structure_used: "结论先行 + 补充理由",
         text:
           "我想做数据分析，是因为我喜欢把复杂业务问题转化为可以验证的数据问题。过去的学习和工作经历让我发现，我既喜欢分析过程，也希望让分析结果真正支持业务决策。",
         fact_preservation_note:

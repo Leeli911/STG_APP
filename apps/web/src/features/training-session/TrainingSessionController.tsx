@@ -41,6 +41,7 @@ export type TrainingSessionControllerViewModel = {
 export type TrainingSessionControllerProps = {
   gateway: TrainingSessionGateway;
   initialAttemptId: string;
+  initialSessionId?: string | null;
   initialSession?: TrainingSessionDto | null;
   makeCreateSessionIdempotencyKey?: () => string;
   makeRevisionIdempotencyKey?: () => string;
@@ -51,6 +52,7 @@ export type TrainingSessionControllerProps = {
 export function TrainingSessionController({
   gateway,
   initialAttemptId,
+  initialSessionId = null,
   initialSession = null,
   makeCreateSessionIdempotencyKey = makeDefaultIdempotencyKey,
   makeRevisionIdempotencyKey = makeDefaultIdempotencyKey,
@@ -73,6 +75,7 @@ export function TrainingSessionController({
   const revisionKeyRef = useRef<string | null>(
     initialSession?.decision?.idempotencyKey ?? null
   );
+  const feedbackViewedSessionRef = useRef<string | null>(null);
 
   const updateSession = useCallback((next: TrainingSessionDto) => {
     if (next.decision) {
@@ -139,6 +142,13 @@ export function TrainingSessionController({
       setNetworkError(null);
 
       try {
+        if (initialSessionId) {
+          const hydrated = await gateway.getSession(initialSessionId);
+          if (!isActive) return;
+          updateSession(hydrated);
+          return;
+        }
+
         if (!createSessionKeyRef.current) {
           createSessionKeyRef.current = makeCreateSessionIdempotencyKey();
         }
@@ -168,10 +178,68 @@ export function TrainingSessionController({
   }, [
     gateway,
     initialAttemptId,
+    initialSessionId,
     initialSession,
     makeCreateSessionIdempotencyKey,
     updateSession
   ]);
+
+  useEffect(() => {
+    if (
+      !session ||
+      session.feedbackShownAt ||
+      !gateway.markFeedbackViewed ||
+      feedbackViewedSessionRef.current === session.id
+    ) {
+      return;
+    }
+
+    feedbackViewedSessionRef.current = session.id;
+    let isActive = true;
+
+    gateway
+      .markFeedbackViewed(session.id)
+      .then((next) => {
+        if (isActive) updateSession(next);
+      })
+      .catch(() => {
+        feedbackViewedSessionRef.current = null;
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [gateway, session, updateSession]);
+
+  useEffect(() => {
+    if (!session || session.status !== "rescoring") return;
+
+    let isActive = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function pollRescore() {
+      try {
+        const next = await gateway.getSession(session!.id);
+        if (!isActive) return;
+        setNetworkError(null);
+        updateSession(next);
+        if (next.status === "rescoring") {
+          timer = setTimeout(() => void pollRescore(), 1_500);
+        }
+      } catch (error) {
+        if (!isActive) return;
+        setNetworkError(toUserFacingNetworkMessage(error));
+        timer = setTimeout(() => void pollRescore(), 3_000);
+      }
+    }
+
+    timer = setTimeout(() => void pollRescore(), 1_000);
+
+    return () => {
+      isActive = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [gateway, session, updateSession]);
 
   const setEditText = useCallback((value: string) => {
     setEditTextState(value);
@@ -186,7 +254,7 @@ export function TrainingSessionController({
   const submitRevision = useCallback(async () => {
     if (!session) return;
     if (!selectedAction) {
-      setValidationError("Please choose how to use the suggestion.");
+      setValidationError("请选择如何处理这条修改建议。");
       return;
     }
 
@@ -240,7 +308,7 @@ export function TrainingSessionController({
 
   const retryRevision = useCallback(async () => {
     if (!session || !session.decision) {
-      setNetworkError("There is no committed revision to retry.");
+      setNetworkError("当前没有可供重试的已提交修订。");
       return;
     }
 
@@ -324,7 +392,7 @@ function isRecoverableByReadingSession(
 function toUserFacingNetworkMessage(error: unknown) {
   if (error instanceof TrainingSessionGatewayError) {
     if (error.code === "UNAUTHENTICATED") {
-      return "Please sign in to continue.";
+      return "请先登录后继续。";
     }
     if (error.code === "NETWORK_ERROR" || error.code === "NETWORK_UNCERTAIN") {
       return unknownOutcomeMessage;
@@ -332,7 +400,7 @@ function toUserFacingNetworkMessage(error: unknown) {
     return error.message;
   }
 
-  return "Something went wrong while updating your training session.";
+  return "更新训练记录时出现问题，请稍后重试。";
 }
 
 function makeDefaultIdempotencyKey() {
@@ -347,4 +415,4 @@ function makeDefaultIdempotencyKey() {
 }
 
 const unknownOutcomeMessage =
-  "We could not confirm whether your revision was saved. Please try again.";
+  "暂时无法确认修订是否已保存，请重试。";

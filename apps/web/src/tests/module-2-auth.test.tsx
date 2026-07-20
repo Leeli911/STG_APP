@@ -8,11 +8,15 @@ import { middleware } from "@/middleware";
 import { signOutUser } from "@/server/auth/logout";
 import {
   DEV_AUTH_COOKIE_NAME,
-  DEV_AUTH_COOKIE_VALUE
+  DEV_AUTH_COOKIE_VALUE,
+  getDevAuthUserFromCookie,
+  isDevAuthCredential,
+  isDevAuthEnabled
 } from "@/server/auth/dev-auth";
 import {
   getLoginRedirectUrl,
-  isProtectedRoute
+  isProtectedRoute,
+  shouldUpdateAuthSession
 } from "@/server/auth/protected-routes";
 import { getSupabasePublicEnv } from "@/lib/env/supabase";
 
@@ -58,6 +62,7 @@ describe("Module 2 auth foundation", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.doUnmock("@/lib/supabase/server");
+    vi.doUnmock("@/server/auth/session");
     vi.doUnmock("next/headers");
     vi.doUnmock("next/navigation");
     vi.resetModules();
@@ -78,11 +83,20 @@ describe("Module 2 auth foundation", () => {
 
   it("protects Sprint 1 app routes and redirects unauthenticated users to login", () => {
     expect(isProtectedRoute("/dashboard")).toBe(true);
+    expect(isProtectedRoute("/onboarding")).toBe(true);
+    expect(isProtectedRoute("/reset-password")).toBe(true);
     expect(isProtectedRoute("/workspace")).toBe(true);
+    expect(isProtectedRoute("/training/attempt-1")).toBe(true);
     expect(isProtectedRoute("/result/attempt-1")).toBe(true);
     expect(isProtectedRoute("/history")).toBe(true);
     expect(isProtectedRoute("/admin")).toBe(true);
     expect(isProtectedRoute("/login")).toBe(false);
+    expect(isProtectedRoute("/signup")).toBe(false);
+    expect(isProtectedRoute("/forgot-password")).toBe(false);
+    expect(isProtectedRoute("/auth/callback")).toBe(false);
+    expect(shouldUpdateAuthSession("/login")).toBe(true);
+    expect(shouldUpdateAuthSession("/training-demo")).toBe(false);
+    expect(shouldUpdateAuthSession("/")).toBe(false);
 
     const redirectUrl = getLoginRedirectUrl(
       new URL("http://localhost:3000/dashboard?from=test")
@@ -92,6 +106,18 @@ describe("Module 2 auth foundation", () => {
     expect(redirectUrl.searchParams.get("redirectTo")).toBe(
       "/dashboard?from=test"
     );
+  });
+
+  it("bypasses auth initialization for the public deterministic demo", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://invalid.example");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "unused-public-key");
+
+    const response = await middleware(
+      createMiddlewareRequest("http://localhost:3000/training-demo")
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
   });
 
   it("treats missing Supabase env as unauthenticated instead of crashing middleware", async () => {
@@ -110,6 +136,8 @@ describe("Module 2 auth foundation", () => {
   });
 
   it("allows protected routes with the local dev auth cookie", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("STG_ENABLE_DEV_AUTH", "true");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
@@ -122,6 +150,81 @@ describe("Module 2 auth foundation", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("keeps development auth disabled unless it is explicitly enabled", () => {
+    expect(
+      isDevAuthEnabled({ NODE_ENV: "development" })
+    ).toBe(false);
+    expect(
+      isDevAuthCredential("test@123.com", "123", {
+        NODE_ENV: "test",
+        STG_ENABLE_DEV_AUTH: "false"
+      })
+    ).toBe(false);
+    expect(
+      getDevAuthUserFromCookie(DEV_AUTH_COOKIE_VALUE, {
+        NODE_ENV: "development",
+        STG_ENABLE_DEV_AUTH: "true"
+      })
+    ).toEqual({
+      id: "dev-user-test-123",
+      email: "test@123.com"
+    });
+  });
+
+  it("never accepts development auth in production, even when flagged on", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("STG_ENABLE_DEV_AUTH", "true");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+
+    expect(
+      isDevAuthCredential("test@123.com", "123", {
+        NODE_ENV: "production",
+        STG_ENABLE_DEV_AUTH: "true"
+      })
+    ).toBe(false);
+    expect(
+      getDevAuthUserFromCookie(DEV_AUTH_COOKIE_VALUE, {
+        NODE_ENV: "production",
+        STG_ENABLE_DEV_AUTH: "true"
+      })
+    ).toBeNull();
+
+    const response = await middleware(
+      createMiddlewareRequest("http://localhost:3000/dashboard", {
+        [DEV_AUTH_COOKIE_NAME]: DEV_AUTH_COOKIE_VALUE
+      })
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/login?redirectTo=%2Fdashboard"
+    );
+  });
+
+  it("keeps the server session fallback fail-closed in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("STG_ENABLE_DEV_AUTH", "true");
+    vi.doMock("@/lib/supabase/server", () => ({
+      createServerSupabaseClient: vi
+        .fn()
+        .mockRejectedValue(new Error("Supabase unavailable"))
+    }));
+    vi.doMock("next/headers", () => ({
+      cookies: vi.fn().mockResolvedValue({
+        get: vi.fn().mockReturnValue({
+          name: DEV_AUTH_COOKIE_NAME,
+          value: DEV_AUTH_COOKIE_VALUE
+        })
+      })
+    }));
+
+    const { getCurrentUser } = await import("@/server/auth/session");
+
+    await expect(getCurrentUser()).resolves.toBeNull();
   });
 
   it("loads the persisted session into user context and listens for auth updates", async () => {
@@ -193,10 +296,10 @@ describe("Module 2 auth foundation", () => {
       })
     );
 
-    expect(screen.getByRole("heading", { name: "Log in" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Email")).toBeInTheDocument();
-    expect(screen.getByLabelText("Password")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Log in" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "登录" })).toBeInTheDocument();
+    expect(screen.getByLabelText("邮箱")).toBeInTheDocument();
+    expect(screen.getByLabelText("密码")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "登录" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("/dashboard")).toHaveAttribute(
       "name",
       "redirectTo"
@@ -204,6 +307,9 @@ describe("Module 2 auth foundation", () => {
   });
 
   it("renders a development login hint when login auth fallback is enabled", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("STG_ENABLE_DEV_AUTH", "true");
+
     render(
       await LoginPage({
         searchParams: Promise.resolve({
@@ -248,6 +354,9 @@ describe("Module 2 auth foundation", () => {
   });
 
   it("signs in with the local dev account when Supabase auth is unavailable", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("STG_ENABLE_DEV_AUTH", "true");
+
     const redirect = vi.fn((path: string) => {
       throw new Error(`NEXT_REDIRECT:${path}`);
     });

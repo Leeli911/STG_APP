@@ -26,13 +26,12 @@ export function RevisionPanel({
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-6">
       <div className="space-y-2">
-        <p className="text-sm font-medium text-slate-500">Revision Choice</p>
+        <p className="text-sm font-medium text-slate-500">修订决策</p>
         <h2 className="text-xl font-semibold text-slate-900">
-          Choose your final answer
+          选择你的最终回答
         </h2>
         <p className="text-sm text-slate-600">
-          Decide whether to use the AI suggestion, keep your original answer, or
-          write your own final version.
+          你可以采用修改建议、保留原稿，或在参考建议后自己完成最终版本。
         </p>
       </div>
 
@@ -41,21 +40,21 @@ export function RevisionPanel({
           action="accepted"
           disabled={disabled}
           isSelected={selectedAction === "accepted"}
-          label="Accept suggestion"
+          label="采用修改建议"
           onSelect={onSelectAction}
         />
         <DecisionButton
           action="rejected"
           disabled={disabled}
           isSelected={selectedAction === "rejected"}
-          label="Keep original"
+          label="保留原稿"
           onSelect={onSelectAction}
         />
         <DecisionButton
           action="edited"
           disabled={disabled}
           isSelected={selectedAction === "edited"}
-          label="Edit myself"
+          label="自主编辑"
           onSelect={onSelectAction}
         />
       </div>
@@ -66,7 +65,7 @@ export function RevisionPanel({
             className="text-sm font-medium text-slate-700"
             htmlFor="training-session-edited-answer"
           >
-            Edited final answer
+            编辑最终稿
           </label>
           <textarea
             className="min-h-36 w-full rounded-md border border-slate-300 p-3 text-sm leading-6 text-slate-900 shadow-sm focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus disabled:bg-slate-100 disabled:text-slate-500"
@@ -94,7 +93,7 @@ export function RevisionPanel({
         onClick={onSubmit}
         type="button"
       >
-        Submit revision
+        提交修订
       </button>
     </section>
   );

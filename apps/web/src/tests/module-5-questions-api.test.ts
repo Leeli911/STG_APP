@@ -165,6 +165,47 @@ describe("Module 5 GET /api/questions", () => {
     });
   });
 
+  it("returns the server-owned Live Training V2 release switch", async () => {
+    const dependencies = createDependencies();
+    dependencies.liveTrainingV2Enabled = false;
+
+    const response = await handleGetQuestions(
+      request("/api/questions?scope=today"),
+      dependencies
+    );
+
+    expect(await json(response)).toMatchObject({
+      ok: true,
+      data: {
+        liveTrainingV2Enabled: false
+      }
+    });
+  });
+
+  it("returns an explicit completion state instead of Day7 after the course is complete", async () => {
+    const dependencies = createDependencies();
+    dependencies.resolveProgress = vi.fn().mockResolvedValue({
+      currentDay: 7,
+      completedDays: [1, 2, 3, 4, 5, 6, 7],
+      isComplete: true
+    });
+
+    const response = await handleGetQuestions(
+      request("/api/questions?scope=today"),
+      dependencies
+    );
+
+    expect(response.status).toBe(200);
+    expect(dependencies.questionService.getQuestionByDay).not.toHaveBeenCalled();
+    expect(await json(response)).toMatchObject({
+      ok: true,
+      data: {
+        question: null,
+        courseCompleted: true
+      }
+    });
+  });
+
   it("returns seven active questions with MVP availability statuses for scope=all", async () => {
     const response = await handleGetQuestions(
       request("/api/questions?scope=all"),

@@ -116,13 +116,13 @@ describe("Module 7 UI fixes and result page", () => {
     const { default: WorkspacePage } = await import("@/app/workspace/page");
     render(<WorkspacePage />);
 
-    const textarea = await screen.findByLabelText("Your answer");
+    const textarea = await screen.findByLabelText("你的回答");
     fireEvent.change(textarea, {
       target: {
         value: "Too short"
       }
     });
-    fireEvent.click(screen.getByRole("button", { name: "Submit answer" }));
+    fireEvent.click(screen.getByRole("button", { name: "提交回答" }));
 
     expect(
       screen.getByText("回答内容太短。请至少写出一个完整观点和简单原因。")
@@ -139,7 +139,7 @@ describe("Module 7 UI fixes and result page", () => {
     const { default: WorkspacePage } = await import("@/app/workspace/page");
     render(<WorkspacePage />);
 
-    const textarea = await screen.findByLabelText("Your answer");
+    const textarea = await screen.findByLabelText("你的回答");
 
     expect(screen.getByText("建议 50-300 字")).toBeInTheDocument();
 
@@ -155,6 +155,7 @@ describe("Module 7 UI fixes and result page", () => {
 
   it("shows a development login message instead of a red auth configuration error", async () => {
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("STG_ENABLE_DEV_AUTH", "true");
 
     const { default: LoginPage } = await import("@/app/login/page");
     render(
@@ -217,6 +218,33 @@ describe("Module 7 UI fixes and result page", () => {
     expect(await screen.findByRole("heading", { name: "Result" })).toBeInTheDocument();
     expect(screen.queryByText("Development Mock Feedback")).not.toBeInTheDocument();
     expect(screen.getByText("AI Rewrite")).toBeInTheDocument();
+  });
+
+  it("keeps the read-only fallback usable while a background attempt is processing", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        data: {
+          result: {
+            attempt: {
+              status: "analyzing",
+              originalAnswer: "A complete answer that is still being analyzed.",
+              submittedAt: "2026-07-20T00:00:00.000Z",
+              retryAfterMs: 1500
+            }
+          }
+        }
+      })
+    } as Response);
+
+    const { ResultClient } = await import("@/app/result/[attemptId]/ResultClient");
+    render(<ResultClient attemptId="attempt-processing" isDevelopment />);
+
+    expect(
+      await screen.findByRole("heading", { name: "正在生成反馈" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/当前状态：analyzing/)).toBeInTheDocument();
   });
 
   it("shows a retry entry for failed pipeline results", async () => {

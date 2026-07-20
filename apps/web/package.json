@@ -1,11 +1,12 @@
 {
   "name": "@stg/web",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0-beta.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:golden": "vitest run module-8-golden-runner",
     "test:live-smoke": "vite-node --config vitest.config.ts scripts/live-smoke.ts",

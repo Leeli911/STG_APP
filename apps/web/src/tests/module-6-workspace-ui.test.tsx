@@ -6,15 +6,17 @@ import { AppShell } from "@/components/layout/AppShell";
 const routerPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/dashboard",
   useRouter: () => ({
     push: routerPush
   })
 }));
 
-function questionResponse() {
+function questionResponse(liveTrainingV2Enabled = true) {
   return {
     ok: true,
     data: {
+      liveTrainingV2Enabled,
       question: {
         id: "00000000-0000-4000-8000-000000000001",
         dayNumber: 1,
@@ -66,7 +68,34 @@ describe("Module 6 workspace submission UI", () => {
     expect(screen.getByText("0 / 6000")).toBeInTheDocument();
   });
 
-  it("submits an answer and redirects to the Result Page", async () => {
+  it("shows the course completion state without rendering a Day7 answer form", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        data: {
+          question: null,
+          courseCompleted: true
+        },
+        meta: {
+          request_id: "request-complete"
+        }
+      })
+    } as Response);
+
+    const { default: WorkspacePage } = await import("@/app/workspace/page");
+    render(<WorkspacePage />);
+
+    expect(
+      await screen.findByRole("heading", { name: "七天训练已完成" })
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("你的回答")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "查看训练总结" })
+    ).toBeInTheDocument();
+  });
+
+  it("submits an answer and redirects to the Training Page", async () => {
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce({
         ok: true,
@@ -95,27 +124,56 @@ describe("Module 6 workspace submission UI", () => {
     const { default: WorkspacePage } = await import("@/app/workspace/page");
     render(<WorkspacePage />);
 
-    const textarea = await screen.findByLabelText("Your answer");
+    const textarea = await screen.findByLabelText("你的回答");
     fireEvent.change(textarea, {
       target: {
         value: "I want to do data analysis because I enjoy structure."
       }
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Submit answer" }));
+    fireEvent.click(screen.getByRole("button", { name: "提交回答" }));
 
     await waitFor(() => {
-      expect(routerPush).toHaveBeenCalledWith("/result/attempt-1");
+      expect(routerPush).toHaveBeenCalledWith("/training/attempt-1");
+    });
+  });
+
+  it("uses the read-only result fallback when Live Training V2 is disabled", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => questionResponse(false)
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          ok: true,
+          data: { attempt: { id: "attempt-fallback" } }
+        })
+      } as Response);
+
+    const { default: WorkspacePage } = await import("@/app/workspace/page");
+    render(<WorkspacePage />);
+
+    fireEvent.change(await screen.findByLabelText("你的回答"), {
+      target: {
+        value: "I want this role because I can turn data into clear decisions."
+      }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "提交回答" }));
+
+    await waitFor(() => {
+      expect(routerPush).toHaveBeenCalledWith("/result/attempt-fallback");
     });
   });
 
   it("does not show protected navigation on unauthenticated pages", async () => {
     render(await AppShell({ children: <main>Login content</main>, user: null }));
 
-    expect(screen.getByText("Structured Thinking Gym")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Workspace" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "History" })).not.toBeInTheDocument();
+    expect(screen.getByText("结构化思维训练场")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "训练主页" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "今日训练" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "训练记录" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Log out" })).not.toBeInTheDocument();
   });
@@ -131,10 +189,10 @@ describe("Module 6 workspace submission UI", () => {
       })
     );
 
-    expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Workspace" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "History" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "训练主页" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "今日训练" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "训练记录" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "退出登录" })).toBeInTheDocument();
   });
 });

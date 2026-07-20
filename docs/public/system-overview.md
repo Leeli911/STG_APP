@@ -79,13 +79,13 @@ STG is intended to show more than a single AI feature. It demonstrates:
 - Deterministic demo design for reliable public review without paid services
 - Engineering boundaries that keep the product extensible without turning it into a research platform
 
-## Future Work
+## Current Boundary and Future Work
 
-Planned future phases include:
+The shared training screen now displays score deltas after revision. Remaining release work includes:
 
-- Score-delta tracking between draft and final answer
 - Feedback display modes for different levels of guidance
-- A lightweight learning dashboard
-- More progress visualization over time
+- Live validation of the seven-day dashboard and history
+- Production connection of the background AI job, webhook, and reconciler infrastructure
+- Pilot metrics and privacy-verified account lifecycle operations
 
 These features should extend the existing product loop rather than turn STG into a separate research platform.

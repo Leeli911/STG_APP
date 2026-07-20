@@ -59,6 +59,7 @@ function createRepository(): AttemptRepository & {
   statusTransitions: () => AttemptStatus[];
   latestScore: () => ScoreRow | null;
   latestFeedback: () => AiFeedbackRow | null;
+  seedProcessingAttempt: () => void;
   seedFailedAttempt: () => void;
   seedOtherUserAttempt: () => void;
 } {
@@ -78,6 +79,7 @@ function createRepository(): AttemptRepository & {
     statusTransitions: () => AttemptStatus[];
     latestScore: () => ScoreRow | null;
     latestFeedback: () => AiFeedbackRow | null;
+    seedProcessingAttempt: () => void;
     seedFailedAttempt: () => void;
     seedOtherUserAttempt: () => void;
   } = {
@@ -168,6 +170,19 @@ function createRepository(): AttemptRepository & {
     },
     latestFeedback() {
       return feedbackByAttemptId.get("attempt-1") ?? null;
+    },
+    seedProcessingAttempt() {
+      attemptsById.set("processing-attempt", {
+        id: "processing-attempt",
+        user_id: "user-1",
+        question_id: activeDay1Question.id,
+        day_number: 1,
+        original_answer: validShortAnswer,
+        status: "analysis_running",
+        idempotency_key: "processing-key",
+        client_started_at: null,
+        created_at: "2026-06-19T00:00:00.000Z"
+      });
     },
     seedFailedAttempt() {
       attemptsById.set("failed-attempt", {
@@ -386,6 +401,32 @@ describe("Module 7 mock AI result persistence", () => {
           attempt: {
             status: "failed",
             retryAvailable: true
+          }
+        }
+      }
+    });
+  });
+
+  it("returns a polling state instead of 404 while an attempt is processing", async () => {
+    const repository = createRepository();
+    repository.seedProcessingAttempt();
+
+    const response = await handleGetAttemptResult(
+      getResultRequest("processing-attempt"),
+      {
+        getUser: async () => ({ id: "user-1" }),
+        repository
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(await json(response)).toMatchObject({
+      ok: true,
+      data: {
+        result: {
+          attempt: {
+            status: "analysis_running",
+            retryAfterMs: 1500
           }
         }
       }

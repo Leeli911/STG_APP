@@ -3,6 +3,7 @@ export {
   toTrainingSessionDto
 } from "./trainingSessionDto";
 export { createTrainingSessionService } from "./trainingSessionService";
+export { handleMarkFeedbackViewed } from "./markFeedbackViewedApi";
 export { createSupabaseTrainingSessionRepository } from "./trainingSessionRepository";
 export type {
   CompletedTrainingSessionDto,

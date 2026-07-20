@@ -1,4 +1,8 @@
-import { loadGoldenSetV1, runGoldenCaseChecks } from "@/server/benchmarks/goldenSet";
+import {
+  loadGoldenSetV1,
+  loadGoldenSetV2,
+  runGoldenCaseChecks
+} from "@/server/benchmarks/goldenSet";
 import { AnalysisOutputSchema } from "@/schemas/ai";
 
 const validAnalysis = AnalysisOutputSchema.parse({
@@ -116,5 +120,26 @@ describe("Module 8 Golden Set runner foundation", () => {
       expected_score_range_hit: true,
       banned_phrase_count: 0
     });
+  });
+
+  it("loads 60 unique manually labelled bilingual cases in Golden Set V2", () => {
+    const goldenSet = loadGoldenSetV2();
+    const ids = new Set(goldenSet.cases.map((item) => item.id));
+    const supplemental = goldenSet.cases.slice(20);
+    const languages = new Set(supplemental.map((item) => item.language));
+    const riskTags = new Set(supplemental.flatMap((item) => item.risk_tags ?? []));
+
+    expect(goldenSet.version).toBe("Golden Set V2");
+    expect(goldenSet.cases).toHaveLength(60);
+    expect(ids.size).toBe(60);
+    expect(languages).toEqual(new Set(["zh", "en", "mixed"]));
+    expect([...riskTags]).toEqual(
+      expect.arrayContaining([
+        "off_topic",
+        "star_missing",
+        "fact_preservation_no_metric",
+        "mixed_language"
+      ])
+    );
   });
 });

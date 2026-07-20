@@ -36,9 +36,10 @@ export function ResultClient({
 
   useEffect(() => {
     let isMounted = true;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
-    async function loadResult() {
-      setIsLoading(true);
+    async function loadResult(initial = false) {
+      if (initial) setIsLoading(true);
       setError(null);
 
       try {
@@ -51,6 +52,9 @@ export function ResultClient({
 
         if (isMounted) {
           setResult(body.data.result);
+          if (isProcessingResult(body.data.result)) {
+            pollTimer = setTimeout(() => void loadResult(false), 1500);
+          }
         }
       } catch (loadError) {
         if (isMounted) {
@@ -65,10 +69,11 @@ export function ResultClient({
       }
     }
 
-    void loadResult();
+    void loadResult(true);
 
     return () => {
       isMounted = false;
+      if (pollTimer) clearTimeout(pollTimer);
     };
   }, [attemptId]);
 
@@ -77,6 +82,7 @@ export function ResultClient({
     result.attempt.feedbackMode === "mock";
   const completedResult = isCompletedResult(result) ? result : null;
   const failedResult = result?.attempt.status === "failed" ? result : null;
+  const processingResult = isProcessingResult(result) ? result : null;
 
   return (
     <main className="space-y-6">
@@ -100,6 +106,18 @@ export function ResultClient({
         <p role="alert" className="text-sm text-red-600">
           {error}
         </p>
+      ) : null}
+
+      {processingResult ? (
+        <section
+          aria-live="polite"
+          className="space-y-2 rounded-lg border border-slate-200 bg-white p-6"
+        >
+          <h2 className="text-xl font-semibold">正在生成反馈</h2>
+          <p className="text-slate-700">
+            当前状态：{processingResult.attempt.status}。页面会自动刷新，不需要重复提交。
+          </p>
+        </section>
       ) : null}
 
       {failedResult ? (
@@ -210,6 +228,14 @@ function isCompletedResult(
   result: AttemptResultDto | null
 ): result is CompletedAttemptResultDto {
   return result?.attempt.status === "completed";
+}
+
+function isProcessingResult(result: AttemptResultDto | null) {
+  return Boolean(
+    result &&
+      result.attempt.status !== "completed" &&
+      result.attempt.status !== "failed"
+  );
 }
 
 function scoreItems(result: CompletedAttemptResultDto) {

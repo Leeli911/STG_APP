@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-import AdminPage from "@/app/admin/page";
+import { AdminPageContent } from "@/app/admin/AdminPageContent";
 import DashboardPage from "@/app/dashboard/page";
 import HistoryPage from "@/app/history/page";
 import ResultPage from "@/app/result/[attemptId]/page";
@@ -9,8 +9,18 @@ import WorkspacePage from "@/app/workspace/page";
 import { AppShell } from "@/components/layout/AppShell";
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/dashboard",
   useRouter: () => ({
     push: vi.fn()
+  })
+}));
+
+vi.mock("@/features/training-overview/useTrainingOverview", () => ({
+  useTrainingOverview: () => ({
+    overview: null,
+    isLoading: true,
+    error: null,
+    retry: vi.fn()
   })
 }));
 
@@ -26,8 +36,8 @@ describe("Module 1 app shell", () => {
       })
     );
 
-    expect(screen.getByText("Structured Thinking Gym")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
+    expect(screen.getByText("结构化思维训练场")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "训练主页" })).toHaveAttribute(
       "href",
       "/dashboard"
     );
@@ -40,8 +50,8 @@ describe("Module 1 app shell", () => {
 
   it("renders all Sprint 1 page skeletons", async () => {
     render(<DashboardPage />);
-    expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
-    expect(screen.getByText("Today Training")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "训练概览" })).toBeInTheDocument();
+    expect(screen.getByText("正在读取训练进度…")).toBeInTheDocument();
 
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce({
@@ -116,7 +126,7 @@ describe("Module 1 app shell", () => {
       } as Response);
 
     render(<WorkspacePage />);
-    expect(screen.getByRole("heading", { name: "Workspace" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "今日训练" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Conclusion First" })).toBeInTheDocument();
 
     render(await ResultPage({ params: Promise.resolve({ attemptId: "attempt-1" }) }));
@@ -125,9 +135,9 @@ describe("Module 1 app shell", () => {
     expect(screen.queryByText(/attempt-1/)).not.toBeInTheDocument();
 
     render(<HistoryPage />);
-    expect(screen.getByRole("heading", { name: "History" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "训练记录" })).toBeInTheDocument();
 
-    render(<AdminPage />);
+    render(<AdminPageContent />);
     expect(screen.getByRole("heading", { name: "Admin" })).toBeInTheDocument();
   });
 });

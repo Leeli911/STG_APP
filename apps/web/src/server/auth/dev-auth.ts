@@ -8,14 +8,35 @@ export type DevAuthUser = {
   email: string;
 };
 
-export function isDevAuthCredential(email: string, password: string) {
+type DevAuthEnv = Record<string, string | undefined>;
+
+/**
+ * Development authentication is intentionally opt-in and can never be enabled
+ * in production, even if a deployment accidentally carries the feature flag.
+ */
+export function isDevAuthEnabled(env: DevAuthEnv = process.env) {
+  return (
+    env.NODE_ENV !== "production" && env.STG_ENABLE_DEV_AUTH === "true"
+  );
+}
+
+export function isDevAuthCredential(
+  email: string,
+  password: string,
+  env: DevAuthEnv = process.env
+) {
+  if (!isDevAuthEnabled(env)) {
+    return false;
+  }
+
   return email === DEV_AUTH_EMAIL && password === DEV_AUTH_PASSWORD;
 }
 
 export function getDevAuthUserFromCookie(
-  cookieValue: string | undefined
+  cookieValue: string | undefined,
+  env: DevAuthEnv = process.env
 ): DevAuthUser | null {
-  if (cookieValue !== DEV_AUTH_COOKIE_VALUE) {
+  if (!isDevAuthEnabled(env) || cookieValue !== DEV_AUTH_COOKIE_VALUE) {
     return null;
   }
 
@@ -26,9 +47,10 @@ export function getDevAuthUserFromCookie(
 }
 
 export function getDevAuthUserFromCookieHeader(
-  cookieHeader: string | null
+  cookieHeader: string | null,
+  env: DevAuthEnv = process.env
 ): DevAuthUser | null {
-  if (!cookieHeader) {
+  if (!isDevAuthEnabled(env) || !cookieHeader) {
     return null;
   }
 
@@ -42,16 +64,17 @@ export function getDevAuthUserFromCookieHeader(
   }
 
   return getDevAuthUserFromCookie(
-    decodeURIComponent(cookie.slice(DEV_AUTH_COOKIE_NAME.length + 1))
+    decodeURIComponent(cookie.slice(DEV_AUTH_COOKIE_NAME.length + 1)),
+    env
   );
 }
 
-export function getDevAuthCookieOptions() {
+export function getDevAuthCookieOptions(env: DevAuthEnv = process.env) {
   return {
     httpOnly: true,
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production"
+    secure: env.NODE_ENV === "production"
   };
 }

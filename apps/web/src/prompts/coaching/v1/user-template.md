@@ -16,6 +16,14 @@ Optional Language:
 
 {{language}}
 
+Language rule:
+
+If the language is zh, write every user-facing natural-language value in Simplified Chinese.
+
+If the language is en, write every user-facing natural-language value in English.
+
+Do not mix Chinese and English in user-facing feedback, except for proper nouns or exact evidence quoted from the user's answer. Enum values and JSON keys must remain exactly as defined by the schema.
+
 Analysis Result:
 
 {{analysis\_json}}

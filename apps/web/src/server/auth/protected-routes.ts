@@ -1,8 +1,12 @@
 const protectedRoutePrefixes = [
   "/dashboard",
+  "/onboarding",
+  "/reset-password",
   "/workspace",
+  "/training",
   "/result",
   "/history",
+  "/settings",
   "/admin"
 ];
 
@@ -10,6 +14,10 @@ export function isProtectedRoute(pathname: string) {
   return protectedRoutePrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
+}
+
+export function shouldUpdateAuthSession(pathname: string) {
+  return pathname === "/login" || isProtectedRoute(pathname);
 }
 
 export function getSafeRedirectPath(

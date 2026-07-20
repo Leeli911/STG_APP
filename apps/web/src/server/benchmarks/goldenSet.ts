@@ -15,10 +15,17 @@ export type GoldenCase = {
     min: number;
     max: number;
   };
+  language?: "zh" | "en" | "mixed";
+  risk_tags?: string[];
 };
 
 export type GoldenSet = {
-  version: "Golden Set V1";
+  version: "Golden Set V1" | "Golden Set V2";
+  cases: GoldenCase[];
+};
+
+type GoldenSetSupplement = {
+  version: "Golden Set V2 Supplement";
   cases: GoldenCase[];
 };
 
@@ -46,6 +53,24 @@ export function loadGoldenSetV1(): GoldenSet {
   );
 
   return JSON.parse(readFileSync(path, "utf8")) as GoldenSet;
+}
+
+export function loadGoldenSetV2(): GoldenSet {
+  const supplementPath = join(
+    process.cwd(),
+    "src",
+    "tests",
+    "golden",
+    "golden-set-v2-supplement.json"
+  );
+  const supplement = JSON.parse(
+    readFileSync(supplementPath, "utf8")
+  ) as GoldenSetSupplement;
+
+  return {
+    version: "Golden Set V2",
+    cases: [...loadGoldenSetV1().cases, ...supplement.cases]
+  };
 }
 
 export function runGoldenCaseChecks({

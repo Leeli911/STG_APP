@@ -1,9 +1,14 @@
 import { toAttemptDto } from "@/server/attempts/attemptDto";
 import {
+  toProcessingAttemptResultDto,
   toAttemptResultDto,
   toFailedAttemptResultDto
 } from "@/server/attempts/attemptResultDto";
 import { runAiCoachPipeline } from "@/server/ai/pipeline";
+import type {
+  PipelineInput,
+  PipelineProfileContext
+} from "@/server/ai/pipeline";
 import {
   MAX_ANSWER_LENGTH,
   MINIMUM_ANSWER_MESSAGE,
@@ -12,7 +17,8 @@ import {
 import type {
   AttemptDto,
   AttemptResultDto,
-  AttemptRepository
+  AttemptRepository,
+  AttemptRow
 } from "@/server/attempts/types";
 import type { TrainingDayNumber } from "@/server/questions";
 
@@ -22,7 +28,9 @@ export type AttemptErrorCode =
   | "NOT_FOUND"
   | "FORBIDDEN"
   | "CONFLICT"
+  | "COURSE_COMPLETED"
   | "DATABASE_ERROR"
+  | "QUOTA_EXCEEDED"
   | "INTERNAL_ERROR";
 
 export class AttemptServiceError extends Error {
@@ -60,9 +68,33 @@ export type AttemptService = {
   ) => Promise<AttemptResultDto>;
 };
 
+export type AttemptTrainingProgress = {
+  currentDay: TrainingDayNumber;
+  isComplete: boolean;
+};
+
 type AttemptServiceDependencies = {
   repository: AttemptRepository;
-  currentDayResolver?: (userId: string) => Promise<TrainingDayNumber>;
+  currentDayResolver?: (
+    userId: string
+  ) => Promise<TrainingDayNumber | AttemptTrainingProgress>;
+  profileContextResolver?: (
+    userId: string
+  ) => Promise<PipelineProfileContext | undefined>;
+  consumeAiQuota?: (userId: string, idempotencyKey: string) => Promise<{
+    allowed: boolean;
+    used: number;
+    remaining: number;
+    limit: number;
+    resetsOn: string;
+  }>;
+  processAttempt?: (input: PipelineInput) => Promise<AttemptRow>;
+  deferInFlightAttempts?: boolean;
+  /**
+   * Failed submissions are idempotent terminal responses by default. Controlled
+   * revision recovery opts in and is bounded by the durable AI Job retry policy.
+   */
+  retryFailedAttempts?: boolean;
 };
 
 const UUID_PATTERN =
@@ -70,7 +102,12 @@ const UUID_PATTERN =
 
 export function createAttemptService({
   repository,
-  currentDayResolver = async () => 1
+  currentDayResolver = async () => 1,
+  profileContextResolver = async () => undefined,
+  consumeAiQuota,
+  processAttempt = runAiCoachPipeline,
+  deferInFlightAttempts = false,
+  retryFailedAttempts = false
 }: AttemptServiceDependencies): AttemptService {
   return {
     async submitAttempt(input) {
@@ -85,6 +122,18 @@ export function createAttemptService({
 
       if (existingAttempt) {
         if (existingAttempt.status === "completed") {
+          return toAttemptDto(existingAttempt);
+        }
+
+        if (existingAttempt.status === "failed" && !retryFailedAttempts) {
+          return toAttemptDto(existingAttempt);
+        }
+
+        if (
+          deferInFlightAttempts &&
+          existingAttempt.status !== "submitted" &&
+          existingAttempt.status !== "failed"
+        ) {
           return toAttemptDto(existingAttempt);
         }
 
@@ -104,11 +153,14 @@ export function createAttemptService({
         }
 
         return toAttemptDto(
-          await runAiCoachPipeline({
+          await processAttempt({
             userId: validated.userId,
             attempt: existingAttempt,
             question: existingQuestion,
-            repository
+            repository,
+            profileContext: await readFromRepository(() =>
+              profileContextResolver(validated.userId)
+            )
           })
         );
       }
@@ -139,20 +191,51 @@ export function createAttemptService({
         );
       }
 
-      const currentDay = await readFromRepository(() =>
+      const resolvedProgress = await readFromRepository(() =>
         currentDayResolver(validated.userId)
       );
+      const progress = normalizeTrainingProgress(resolvedProgress);
 
-      if (question.day_number !== currentDay) {
+      if (progress.isComplete) {
+        throw new AttemptServiceError(
+          "COURSE_COMPLETED",
+          "The seven-day course is already completed.",
+          409,
+          {
+            current_day: progress.currentDay
+          }
+        );
+      }
+
+      if (question.day_number !== progress.currentDay) {
         throw new AttemptServiceError(
           "FORBIDDEN",
           "Only the current training question can be submitted.",
           403,
           {
-            current_day: currentDay,
+            current_day: progress.currentDay,
             question_day: question.day_number
           }
         );
+      }
+
+      if (consumeAiQuota) {
+        const quota = await readFromRepository(() =>
+          consumeAiQuota(validated.userId, validated.idempotencyKey)
+        );
+        if (!quota.allowed) {
+          throw new AttemptServiceError(
+            "QUOTA_EXCEEDED",
+            "Daily AI training limit reached.",
+            429,
+            {
+              used: quota.used,
+              limit: quota.limit,
+              remaining: quota.remaining,
+              resets_on: quota.resetsOn
+            }
+          );
+        }
       }
 
       const attempt = await readFromRepository(() =>
@@ -166,11 +249,14 @@ export function createAttemptService({
       );
 
       return toAttemptDto(
-        await runAiCoachPipeline({
+        await processAttempt({
           userId: validated.userId,
           attempt,
           question,
-          repository
+          repository,
+          profileContext: await readFromRepository(() =>
+            profileContextResolver(validated.userId)
+          )
         })
       );
     },
@@ -198,19 +284,20 @@ export function createAttemptService({
       }
 
       if (attempt.status !== "completed") {
-        throw new AttemptServiceError(
-          "NOT_FOUND",
-          "Attempt result is not ready yet.",
-          404,
-          {
-            attempt_id: attemptId
-          }
-        );
+        return toProcessingAttemptResultDto({ attempt });
       }
 
-      const [score, feedback] = await Promise.all([
+      const [score, feedback, sessionId] = await Promise.all([
         readFromRepository(() => repository.findScoreByAttemptId(attempt.id)),
-        readFromRepository(() => repository.findAiFeedbackByAttemptId(attempt.id))
+        readFromRepository(() => repository.findAiFeedbackByAttemptId(attempt.id)),
+        repository.findTrainingSessionIdByInitialAttemptId
+          ? readFromRepository(() =>
+              repository.findTrainingSessionIdByInitialAttemptId!(
+                userId,
+                attempt.id
+              )
+            )
+          : Promise.resolve(null)
       ]);
 
       if (!score || !feedback) {
@@ -227,10 +314,19 @@ export function createAttemptService({
       return toAttemptResultDto({
         attempt,
         score,
-        feedback
+        feedback,
+        sessionId
       });
     }
   };
+}
+
+function normalizeTrainingProgress(
+  value: TrainingDayNumber | AttemptTrainingProgress
+): AttemptTrainingProgress {
+  return typeof value === "number"
+    ? { currentDay: value, isComplete: false }
+    : value;
 }
 
 function validateSubmitAttemptInput(input: SubmitAttemptInput) {

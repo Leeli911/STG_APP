@@ -310,4 +310,165 @@ describe("Module 6 POST /api/attempts", () => {
       }
     });
   });
+
+  it("binds quota consumption to the request idempotency key", async () => {
+    const dependencies = createDependencies();
+    const consumeAiQuota = vi.fn().mockResolvedValue({
+      allowed: true,
+      used: 1,
+      remaining: 2,
+      limit: 3,
+      resetsOn: "2026-07-21"
+    });
+
+    const response = await handlePostAttempt(
+      request({
+        body: {
+          question_id: activeDay1Question.id,
+          answer_text: validAnswer
+        },
+        idempotencyKey: "quota-idem-1"
+      }),
+      { ...dependencies, consumeAiQuota }
+    );
+
+    expect(response.status).toBe(200);
+    expect(consumeAiQuota).toHaveBeenCalledWith("user-1", "quota-idem-1");
+  });
+
+  it("does not re-run a failed attempt when the same idempotency key is replayed", async () => {
+    const dependencies = createDependencies();
+    const processAttempt = vi.fn(
+      async ({ attempt }: { attempt: AttemptRow }) => attempt
+    );
+    const consumeAiQuota = vi.fn().mockResolvedValue({
+      allowed: true,
+      used: 1,
+      remaining: 2,
+      limit: 3,
+      resetsOn: "2026-06-20"
+    });
+    dependencies.processAttempt = processAttempt;
+    dependencies.consumeAiQuota = consumeAiQuota;
+    const body = {
+      question_id: activeDay1Question.id,
+      answer_text: validAnswer
+    };
+
+    const first = await handlePostAttempt(
+      request({ body, idempotencyKey: "failed-key" }),
+      dependencies
+    );
+    const firstBody = await json(first);
+    await dependencies.repository.updateAttemptStatus(
+      "user-1",
+      firstBody.data.attempt.id,
+      "failed"
+    );
+
+    const replay = await handlePostAttempt(
+      request({ body, idempotencyKey: "failed-key" }),
+      dependencies
+    );
+
+    expect(replay.status).toBe(200);
+    expect(await json(replay)).toMatchObject({
+      ok: true,
+      data: {
+        attempt: {
+          id: firstBody.data.attempt.id,
+          status: "failed"
+        }
+      }
+    });
+    expect(dependencies.repository.createCount()).toBe(1);
+    expect(processAttempt).toHaveBeenCalledTimes(1);
+    expect(consumeAiQuota).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires a new quota reservation before retrying failed practice", async () => {
+    const dependencies = createDependencies();
+    const processAttempt = vi.fn(
+      async ({ attempt }: { attempt: AttemptRow }) => attempt
+    );
+    const consumeAiQuota = vi
+      .fn()
+      .mockResolvedValueOnce({
+        allowed: true,
+        used: 3,
+        remaining: 0,
+        limit: 3,
+        resetsOn: "2026-06-20"
+      })
+      .mockResolvedValueOnce({
+        allowed: false,
+        used: 3,
+        remaining: 0,
+        limit: 3,
+        resetsOn: "2026-06-20"
+      });
+    dependencies.processAttempt = processAttempt;
+    dependencies.consumeAiQuota = consumeAiQuota;
+    const body = {
+      question_id: activeDay1Question.id,
+      answer_text: validAnswer
+    };
+
+    const first = await handlePostAttempt(
+      request({ body, idempotencyKey: "first-key" }),
+      dependencies
+    );
+    const firstBody = await json(first);
+    await dependencies.repository.updateAttemptStatus(
+      "user-1",
+      firstBody.data.attempt.id,
+      "failed"
+    );
+
+    const retry = await handlePostAttempt(
+      request({ body, idempotencyKey: "new-retry-key" }),
+      dependencies
+    );
+
+    expect(retry.status).toBe(429);
+    expect(await json(retry)).toMatchObject({
+      ok: false,
+      error: {
+        code: "QUOTA_EXCEEDED"
+      }
+    });
+    expect(dependencies.repository.createCount()).toBe(1);
+    expect(processAttempt).toHaveBeenCalledTimes(1);
+    expect(consumeAiQuota).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects a new submission after all seven course days are complete", async () => {
+    const dependencies = createDependencies();
+    dependencies.currentDayResolver = vi.fn().mockResolvedValue({
+      currentDay: 7,
+      completedDays: [1, 2, 3, 4, 5, 6, 7],
+      isComplete: true,
+      totalDays: 7
+    });
+
+    const response = await handlePostAttempt(
+      request({
+        body: {
+          question_id: activeDay1Question.id,
+          answer_text: validAnswer
+        }
+      }),
+      dependencies
+    );
+
+    expect(response.status).toBe(409);
+    expect(await json(response)).toMatchObject({
+      ok: false,
+      error: {
+        code: "COURSE_COMPLETED",
+        message: "The seven-day course is already completed."
+      }
+    });
+    expect(dependencies.repository.createCount()).toBe(0);
+  });
 });

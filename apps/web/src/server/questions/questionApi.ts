@@ -17,12 +17,14 @@ export type GetQuestionsUser = {
 export type QuestionProgress = {
   currentDay: TrainingDayNumber;
   completedDays: TrainingDayNumber[];
+  isComplete: boolean;
 };
 
 export type GetQuestionsDependencies = {
   getUser: () => Promise<GetQuestionsUser | null>;
   questionService: Pick<QuestionService, "getQuestionByDay" | "listTrainingSequence">;
   resolveProgress?: (userId: string) => Promise<QuestionProgress>;
+  liveTrainingV2Enabled?: boolean;
 };
 
 type QuestionsQuery =
@@ -53,7 +55,8 @@ export async function resolveMvpQuestionProgress(
 ): Promise<QuestionProgress> {
   return {
     currentDay: 1,
-    completedDays: []
+    completedDays: [],
+    isComplete: false
   };
 }
 
@@ -110,11 +113,27 @@ export async function handleGetQuestions(
     const progress = await resolveProgress(user.id);
 
     if (validation.query.mode === "today") {
+      const liveTrainingV2Enabled =
+        dependencies.liveTrainingV2Enabled ?? true;
+      if (progress.isComplete) {
+        return jsonSuccess(
+          {
+            question: null,
+            courseCompleted: true,
+            liveTrainingV2Enabled
+          },
+          requestId
+        );
+      }
+
       const question = await dependencies.questionService.getQuestionByDay(
         progress.currentDay
       );
 
-      return jsonSuccess({ question }, requestId);
+      return jsonSuccess(
+        { question, courseCompleted: false, liveTrainingV2Enabled },
+        requestId
+      );
     }
 
     const questions = await dependencies.questionService.listTrainingSequence();

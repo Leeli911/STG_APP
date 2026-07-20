@@ -3,10 +3,20 @@ import { randomUUID } from "node:crypto";
 import { jsonError, jsonSuccess } from "@/server/api/envelope";
 import {
   AttemptServiceError,
-  createAttemptService
+  createAttemptService,
+  type AttemptTrainingProgress
 } from "@/server/attempts/attemptService";
 import type { AttemptRepository } from "@/server/attempts/types";
 import type { TrainingDayNumber } from "@/server/questions";
+import type {
+  PipelineInput,
+  PipelineProfileContext
+} from "@/server/ai/pipeline";
+import type { AttemptRow } from "@/server/attempts/types";
+import {
+  recordProductEventBestEffort,
+  type ProductEventRecorder
+} from "@/server/product-events";
 
 export type PostAttemptUser = {
   id: string;
@@ -15,7 +25,23 @@ export type PostAttemptUser = {
 export type PostAttemptDependencies = {
   getUser: () => Promise<PostAttemptUser | null>;
   repository: AttemptRepository;
-  currentDayResolver?: (userId: string) => Promise<TrainingDayNumber>;
+  currentDayResolver?: (
+    userId: string
+  ) => Promise<TrainingDayNumber | AttemptTrainingProgress>;
+  profileContextResolver?: (
+    userId: string
+  ) => Promise<PipelineProfileContext | undefined>;
+  consumeAiQuota?: (userId: string, idempotencyKey: string) => Promise<{
+    allowed: boolean;
+    used: number;
+    remaining: number;
+    limit: number;
+    resetsOn: string;
+  }>;
+  processAttempt?: (input: PipelineInput) => Promise<AttemptRow>;
+  deferInFlightAttempts?: boolean;
+  retryFailedAttempts?: boolean;
+  recordProductEvent?: ProductEventRecorder;
 };
 
 type PostAttemptBody = {
@@ -65,7 +91,12 @@ export async function handlePostAttempt(
 
   const service = createAttemptService({
     repository: dependencies.repository,
-    currentDayResolver: dependencies.currentDayResolver
+    currentDayResolver: dependencies.currentDayResolver,
+    profileContextResolver: dependencies.profileContextResolver,
+    consumeAiQuota: dependencies.consumeAiQuota,
+    processAttempt: dependencies.processAttempt,
+    deferInFlightAttempts: dependencies.deferInFlightAttempts,
+    retryFailedAttempts: dependencies.retryFailedAttempts
   });
 
   try {
@@ -77,7 +108,27 @@ export async function handlePostAttempt(
       idempotencyKey: request.headers.get("x-idempotency-key")
     });
 
-    return jsonSuccess({ attempt }, requestId);
+    await recordProductEventBestEffort(
+      dependencies.recordProductEvent,
+      {
+        userId: user.id,
+        event_name: "draft_submitted",
+        attempt_id: attempt.id,
+        metadata: {
+          practice_day: attempt.dayNumber,
+          character_count: attempt.answerText.length,
+          answer_language: detectAnswerLanguage(attempt.answerText)
+        },
+        request_id: requestId
+      },
+      "attempt.draft_submitted"
+    );
+
+    return jsonSuccess(
+      { attempt },
+      requestId,
+      attempt.status === "completed" || attempt.status === "failed" ? 200 : 202
+    );
   } catch (error) {
     if (error instanceof AttemptServiceError) {
       return jsonError(
@@ -96,6 +147,13 @@ export async function handlePostAttempt(
       500
     );
   }
+}
+
+function detectAnswerLanguage(answer: string): "zh" | "en" | "mixed" {
+  const hasChinese = /[\u3400-\u9fff]/u.test(answer);
+  const hasLatin = /[A-Za-z]/.test(answer);
+  if (hasChinese && hasLatin) return "mixed";
+  return hasChinese ? "zh" : "en";
 }
 
 async function parsePostAttemptBody(

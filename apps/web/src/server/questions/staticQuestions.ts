@@ -6,7 +6,7 @@ export const staticQuestionRows: QuestionRow[] = [
   {
     id: "00000000-0000-4000-8000-000000000001",
     day_number: 1,
-    title: "Conclusion First",
+    title: "结论先行",
     scenario: "面试官问你一个非常简单的问题，希望快速了解你。",
     prompt: "你为什么想做数据分析这份工作？",
     learning_goal: "只训练结论先行。",
@@ -24,7 +24,7 @@ export const staticQuestionRows: QuestionRow[] = [
   {
     id: "00000000-0000-4000-8000-000000000002",
     day_number: 2,
-    title: "Categorization",
+    title: "分类表达",
     scenario: "面试官问你为什么适合这个岗位。",
     prompt: "如果让你用三个理由说明自己适合这个岗位，你会怎么回答？",
     learning_goal: "只训练分类表达。",
@@ -42,7 +42,7 @@ export const staticQuestionRows: QuestionRow[] = [
   {
     id: "00000000-0000-4000-8000-000000000003",
     day_number: 3,
-    title: "STAR",
+    title: "完整案例",
     scenario: "面试官让你讲一次解决问题的经历。",
     prompt: "请讲一次你解决困难问题的经历。",
     learning_goal: "只训练完整案例表达。",
@@ -60,7 +60,7 @@ export const staticQuestionRows: QuestionRow[] = [
   {
     id: "00000000-0000-4000-8000-000000000004",
     day_number: 4,
-    title: "Evidence",
+    title: "事实证据",
     scenario: "面试官问你的优势是什么。",
     prompt: "你最大的优势是什么？请用一个真实经历证明。",
     learning_goal: "只训练用事实支撑观点。",
@@ -78,7 +78,7 @@ export const staticQuestionRows: QuestionRow[] = [
   {
     id: "00000000-0000-4000-8000-000000000005",
     day_number: 5,
-    title: "Conflict Handling",
+    title: "冲突处理",
     scenario: "业务方坚持认为数据有问题，但你检查后发现数据没有错误。",
     prompt: "请讲讲这种情况下你会怎么和业务方沟通。",
     learning_goal: "只训练冲突处理表达。",
@@ -96,7 +96,7 @@ export const staticQuestionRows: QuestionRow[] = [
   {
     id: "00000000-0000-4000-8000-000000000006",
     day_number: 6,
-    title: "Stakeholder Communication",
+    title: "向上沟通",
     scenario: "老板突然问你：最近用户活跃下降了，你怎么看？",
     prompt: "如果领导突然这样问你，你会如何回答？",
     learning_goal: "只训练向上汇报。",
@@ -114,7 +114,7 @@ export const staticQuestionRows: QuestionRow[] = [
   {
     id: "00000000-0000-4000-8000-000000000007",
     day_number: 7,
-    title: "Final Pitch",
+    title: "最终自我推荐",
     scenario: "面试已经结束。面试官最后问：为什么我们应该录用你？",
     prompt: "请用三分钟完成你的最终自我推荐。",
     learning_goal: "只训练说服表达。",
