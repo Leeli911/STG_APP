@@ -9,6 +9,7 @@ dist
 coverage
 *.tsbuildinfo
 output/playwright
+.playwright-cli
 
 # Environment files
 .env

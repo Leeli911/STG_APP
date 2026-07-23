@@ -36,7 +36,7 @@ describe("Module 1 app shell", () => {
       })
     );
 
-    expect(screen.getByText("结构化思维训练场")).toBeInTheDocument();
+    expect(screen.getByText("结构化表达训练场")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "训练主页" })).toHaveAttribute(
       "href",
       "/dashboard"
