@@ -1,142 +1,157 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within
-} from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import TrainingDemoPage from "@/app/training-demo/page";
 import { isProtectedRoute } from "@/server/auth/protected-routes";
 
-const draftText =
-  "团队做决策时，经常会遇到信息分散、问题难以判断的情况。我希望通过数据分析帮助团队更清楚地理解业务问题。";
-const suggestionText =
-  "我希望通过数据分析帮助团队更清楚地理解业务问题。团队做决策时，经常会遇到信息分散、问题难以判断的情况。";
-const editedText =
-  "我希望通过数据分析拆解复杂业务问题，并帮助团队做出清晰、可靠的业务判断。";
+const purposeDraft =
+  "新用户引导改版比原计划晚三天，相关联调仍在进行。我建议把发布日期调整到下周一，请主管今天确认。";
+const purposeCore = "我建议把发布日期调整到下周一，请主管今天确认。";
+const purposeRevision =
+  "我建议把发布日期调整到下周一，请主管今天确认。新用户引导改版比原计划晚三天，相关联调仍在进行。";
+const transferAnswer =
+  "关键数据还需要两天核对。我建议延后周报，请负责人今天决定。";
+const transferCore = "我建议延后周报，请负责人今天决定。";
 
-describe("Module 10 direct training demo route", () => {
+describe("Module 10 structured-practice public route", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("renders /training-demo without login and without fetch", async () => {
+  it("无需登录即可打开，初始回答为空且不会提前泄露训练方法", () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
-      .mockRejectedValue(new Error("training demo must not call fetch"));
+      .mockRejectedValue(new Error("公开训练不得调用 fetch"));
 
     expect(isProtectedRoute("/training-demo")).toBe(false);
-
     render(<TrainingDemoPage />);
 
     expect(
-      screen.getByRole("heading", { name: "训练体验题" })
+      screen.getByRole("heading", { name: "五分钟结构化表达训练" })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("你的回答")).toHaveValue(draftText);
-    fireEvent.click(screen.getByRole("button", { name: "提交回答" }));
-
-    expect(
-      await screen.findByRole("heading", { name: "训练反馈" })
-    ).toBeInTheDocument();
-    expect(screen.getByText("原始回答")).toBeInTheDocument();
-    expect(screen.getByText(draftText)).toBeInTheDocument();
+    expect(screen.getByLabelText("你的无提示回答")).toHaveValue("");
+    expect(screen.queryByText("明确目的")).not.toBeInTheDocument();
+    expect(screen.queryByText("结论先行")).not.toBeInTheDocument();
+    expect(screen.queryByText("两到三点框架")).not.toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("shows Score Breakdown and Suggestion without DeltaSummary", async () => {
-    await renderFeedback();
+  it("短回答会显示明确错误，不会出现点击后无反应", () => {
+    render(<TrainingDemoPage />);
 
-    expect(await screen.findByText("评分明细")).toBeInTheDocument();
-    expect(screen.getByText("核心信息")).toBeInTheDocument();
-    expect(screen.getByText("核心价值出现在背景说明之后。")).toBeInTheDocument();
-    expect(
-      screen.getByText("面试官需要先听铺垫，才能听到核心价值。")
-    ).toBeInTheDocument();
-    expect(screen.getByText("智能教练修改建议")).toBeInTheDocument();
-    expect(screen.getByText("结论先行")).toBeInTheDocument();
-    expect(screen.getByText("把第 2 句的核心价值移到了开头。")).toBeInTheDocument();
-    expect(screen.getByText(suggestionText)).toBeInTheDocument();
-    expect(screen.queryByText(/DeltaSummary/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Score Delta/i)).not.toBeInTheDocument();
-  });
-
-  it("accepts the suggestion and shows it as the Final Answer", async () => {
-    await renderFeedback();
-    await chooseAndSubmit("采用修改建议");
-
-    const status = await completedStatusSection();
-    expect(within(status).getByText("最终稿")).toBeInTheDocument();
-    expect(within(status).getByText(suggestionText)).toBeInTheDocument();
-  });
-
-  it("rejects the suggestion and shows the original Draft as the Final Answer", async () => {
-    await renderFeedback();
-    await chooseAndSubmit("保留原稿");
-
-    const status = await completedStatusSection();
-    expect(within(status).getByText("最终稿")).toBeInTheDocument();
-    expect(within(status).getByText(draftText)).toBeInTheDocument();
-    expect(within(status).getByText("0")).toBeInTheDocument();
-  });
-
-  it("submits an edited answer and shows the edited Final Answer", async () => {
-    await renderFeedback();
-
-    fireEvent.click(await screen.findByRole("button", { name: "自主编辑" }));
-    fireEvent.change(screen.getByLabelText("编辑最终稿"), {
-      target: {
-        value: editedText
-      }
+    fireEvent.change(screen.getByLabelText("你的无提示回答"), {
+      target: { value: "太短了" }
     });
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "提交修订" }));
-    });
+    fireEvent.click(screen.getByRole("button", { name: "提交冷回答" }));
 
-    const status = await completedStatusSection();
-    expect(within(status).getByText("最终稿")).toBeInTheDocument();
-    expect(within(status).getByText(editedText)).toBeInTheDocument();
-  });
-
-  it("lets the user practice again with a new answer after completing the loop", async () => {
-    await renderFeedback();
-    await chooseAndSubmit("采用修改建议");
-    await completedStatusSection();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "用新回答再练一次" })
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "请至少输入 20 个字符后再提交。"
     );
+    expect(screen.getByLabelText("你的无提示回答")).toBeInTheDocument();
+  });
+
+  it("完成冷回答、单点反馈、亲自重写和迁移练习的完整闭环", () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("公开训练不得调用 fetch"));
+    render(<TrainingDemoPage />);
+
+    submitAnswer("你的无提示回答", purposeDraft, "提交冷回答");
+    expect(screen.getByText("刚才的回答")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("我的核心结论"), {
+      target: { value: purposeCore }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
+
+    expect(screen.getByRole("heading", { name: "明确目的" })).toBeInTheDocument();
+    const feedback = sectionForHeading("本次只改一个问题");
+    expect(within(feedback).getByText("原文证据")).toBeInTheDocument();
+    expect(within(feedback).getByText("只做这一个动作")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /采用/ })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("亲自重写"), {
+      target: { value: purposeRevision }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "检查我的重写" }));
+    expect(screen.getByRole("heading", { name: "重写结果" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "进入迁移练习" }));
+    submitAnswer("你的迁移回答", transferAnswer, "提交迁移回答");
+    fireEvent.change(screen.getByLabelText("迁移题核心结论"), {
+      target: { value: transferCore }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "检查迁移结果" }));
 
     expect(
-      screen.getByRole("heading", { name: "训练体验题" })
+      screen.getByRole("heading", { name: "已在新情境中独立使用" })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("你的回答")).toHaveValue("");
+    expect(screen.getByText("当前浏览器已完成 1 次迁移练习")).toBeInTheDocument();
+    expect(screen.queryByText(/\d+\s*%/)).not.toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("必须实际修改原稿后才能检查重写", () => {
+    render(<TrainingDemoPage />);
+    submitAnswer("你的无提示回答", purposeDraft, "提交冷回答");
+    fireEvent.change(screen.getByLabelText("我的核心结论"), {
+      target: { value: purposeCore }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
+    fireEvent.click(screen.getByRole("button", { name: "检查我的重写" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "请根据反馈至少修改一处，再检查重写结果。"
+    );
+    expect(screen.queryByRole("heading", { name: "重写结果" })).not.toBeInTheDocument();
+  });
+
+  it("第二天能识别核心结论在后文，并提示移到开头", () => {
+    render(<TrainingDemoPage />);
+    fireEvent.click(screen.getByRole("button", { name: "第 2 天 职场短答" }));
+    const answer =
+      "目前核心功能已经完成，但还有几个联调问题。项目存在上线风险，我建议先解决联调问题再发布。";
+    const core = "项目存在上线风险，我建议先解决联调问题再发布。";
+
+    submitAnswer("你的无提示回答", answer, "提交冷回答");
+    fireEvent.change(screen.getByLabelText("我的核心结论"), {
+      target: { value: core }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
+
+    expect(screen.getByRole("heading", { name: "结论先行" })).toBeInTheDocument();
+    expect(screen.getByText("核心结论到第 2 句才出现。")).toBeInTheDocument();
+    expect(screen.getByText("把这句移到开头，原有背景放到它后面。")).toBeInTheDocument();
+  });
+
+  it("第三天能识别明确的三点结构", () => {
+    render(<TrainingDemoPage />);
+    fireEvent.click(screen.getByRole("button", { name: "第 3 天 职场短答" }));
+    const answer =
+      "我建议优先优化新用户引导，主要有三点。第一点，流失集中在前三步。第二点，相关客服咨询很多。第三点，改动成本相对较低。";
+
+    submitAnswer("你的无提示回答", answer, "提交冷回答");
+    fireEvent.change(screen.getByLabelText("我的核心结论"), {
+      target: { value: "我建议优先优化新用户引导。" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
+
+    expect(screen.getByRole("heading", { name: "两到三点框架" })).toBeInTheDocument();
+    expect(screen.getByText("回答明确标出了 3 个部分。")).toBeInTheDocument();
   });
 });
 
-async function renderFeedback() {
-  render(<TrainingDemoPage />);
-  fireEvent.click(screen.getByRole("button", { name: "提交回答" }));
-  expect(
-    await screen.findByRole("heading", { name: "训练反馈" })
-  ).toBeInTheDocument();
+function submitAnswer(label: string, value: string, buttonName: string) {
+  fireEvent.change(screen.getByLabelText(label), { target: { value } });
+  fireEvent.click(screen.getByRole("button", { name: buttonName }));
 }
 
-async function chooseAndSubmit(buttonName: "采用修改建议" | "保留原稿") {
-  fireEvent.click(await screen.findByRole("button", { name: buttonName }));
-  await waitFor(() => {
-    expect(screen.getByRole("button", { name: buttonName }))
-      .toHaveAttribute("aria-pressed", "true");
-  });
-  await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: "提交修订" }));
-  });
-}
-
-async function completedStatusSection() {
-  const complete = await screen.findByText("重新评分已完成");
-  const section = complete.closest("section");
-  if (!section) throw new Error("Completed status section was not rendered.");
+function sectionForHeading(name: string) {
+  const heading = screen.getByRole("heading", { name });
+  const section = heading.closest("section");
+  if (!section) throw new Error(`没有找到标题“${name}”所在的区域。`);
   return section;
 }

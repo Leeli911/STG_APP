@@ -170,7 +170,7 @@ describe("Module 6 workspace submission UI", () => {
   it("does not show protected navigation on unauthenticated pages", async () => {
     render(await AppShell({ children: <main>Login content</main>, user: null }));
 
-    expect(screen.getByText("结构化思维训练场")).toBeInTheDocument();
+    expect(screen.getByText("结构化表达训练场")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "训练主页" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "今日训练" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "训练记录" })).not.toBeInTheDocument();

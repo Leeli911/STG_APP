@@ -38,7 +38,7 @@ export function AppShell({
             href={showProtectedNavigation ? "/dashboard" : "/"}
             className="font-semibold"
           >
-            结构化思维训练场
+            结构化表达训练场
           </Link>
           {showProtectedNavigation ? (
             <>

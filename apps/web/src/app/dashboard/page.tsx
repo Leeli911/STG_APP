@@ -36,7 +36,7 @@ function DashboardContent({
     <main className="space-y-8">
       <section className="space-y-2">
         <p className="text-sm font-medium uppercase tracking-wide text-focus">
-          结构化思维训练场
+          结构化表达训练场
         </p>
         <h1 className="text-3xl font-semibold">训练概览</h1>
         <p className="max-w-2xl text-slate-600">
