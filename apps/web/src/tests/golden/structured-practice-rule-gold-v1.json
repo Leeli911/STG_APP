@@ -1,0 +1,2903 @@
+{
+  "version": "rule-gold-v1",
+  "cases": [
+    {
+      "id": "gold-purpose-001",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "项目会晚三天，建议把发布日期调整到下周一，请您确认。",
+      "selfStatement": "建议把发布日期调整到下周一，请您确认",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "完整请求"
+      ],
+      "acceptableEvidence": [
+        "建议把发布日期调整到下周一，请您确认"
+      ]
+    },
+    {
+      "id": "gold-purpose-002",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "引导改版要延后3天，麻烦拍板是否改到下周一上线",
+      "selfStatement": "麻烦拍板是否改到下周一上线",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "麻烦拍板是否改到下周一上线"
+      ]
+    },
+    {
+      "id": "gold-purpose-003",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "当前版本存在三天 delay，建议 release 调至下周一，请批准调整。",
+      "selfStatement": "建议 release 调至下周一",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "少量英文术语",
+        "完整请求"
+      ],
+      "acceptableEvidence": [
+        "建议 release 调至下周一"
+      ]
+    },
+    {
+      "id": "gold-purpose-004",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "项目会延期，建议把发布日期调整一下。",
+      "selfStatement": "项目会延期",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "信息缺失",
+        "未请求决定"
+      ],
+      "acceptableEvidence": [
+        "项目会延期"
+      ]
+    },
+    {
+      "id": "gold-purpose-005",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "我们计划下周一发布，请您确认。",
+      "selfStatement": "请您确认",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "遗漏延期事实",
+        "简短表达"
+      ],
+      "acceptableEvidence": [
+        "请您确认"
+      ]
+    },
+    {
+      "id": "gold-purpose-006",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "改版晚三天，团队还在处理。",
+      "selfStatement": "天气不错",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "自检错位",
+        "缺少行动"
+      ],
+      "acceptableEvidence": [
+        "改版晚三天，团队还在处理"
+      ]
+    },
+    {
+      "id": "gold-purpose-007",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "发布日期可能有变化。",
+      "selfStatement": "发布日期可能有变化",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "单一事实",
+        "行动缺失"
+      ],
+      "acceptableEvidence": [
+        "发布日期可能有变化"
+      ]
+    },
+    {
+      "id": "gold-purpose-008",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "目前需要调整。",
+      "selfStatement": "项目延期并改到下周一",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关自填核心句",
+        "关键词不足"
+      ],
+      "acceptableEvidence": [
+        "目前需要调整"
+      ]
+    },
+    {
+      "id": "gold-purpose-009",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "大家辛苦了，我会继续跟进。",
+      "selfStatement": "建议发布日期改到下周一",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "大家辛苦了，我会继续跟进"
+      ]
+    },
+    {
+      "id": "gold-purpose-010",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-01",
+      "answer": "这次延期需要关注。",
+      "selfStatement": "这次延期需要关注",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "单一事实",
+        "模糊行动"
+      ],
+      "acceptableEvidence": [
+        "这次延期需要关注"
+      ]
+    },
+    {
+      "id": "gold-purpose-011",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "预算已使用九成，建议取消两个非核心需求、缩小本期范围，请批准。",
+      "selfStatement": "请批准缩小本期范围",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "完整请求"
+      ],
+      "acceptableEvidence": [
+        "预算已使用九成，建议取消两个非核心需求、缩小本期范围，请批准"
+      ]
+    },
+    {
+      "id": "gold-purpose-012",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "钱快到上限了非核心需求先不做可以吗请您确认",
+      "selfStatement": "非核心需求先不做可以吗",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "非核心需求先不做可以吗"
+      ]
+    },
+    {
+      "id": "gold-purpose-013",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "预算九成，建议减少需求，请同意本期 scope 调整。",
+      "selfStatement": "请同意本期 scope 调整",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "少量英文术语",
+        "完整请求"
+      ],
+      "acceptableEvidence": [
+        "请同意本期 scope 调整"
+      ]
+    },
+    {
+      "id": "gold-purpose-014",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "预算已经接近上限，两个非核心需求暂时不做。",
+      "selfStatement": "两个非核心需求暂时不做",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "未请求批准",
+        "任务接近完整"
+      ],
+      "acceptableEvidence": [
+        "两个非核心需求暂时不做"
+      ]
+    },
+    {
+      "id": "gold-purpose-015",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "建议缩小范围，请您批准。",
+      "selfStatement": "建议缩小范围，请您批准",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "遗漏预算事实",
+        "请求明确"
+      ],
+      "acceptableEvidence": [
+        "建议缩小范围，请您批准"
+      ]
+    },
+    {
+      "id": "gold-purpose-016",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "现在预算比较紧。",
+      "selfStatement": "批准缩小范围",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "无关自填核心句",
+        "单一事实"
+      ],
+      "acceptableEvidence": [
+        "现在预算比较紧"
+      ]
+    },
+    {
+      "id": "gold-purpose-017",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "非核心需求可以先取消。",
+      "selfStatement": "非核心需求可以先取消",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "单一行动",
+        "预算事实缺失"
+      ],
+      "acceptableEvidence": [
+        "非核心需求可以先取消"
+      ]
+    },
+    {
+      "id": "gold-purpose-018",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "本期工作按原计划推进。",
+      "selfStatement": "预算九成需要缩小范围",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "本期工作按原计划推进"
+      ]
+    },
+    {
+      "id": "gold-purpose-019",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "还有两项工作没完成。",
+      "selfStatement": "请批准减少需求",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "任务关键词缺失",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "还有两项工作没完成"
+      ]
+    },
+    {
+      "id": "gold-purpose-020",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-02",
+      "answer": "需要砍掉一些内容。",
+      "selfStatement": "需要砍掉一些内容",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "模糊请求",
+        "单一概念"
+      ],
+      "acceptableEvidence": [
+        "需要砍掉一些内容"
+      ]
+    },
+    {
+      "id": "gold-purpose-021",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "测试阻断导致客户交付晚两天，请确认今天几点通知客户。",
+      "selfStatement": "请确认今天几点通知客户",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "完整请求"
+      ],
+      "acceptableEvidence": [
+        "请确认今天几点通知客户"
+      ]
+    },
+    {
+      "id": "gold-purpose-022",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "交付得延后两天咱们今天啥时候跟客户说麻烦定一下",
+      "selfStatement": "今天啥时候跟客户说麻烦定一下",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "今天啥时候跟客户说麻烦定一下"
+      ]
+    },
+    {
+      "id": "gold-purpose-023",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "Delivery 会晚两天，请确认今天通知客户的时间。",
+      "selfStatement": "请确认今天通知客户的时间",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "少量英文术语",
+        "完整请求"
+      ],
+      "acceptableEvidence": [
+        "请确认今天通知客户的时间"
+      ]
+    },
+    {
+      "id": "gold-purpose-024",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "客户交付会晚两天，我们今天通知。",
+      "selfStatement": "我们今天通知",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "未请求确认",
+        "任务接近完整"
+      ],
+      "acceptableEvidence": [
+        "我们今天通知"
+      ]
+    },
+    {
+      "id": "gold-purpose-025",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "请确认今天何时通知客户。",
+      "selfStatement": "请确认今天何时通知客户",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "遗漏交付延迟",
+        "请求明确"
+      ],
+      "acceptableEvidence": [
+        "请确认今天何时通知客户"
+      ]
+    },
+    {
+      "id": "gold-purpose-026",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "交付晚两天。",
+      "selfStatement": "今天何时通知客户",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "无关自填核心句",
+        "单一事实"
+      ],
+      "acceptableEvidence": [
+        "交付晚两天"
+      ]
+    },
+    {
+      "id": "gold-purpose-027",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "需要通知客户。",
+      "selfStatement": "需要通知客户",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "单一行动",
+        "交付事实缺失"
+      ],
+      "acceptableEvidence": [
+        "需要通知客户"
+      ]
+    },
+    {
+      "id": "gold-purpose-028",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "测试团队正在继续排查。",
+      "selfStatement": "请确认通知客户的时间",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "测试团队正在继续排查"
+      ]
+    },
+    {
+      "id": "gold-purpose-029",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "这个问题比较重要，请关注。",
+      "selfStatement": "客户交付晚两天",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "空泛回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "这个问题比较重要，请关注"
+      ]
+    },
+    {
+      "id": "gold-purpose-030",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-cold-03",
+      "answer": "今天需要确认一下。",
+      "selfStatement": "今天需要确认一下",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "关键词投机",
+        "信息不足"
+      ],
+      "acceptableEvidence": [
+        "今天需要确认一下"
+      ]
+    },
+    {
+      "id": "gold-purpose-031",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "关键数据还需两天核对，请决定延后周报还是先发暂定数据。",
+      "selfStatement": "请决定延后周报还是先发暂定数据",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "二选一请求"
+      ],
+      "acceptableEvidence": [
+        "请决定延后周报还是先发暂定数据"
+      ]
+    },
+    {
+      "id": "gold-purpose-032",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "数据还要复核两天周报是往后放还是先发临时数请拍板",
+      "selfStatement": "周报是往后放还是先发临时数请拍板",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "周报是往后放还是先发临时数请拍板"
+      ]
+    },
+    {
+      "id": "gold-purpose-033",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "数据仍待核对，周报需要延后。",
+      "selfStatement": "周报需要延后",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "未请求决定",
+        "信息缺失"
+      ],
+      "acceptableEvidence": [
+        "周报需要延后"
+      ]
+    },
+    {
+      "id": "gold-purpose-034",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "请确认周报先发暂定数据。",
+      "selfStatement": "请确认周报先发暂定数据",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "遗漏核对事实",
+        "请求明确"
+      ],
+      "acceptableEvidence": [
+        "请确认周报先发暂定数据"
+      ]
+    },
+    {
+      "id": "gold-purpose-035",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "数据需要两天处理。",
+      "selfStatement": "决定周报如何发布",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "无关自填核心句",
+        "单一事实"
+      ],
+      "acceptableEvidence": [
+        "数据需要两天处理"
+      ]
+    },
+    {
+      "id": "gold-purpose-036",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "周报按惯例整理即可。",
+      "selfStatement": "延后周报或发布暂定数据",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "单一任务概念",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "周报按惯例整理即可"
+      ]
+    },
+    {
+      "id": "gold-purpose-037",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "请决定下一步怎么做。",
+      "selfStatement": "请决定下一步怎么做",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "模糊请求",
+        "任务信息不足"
+      ],
+      "acceptableEvidence": [
+        "请决定下一步怎么做"
+      ]
+    },
+    {
+      "id": "gold-purpose-038",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "大家正在准备本周材料。",
+      "selfStatement": "数据待核对",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "大家正在准备本周材料"
+      ]
+    },
+    {
+      "id": "gold-purpose-039",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "两天后再说。",
+      "selfStatement": "两天后再说",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "最小回答",
+        "关键词不足"
+      ],
+      "acceptableEvidence": [
+        "两天后再说"
+      ]
+    },
+    {
+      "id": "gold-purpose-040",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-near-01",
+      "answer": "关键数据要核对，周报先不要发布。",
+      "selfStatement": "关键数据要核对",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "缺少明确决定",
+        "任务接近完整"
+      ],
+      "acceptableEvidence": [
+        "关键数据要核对"
+      ]
+    },
+    {
+      "id": "gold-purpose-041",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "活动预算接近上限，新增渠道会超支，请决定是否暂停新增投放。",
+      "selfStatement": "请决定是否暂停新增投放",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "完整请求"
+      ],
+      "acceptableEvidence": [
+        "请决定是否暂停新增投放"
+      ]
+    },
+    {
+      "id": "gold-purpose-042",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "钱快花完了再投新渠道会超支要不要先停投请确认",
+      "selfStatement": "要不要先停投请确认",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "要不要先停投请确认"
+      ]
+    },
+    {
+      "id": "gold-purpose-043",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "预算已到上限，建议暂停新增渠道。",
+      "selfStatement": "建议暂停新增渠道",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "未请求决定",
+        "任务接近完整"
+      ],
+      "acceptableEvidence": [
+        "建议暂停新增渠道"
+      ]
+    },
+    {
+      "id": "gold-purpose-044",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "请确认是否暂停投放。",
+      "selfStatement": "请确认是否暂停投放",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "遗漏预算事实",
+        "请求明确"
+      ],
+      "acceptableEvidence": [
+        "请确认是否暂停投放"
+      ]
+    },
+    {
+      "id": "gold-purpose-045",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "预算需要注意。",
+      "selfStatement": "决定暂停新增投放",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "无关自填核心句",
+        "单一事实"
+      ],
+      "acceptableEvidence": [
+        "预算需要注意"
+      ]
+    },
+    {
+      "id": "gold-purpose-046",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "本次活动数据仍在整理。",
+      "selfStatement": "预算超支暂停投放",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "本次活动数据仍在整理"
+      ]
+    },
+    {
+      "id": "gold-purpose-047",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "新增渠道先缓一缓。",
+      "selfStatement": "新增渠道先缓一缓",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "模糊行动",
+        "信息不足"
+      ],
+      "acceptableEvidence": [
+        "新增渠道先缓一缓"
+      ]
+    },
+    {
+      "id": "gold-purpose-048",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "请大家继续观察。",
+      "selfStatement": "暂停投放",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "空泛回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "请大家继续观察"
+      ]
+    },
+    {
+      "id": "gold-purpose-049",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "这个方案明天再讨论。",
+      "selfStatement": "预算上限",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "任务遗漏"
+      ],
+      "acceptableEvidence": [
+        "这个方案明天再讨论"
+      ]
+    },
+    {
+      "id": "gold-purpose-050",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-far-01",
+      "answer": "预算会超支，投放需要调整。",
+      "selfStatement": "投放需要调整",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "缺少明确决定",
+        "任务接近完整"
+      ],
+      "acceptableEvidence": [
+        "投放需要调整"
+      ]
+    },
+    {
+      "id": "gold-purpose-051",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "合作方合同尚未签署，请决定是否把明天的项目启动延后。",
+      "selfStatement": "请决定是否把项目启动延后",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "完整请求"
+      ],
+      "acceptableEvidence": [
+        "合作方合同尚未签署，请决定是否把明天的项目启动延后"
+      ]
+    },
+    {
+      "id": "gold-purpose-052",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "合同还没签明天项目要不要推迟启动麻烦确认",
+      "selfStatement": "明天项目要不要推迟启动麻烦确认",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "明天项目要不要推迟启动麻烦确认"
+      ]
+    },
+    {
+      "id": "gold-purpose-053",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "合同尚未签署，项目需要延后。",
+      "selfStatement": "项目需要延后",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "未请求决定",
+        "任务接近完整"
+      ],
+      "acceptableEvidence": [
+        "项目需要延后"
+      ]
+    },
+    {
+      "id": "gold-purpose-054",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "请确认是否推迟项目启动。",
+      "selfStatement": "请确认是否推迟项目启动",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "遗漏合同事实",
+        "请求明确"
+      ],
+      "acceptableEvidence": [
+        "请确认是否推迟项目启动"
+      ]
+    },
+    {
+      "id": "gold-purpose-055",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "合同还没有完成。",
+      "selfStatement": "决定延后启动",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "无关自填核心句",
+        "单一事实"
+      ],
+      "acceptableEvidence": [
+        "合同还没有完成"
+      ]
+    },
+    {
+      "id": "gold-purpose-056",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "团队明天会正常到岗。",
+      "selfStatement": "合同未签请延后项目",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "团队明天会正常到岗"
+      ]
+    },
+    {
+      "id": "gold-purpose-057",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "明天启动有点风险。",
+      "selfStatement": "明天启动有点风险",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "模糊判断",
+        "信息不足"
+      ],
+      "acceptableEvidence": [
+        "明天启动有点风险"
+      ]
+    },
+    {
+      "id": "gold-purpose-058",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "合作正在推进，请知悉。",
+      "selfStatement": "是否延后启动",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "空泛回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "合作正在推进，请知悉"
+      ]
+    },
+    {
+      "id": "gold-purpose-059",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "请批准这项工作。",
+      "selfStatement": "请批准这项工作",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "关键词投机",
+        "任务遗漏"
+      ],
+      "acceptableEvidence": [
+        "请批准这项工作"
+      ]
+    },
+    {
+      "id": "gold-purpose-060",
+      "skillId": "purpose",
+      "promptId": "stg-v04-purpose-delayed-01",
+      "answer": "合同未签，建议项目启动延后。",
+      "selfStatement": "建议项目启动延后",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "缺少请求决定",
+        "任务接近完整"
+      ],
+      "acceptableEvidence": [
+        "建议项目启动延后"
+      ]
+    },
+    {
+      "id": "gold-conclusion-001",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "本周存在周五上线风险，建议先解决联调问题。核心功能已经完成。",
+      "selfStatement": "本周存在周五上线风险",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "本周存在周五上线风险"
+      ]
+    },
+    {
+      "id": "gold-conclusion-002",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "周五可能上不了线建议先处理联调核心功能倒是做完了",
+      "selfStatement": "周五可能上不了线建议先处理联调",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "周五可能上不了线建议先处理联调"
+      ]
+    },
+    {
+      "id": "gold-conclusion-003",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "Release 有风险，建议调整周五上线安排。其余功能已完成。",
+      "selfStatement": "Release 有风险，建议调整周五上线安排",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "少量英文术语",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "Release 有风险，建议调整周五上线安排"
+      ]
+    },
+    {
+      "id": "gold-conclusion-004",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "核心功能已经完成。不过联调问题可能影响周五上线，建议先解决。",
+      "selfStatement": "联调问题可能影响周五上线",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "背景铺垫",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "联调问题可能影响周五上线"
+      ]
+    },
+    {
+      "id": "gold-conclusion-005",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "团队这周做了很多工作。周五上线有风险，建议调整。",
+      "selfStatement": "周五上线有风险",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "空泛开场",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "周五上线有风险"
+      ]
+    },
+    {
+      "id": "gold-conclusion-006",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "周五上线需要关注。",
+      "selfStatement": "周五上线需要关注",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "结论不完整",
+        "信息不足"
+      ],
+      "acceptableEvidence": [
+        "周五上线需要关注"
+      ]
+    },
+    {
+      "id": "gold-conclusion-007",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "我建议先解决这个问题。",
+      "selfStatement": "周五上线有风险",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "无关自填核心句",
+        "模糊建议"
+      ],
+      "acceptableEvidence": [
+        "我建议先解决这个问题"
+      ]
+    },
+    {
+      "id": "gold-conclusion-008",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "目前整体进展顺利。",
+      "selfStatement": "存在上线风险",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "事实偏离",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "目前整体进展顺利"
+      ]
+    },
+    {
+      "id": "gold-conclusion-009",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "谢谢关心，团队会继续努力。",
+      "selfStatement": "建议调整上线",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "谢谢关心，团队会继续努力"
+      ]
+    },
+    {
+      "id": "gold-conclusion-010",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-01",
+      "answer": "先说一下背景，核心功能已经完成。周五上线可能受影响。",
+      "selfStatement": "周五上线可能受影响",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "结论后置",
+        "缺少处理方向"
+      ],
+      "acceptableEvidence": [
+        "周五上线可能受影响"
+      ]
+    },
+    {
+      "id": "gold-conclusion-011",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "投诉增加的主因是新版本登录异常，团队正在回滚恢复。",
+      "selfStatement": "投诉增加的主因是新版本登录异常",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "投诉增加的主因是新版本登录异常"
+      ]
+    },
+    {
+      "id": "gold-conclusion-012",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "投诉变多主要因为登录故障现在正在回滚",
+      "selfStatement": "投诉变多主要因为登录故障",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "投诉变多主要因为登录故障"
+      ]
+    },
+    {
+      "id": "gold-conclusion-013",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "用户投诉上升源于 login 异常，团队已开始 rollback 处理。",
+      "selfStatement": "用户投诉上升源于 login 异常",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "少量英文术语",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "用户投诉上升源于 login 异常"
+      ]
+    },
+    {
+      "id": "gold-conclusion-014",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "昨天发布了新版本。投诉增加源于登录异常，团队正在回滚。",
+      "selfStatement": "投诉增加源于登录异常",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "背景铺垫",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "投诉增加源于登录异常"
+      ]
+    },
+    {
+      "id": "gold-conclusion-015",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "团队正在处理。用户投诉变多是登录故障导致的，正在恢复。",
+      "selfStatement": "用户投诉变多是登录故障导致的",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "结论后置",
+        "处理先行"
+      ],
+      "acceptableEvidence": [
+        "用户投诉变多是登录故障导致的"
+      ]
+    },
+    {
+      "id": "gold-conclusion-016",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "登录出现异常，正在处理。",
+      "selfStatement": "登录出现异常",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "缺少投诉结果",
+        "信息不完整"
+      ],
+      "acceptableEvidence": [
+        "登录出现异常"
+      ]
+    },
+    {
+      "id": "gold-conclusion-017",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "昨天投诉增加了。",
+      "selfStatement": "因为登录异常",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "uncertain",
+      "tags": [
+        "无关自填核心句",
+        "单一事实"
+      ],
+      "acceptableEvidence": [
+        "昨天投诉增加了"
+      ]
+    },
+    {
+      "id": "gold-conclusion-018",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "用户反馈值得重视。",
+      "selfStatement": "登录异常正在回滚",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "空泛回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "用户反馈值得重视"
+      ]
+    },
+    {
+      "id": "gold-conclusion-019",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "昨天的情况比较复杂。",
+      "selfStatement": "投诉因登录异常增加",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "昨天的情况比较复杂"
+      ]
+    },
+    {
+      "id": "gold-conclusion-020",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-02",
+      "answer": "团队正在回滚。确认后发现登录异常导致投诉增加。",
+      "selfStatement": "登录异常导致投诉增加",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "行动先行",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "登录异常导致投诉增加"
+      ]
+    },
+    {
+      "id": "gold-conclusion-021",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "本周核心目标能完成，但需要减少一个低优先级需求。剩余时间为两天。",
+      "selfStatement": "本周核心目标能完成，但需要减少一个低优先级需求",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "本周核心目标能完成，但需要减少一个低优先级需求"
+      ]
+    },
+    {
+      "id": "gold-conclusion-022",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "能完成不过得先不做一个低优先级需求只剩两天了",
+      "selfStatement": "能完成不过得先不做一个低优先级需求",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "能完成不过得先不做一个低优先级需求"
+      ]
+    },
+    {
+      "id": "gold-conclusion-023",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "可以按时完成，前提是移除一个低优先级需求。",
+      "selfStatement": "可以按时完成，前提是移除一个低优先级需求",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "同义表达",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "可以按时完成，前提是移除一个低优先级需求"
+      ]
+    },
+    {
+      "id": "gold-conclusion-024",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "目前只剩两天。减少一个低优先级需求后，核心目标能完成。",
+      "selfStatement": "核心目标能完成",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "背景铺垫",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "核心目标能完成"
+      ]
+    },
+    {
+      "id": "gold-conclusion-025",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "团队排期很紧。核心目标可以完成，但要减少需求。",
+      "selfStatement": "核心目标可以完成",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "空泛开场",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "核心目标可以完成"
+      ]
+    },
+    {
+      "id": "gold-conclusion-026",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "本周目标可以完成。",
+      "selfStatement": "本周目标可以完成",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "条件缺失",
+        "结论不完整"
+      ],
+      "acceptableEvidence": [
+        "本周目标可以完成"
+      ]
+    },
+    {
+      "id": "gold-conclusion-027",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "建议减少低优先级需求。",
+      "selfStatement": "能完成",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "无关自填核心句",
+        "判断缺失"
+      ],
+      "acceptableEvidence": [
+        "建议减少低优先级需求"
+      ]
+    },
+    {
+      "id": "gold-conclusion-028",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "本周任务正在推进。",
+      "selfStatement": "能完成但要减少需求",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "空泛回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "本周任务正在推进"
+      ]
+    },
+    {
+      "id": "gold-conclusion-029",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "我稍后再同步最新情况。",
+      "selfStatement": "减少低优先级需求",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "回避回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "我稍后再同步最新情况"
+      ]
+    },
+    {
+      "id": "gold-conclusion-030",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-cold-03",
+      "answer": "先看一下人员安排。两天内能完成，但需要移除一个低优先级需求。",
+      "selfStatement": "两天内能完成",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "结论后置",
+        "无关开场"
+      ],
+      "acceptableEvidence": [
+        "两天内能完成"
+      ]
+    },
+    {
+      "id": "gold-conclusion-031",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "建议选择方案二，因为它的上线风险更低。",
+      "selfStatement": "建议选择方案二，因为它的上线风险更低",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "建议选择方案二，因为它的上线风险更低"
+      ]
+    },
+    {
+      "id": "gold-conclusion-032",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "选二更稳上线风险小",
+      "selfStatement": "选二更稳",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "选二更稳"
+      ]
+    },
+    {
+      "id": "gold-conclusion-033",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "两个方案成本差不多。建议选择方案二，它的上线风险低。",
+      "selfStatement": "建议选择方案二",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "背景铺垫",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "建议选择方案二"
+      ]
+    },
+    {
+      "id": "gold-conclusion-034",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "我们比较了两个方案。第二个方案更稳，所以建议选二。",
+      "selfStatement": "第二个方案更稳",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "结论后置",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "第二个方案更稳"
+      ]
+    },
+    {
+      "id": "gold-conclusion-035",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "方案二值得考虑。",
+      "selfStatement": "方案二值得考虑",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "理由缺失",
+        "信息不完整"
+      ],
+      "acceptableEvidence": [
+        "方案二值得考虑"
+      ]
+    },
+    {
+      "id": "gold-conclusion-036",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "上线风险需要关注。",
+      "selfStatement": "选择方案二",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "无关自填核心句",
+        "建议缺失"
+      ],
+      "acceptableEvidence": [
+        "上线风险需要关注"
+      ]
+    },
+    {
+      "id": "gold-conclusion-037",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "两边成本都可以接受。",
+      "selfStatement": "方案二风险更低",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "回避选择",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "两边成本都可以接受"
+      ]
+    },
+    {
+      "id": "gold-conclusion-038",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "我建议继续讨论。",
+      "selfStatement": "选二",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "我建议继续讨论"
+      ]
+    },
+    {
+      "id": "gold-conclusion-039",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "目前没有更多补充。",
+      "selfStatement": "方案二上线风险低",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "目前没有更多补充"
+      ]
+    },
+    {
+      "id": "gold-conclusion-040",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-near-01",
+      "answer": "方案二上线风险更低。",
+      "selfStatement": "方案二上线风险更低",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "判断不够显式",
+        "关键词边界"
+      ],
+      "acceptableEvidence": [
+        "方案二上线风险更低"
+      ]
+    },
+    {
+      "id": "gold-conclusion-041",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "今天不能发布，关键字段仍需复核，预计明天完成。",
+      "selfStatement": "今天不能发布，关键字段仍需复核",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "今天不能发布，关键字段仍需复核"
+      ]
+    },
+    {
+      "id": "gold-conclusion-042",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "先别发关键字段还没核对完明天完成",
+      "selfStatement": "先别发关键字段还没核对完",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "先别发关键字段还没核对完"
+      ]
+    },
+    {
+      "id": "gold-conclusion-043",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "预计明天完成复核。今天不建议发布，因为关键字段待核对。",
+      "selfStatement": "今天不建议发布",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "时间先行",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "今天不建议发布"
+      ]
+    },
+    {
+      "id": "gold-conclusion-044",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "数据团队仍在工作。暂缓发布，关键字段需要复核。",
+      "selfStatement": "暂缓发布",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "背景铺垫",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "暂缓发布"
+      ]
+    },
+    {
+      "id": "gold-conclusion-045",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "关键字段还在复核。",
+      "selfStatement": "关键字段还在复核",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "发布判断缺失",
+        "信息不完整"
+      ],
+      "acceptableEvidence": [
+        "关键字段还在复核"
+      ]
+    },
+    {
+      "id": "gold-conclusion-046",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "今天不建议发布。",
+      "selfStatement": "关键字段未复核",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "无关自填核心句",
+        "理由缺失"
+      ],
+      "acceptableEvidence": [
+        "今天不建议发布"
+      ]
+    },
+    {
+      "id": "gold-conclusion-047",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "这份材料已经整理好了。",
+      "selfStatement": "今天不能发布",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "事实偏离",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "这份材料已经整理好了"
+      ]
+    },
+    {
+      "id": "gold-conclusion-048",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "稍后给您答复。",
+      "selfStatement": "字段需要复核",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "回避回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "稍后给您答复"
+      ]
+    },
+    {
+      "id": "gold-conclusion-049",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "数据质量很重要。",
+      "selfStatement": "暂缓发布",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "空泛回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "数据质量很重要"
+      ]
+    },
+    {
+      "id": "gold-conclusion-050",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-far-01",
+      "answer": "明天再发。",
+      "selfStatement": "明天再发",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "过度简短",
+        "理由缺失"
+      ],
+      "acceptableEvidence": [
+        "明天再发"
+      ]
+    },
+    {
+      "id": "gold-conclusion-051",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "不建议继续追加预算，当前转化率只有目标的一半。",
+      "selfStatement": "不建议继续追加预算",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范表达",
+        "结论先行"
+      ],
+      "acceptableEvidence": [
+        "不建议继续追加预算"
+      ]
+    },
+    {
+      "id": "gold-conclusion-052",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "先别加钱了转化率才目标一半",
+      "selfStatement": "先别加钱了",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "同义表达"
+      ],
+      "acceptableEvidence": [
+        "先别加钱了"
+      ]
+    },
+    {
+      "id": "gold-conclusion-053",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "当前转化率只有目标一半，因此建议停止追加预算。",
+      "selfStatement": "建议停止追加预算",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "依据先行",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "建议停止追加预算"
+      ]
+    },
+    {
+      "id": "gold-conclusion-054",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "活动还在进行。效果低于目标，不建议追加预算。",
+      "selfStatement": "不建议追加预算",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "背景铺垫",
+        "结论后置"
+      ],
+      "acceptableEvidence": [
+        "不建议追加预算"
+      ]
+    },
+    {
+      "id": "gold-conclusion-055",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "转化率只有目标的一半。",
+      "selfStatement": "转化率只有目标的一半",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "建议缺失",
+        "信息不完整"
+      ],
+      "acceptableEvidence": [
+        "转化率只有目标的一半"
+      ]
+    },
+    {
+      "id": "gold-conclusion-056",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "建议暂停。",
+      "selfStatement": "停止追加预算",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "无关自填核心句",
+        "过度简短"
+      ],
+      "acceptableEvidence": [
+        "建议暂停"
+      ]
+    },
+    {
+      "id": "gold-conclusion-057",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "活动反馈正在收集中。",
+      "selfStatement": "不要追加预算",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "回避回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "活动反馈正在收集中"
+      ]
+    },
+    {
+      "id": "gold-conclusion-058",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "需要再观察几天。",
+      "selfStatement": "转化率低于目标",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检错位"
+      ],
+      "acceptableEvidence": [
+        "需要再观察几天"
+      ]
+    },
+    {
+      "id": "gold-conclusion-059",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "团队会继续优化素材。",
+      "selfStatement": "暂停追加预算",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "任务遗漏"
+      ],
+      "acceptableEvidence": [
+        "团队会继续优化素材"
+      ]
+    },
+    {
+      "id": "gold-conclusion-060",
+      "skillId": "conclusion_first",
+      "promptId": "stg-v04-conclusion-delayed-01",
+      "answer": "预算先不追加。",
+      "selfStatement": "预算先不追加",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "理由缺失",
+        "最小回答"
+      ],
+      "acceptableEvidence": [
+        "预算先不追加"
+      ]
+    },
+    {
+      "id": "gold-grouping-001",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "建议优先优化新用户引导，理由有三点：第一点，流失集中在前三步；第二点，客服咨询很多；第三点，改动成本较低。",
+      "selfStatement": "建议优先优化新用户引导",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范分组",
+        "三点结构"
+      ],
+      "acceptableEvidence": [
+        "建议优先优化新用户引导"
+      ]
+    },
+    {
+      "id": "gold-grouping-002",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "引导要先优化 两点 第一是前三步流失大 第二是客服咨询多而且改起来成本低",
+      "selfStatement": "引导要先优化",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "两点结构"
+      ],
+      "acceptableEvidence": [
+        "引导要先优化"
+      ]
+    },
+    {
+      "id": "gold-grouping-003",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "建议优化 onboarding：1. 前三步 churn 明显；2. 客服咨询量大；3. 改动成本低。",
+      "selfStatement": "建议优化 onboarding",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "少量英文术语",
+        "三点结构"
+      ],
+      "acceptableEvidence": [
+        "建议优化 onboarding"
+      ]
+    },
+    {
+      "id": "gold-grouping-004",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "建议优化新用户引导。第一点，前三步流失；第二点，客服咨询；第三点，成本低；第四点，团队有空。",
+      "selfStatement": "建议优化新用户引导",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "含额外信息"
+      ],
+      "acceptableEvidence": [
+        "建议优化新用户引导"
+      ]
+    },
+    {
+      "id": "gold-grouping-005",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "建议优化引导。第一点，流失和客服问题都很多。",
+      "selfStatement": "建议优化引导",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "单一分点",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议优化引导"
+      ]
+    },
+    {
+      "id": "gold-grouping-006",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "建议优化引导。第一点，流失集中在前三步；第二点，团队需要重视。",
+      "selfStatement": "建议优化引导",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "伪分点",
+        "第二点无关"
+      ],
+      "acceptableEvidence": [
+        "建议优化引导"
+      ]
+    },
+    {
+      "id": "gold-grouping-007",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "第一点，客服咨询多；第二点，改动成本低。",
+      "selfStatement": "建议优化新用户引导",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "建议缺失",
+        "无关自填核心句"
+      ],
+      "acceptableEvidence": [
+        "第一点，客服咨询多；第二点，改动成本低"
+      ]
+    },
+    {
+      "id": "gold-grouping-008",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "建议优化引导，前三步流失多，客服咨询多，改动成本低。",
+      "selfStatement": "建议优化引导",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "无显式分组",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议优化引导"
+      ]
+    },
+    {
+      "id": "gold-grouping-009",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "建议优化引导。第一点，客服咨询多；第二点，客服咨询真的很多。",
+      "selfStatement": "建议优化引导",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "重复分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "建议优化引导"
+      ]
+    },
+    {
+      "id": "gold-grouping-010",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-01",
+      "answer": "建议优化引导。第一点，前三步流失；第二点，客服咨询；第三点，成本低；第四点，容易做。",
+      "selfStatement": "建议优化引导",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "近义重复"
+      ],
+      "acceptableEvidence": [
+        "建议优化引导"
+      ]
+    },
+    {
+      "id": "gold-grouping-011",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "建议增加一名协作人员，原因有三点：第一，需求并行增加；第二，测试排期冲突；第三，关键成员频繁加班。",
+      "selfStatement": "建议增加一名协作人员",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范分组",
+        "三点结构"
+      ],
+      "acceptableEvidence": [
+        "建议增加一名协作人员"
+      ]
+    },
+    {
+      "id": "gold-grouping-012",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "得加个人手 两点 一是并行需求太多 二是测试排期打架还让关键成员老加班",
+      "selfStatement": "得加个人手",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "两点结构"
+      ],
+      "acceptableEvidence": [
+        "得加个人手"
+      ]
+    },
+    {
+      "id": "gold-grouping-013",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "建议增加支援：1. workload 上升；2. 测试排期冲突；3. 关键成员加班。",
+      "selfStatement": "建议增加支援",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "少量英文术语",
+        "三点结构"
+      ],
+      "acceptableEvidence": [
+        "建议增加支援"
+      ]
+    },
+    {
+      "id": "gold-grouping-014",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "建议增加协作人员。第一点，需求增加；第二点，测试冲突；第三点，加班；第四点，会议很多。",
+      "selfStatement": "建议增加协作人员",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "含额外信息"
+      ],
+      "acceptableEvidence": [
+        "建议增加协作人员"
+      ]
+    },
+    {
+      "id": "gold-grouping-015",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "建议增加人手。第一点，需求并行和测试排期都有问题。",
+      "selfStatement": "建议增加人手",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "单一分点",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议增加人手"
+      ]
+    },
+    {
+      "id": "gold-grouping-016",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "建议增加人手。第一点，需求并行增加；第二点，大家很忙。",
+      "selfStatement": "建议增加人手",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "伪分点",
+        "第二点无关"
+      ],
+      "acceptableEvidence": [
+        "建议增加人手"
+      ]
+    },
+    {
+      "id": "gold-grouping-017",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "第一点，测试排期冲突；第二点，关键成员加班。",
+      "selfStatement": "应该增加协作人员",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "建议缺失",
+        "无关自填核心句"
+      ],
+      "acceptableEvidence": [
+        "第一点，测试排期冲突；第二点，关键成员加班"
+      ]
+    },
+    {
+      "id": "gold-grouping-018",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "建议增加协作人员，因为需求多、测试排期冲突、关键成员加班。",
+      "selfStatement": "建议增加协作人员",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "无显式分组",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议增加协作人员"
+      ]
+    },
+    {
+      "id": "gold-grouping-019",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "建议增加人手。第一点，关键成员加班；第二点，关键成员一直加班。",
+      "selfStatement": "建议增加人手",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "重复分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "建议增加人手"
+      ]
+    },
+    {
+      "id": "gold-grouping-020",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-02",
+      "answer": "建议增加支援。第一点，需求增加；第二点，测试冲突；第三点，加班；第四点，工作量大。",
+      "selfStatement": "建议增加支援",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "近义重复"
+      ],
+      "acceptableEvidence": [
+        "建议增加支援"
+      ]
+    },
+    {
+      "id": "gold-grouping-021",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "建议更换供应商，原因有三点：第一，报价持续上涨；第二，交付周期不稳定；第三，售后响应慢。",
+      "selfStatement": "建议更换供应商",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范分组",
+        "三点结构"
+      ],
+      "acceptableEvidence": [
+        "建议更换供应商"
+      ]
+    },
+    {
+      "id": "gold-grouping-022",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "供应商得换 两点 一是价格一直涨 二是交付不稳而且售后响应慢",
+      "selfStatement": "供应商得换",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "两点结构"
+      ],
+      "acceptableEvidence": [
+        "供应商得换"
+      ]
+    },
+    {
+      "id": "gold-grouping-023",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "建议替换 vendor：1. price 持续上涨；2. 交付周期不稳定；3. 售后响应慢。",
+      "selfStatement": "建议替换 vendor",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "少量英文术语",
+        "三点结构"
+      ],
+      "acceptableEvidence": [
+        "建议替换 vendor"
+      ]
+    },
+    {
+      "id": "gold-grouping-024",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "建议更换供应商。第一，报价上涨；第二，交付不稳；第三，售后慢；第四，沟通不顺。",
+      "selfStatement": "建议更换供应商",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "含额外信息"
+      ],
+      "acceptableEvidence": [
+        "建议更换供应商"
+      ]
+    },
+    {
+      "id": "gold-grouping-025",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "建议更换供应商。第一点，报价上涨且交付周期不稳。",
+      "selfStatement": "建议更换供应商",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "单一分点",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议更换供应商"
+      ]
+    },
+    {
+      "id": "gold-grouping-026",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "建议更换供应商。第一点，报价上涨；第二点，合作体验不好。",
+      "selfStatement": "建议更换供应商",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "伪分点",
+        "第二点无关"
+      ],
+      "acceptableEvidence": [
+        "建议更换供应商"
+      ]
+    },
+    {
+      "id": "gold-grouping-027",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "第一点，交付周期不稳定；第二点，售后响应较慢。",
+      "selfStatement": "建议更换供应商",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "建议缺失",
+        "无关自填核心句"
+      ],
+      "acceptableEvidence": [
+        "第一点，交付周期不稳定；第二点，售后响应较慢"
+      ]
+    },
+    {
+      "id": "gold-grouping-028",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "建议更换供应商，因为报价上涨、交付不稳、售后响应慢。",
+      "selfStatement": "建议更换供应商",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "无显式分组",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议更换供应商"
+      ]
+    },
+    {
+      "id": "gold-grouping-029",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "建议更换供应商。第一点，报价上涨；第二点，价格持续上涨。",
+      "selfStatement": "建议更换供应商",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "重复分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "建议更换供应商"
+      ]
+    },
+    {
+      "id": "gold-grouping-030",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-cold-03",
+      "answer": "建议替换供应商。第一，报价上涨；第二，交付不稳；第三，售后慢；第四，成本变高。",
+      "selfStatement": "建议替换供应商",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "近义重复"
+      ],
+      "acceptableEvidence": [
+        "建议替换供应商"
+      ]
+    },
+    {
+      "id": "gold-grouping-031",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "登录故障按三步处理：第一，修复登录问题；第二，核对受影响用户；第三，发布说明。",
+      "selfStatement": "登录故障按三步处理",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范分组",
+        "行动框架"
+      ],
+      "acceptableEvidence": [
+        "登录故障按三步处理"
+      ]
+    },
+    {
+      "id": "gold-grouping-032",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "接下来分两块 第一先修登录 第二核对受影响用户并发通知",
+      "selfStatement": "接下来分两块",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "两点结构"
+      ],
+      "acceptableEvidence": [
+        "接下来分两块"
+      ]
+    },
+    {
+      "id": "gold-grouping-033",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "处理安排如下。第一，修复登录问题、核对用户。",
+      "selfStatement": "处理安排如下",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "单一分点",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "处理安排如下"
+      ]
+    },
+    {
+      "id": "gold-grouping-034",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "处理分四项：第一，修复；第二，核对用户；第三，发布说明；第四，开会复盘。",
+      "selfStatement": "处理分四项",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "含额外行动"
+      ],
+      "acceptableEvidence": [
+        "处理分四项"
+      ]
+    },
+    {
+      "id": "gold-grouping-035",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "处理分两点。第一，修复登录问题；第二，继续努力。",
+      "selfStatement": "处理分两点",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "伪分点",
+        "无关内容"
+      ],
+      "acceptableEvidence": [
+        "处理分两点"
+      ]
+    },
+    {
+      "id": "gold-grouping-036",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "第一，核对受影响用户；第二，发布说明。",
+      "selfStatement": "故障处理安排",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "处理意图缺失",
+        "无关自填核心句"
+      ],
+      "acceptableEvidence": [
+        "第一，核对受影响用户；第二，发布说明"
+      ]
+    },
+    {
+      "id": "gold-grouping-037",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "先修复登录问题，再核对用户，最后发布说明。",
+      "selfStatement": "处理安排",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "自然序列",
+        "边界形式"
+      ],
+      "acceptableEvidence": [
+        "先修复登录问题，再核对用户，最后发布说明"
+      ]
+    },
+    {
+      "id": "gold-grouping-038",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "处理分两点。第一，修复登录；第二，修复这个登录问题。",
+      "selfStatement": "处理分两点",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "重复分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "处理分两点"
+      ]
+    },
+    {
+      "id": "gold-grouping-039",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "我们会尽快解决并同步。",
+      "selfStatement": "修复核对发布",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "空泛回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "我们会尽快解决并同步"
+      ]
+    },
+    {
+      "id": "gold-grouping-040",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-near-01",
+      "answer": "处理如下：第一点，修复登录；第二点，；第三点，发布说明。",
+      "selfStatement": "处理如下",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "空分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "处理如下"
+      ]
+    },
+    {
+      "id": "gold-grouping-041",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "建议优先选择方案甲，理由有三点：第一，客户价值更高；第二，实施难度更低；第三，维护成本更小。",
+      "selfStatement": "建议优先选择方案甲",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范分组",
+        "三点结构"
+      ],
+      "acceptableEvidence": [
+        "建议优先选择方案甲"
+      ]
+    },
+    {
+      "id": "gold-grouping-042",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "先选甲 两点 一是客户收益高 二是更好落地且后续维护成本小",
+      "selfStatement": "先选甲",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "两点结构"
+      ],
+      "acceptableEvidence": [
+        "先选甲 两点 一是客户收益高 二是更好落地且后续维护成本小"
+      ]
+    },
+    {
+      "id": "gold-grouping-043",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "建议方案甲。第一点，客户价值高、实施难度低。",
+      "selfStatement": "建议方案甲",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "单一分点",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议方案甲"
+      ]
+    },
+    {
+      "id": "gold-grouping-044",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "优先方案甲。第一，客户价值；第二，实施难度；第三，维护成本；第四，团队熟悉。",
+      "selfStatement": "优先方案甲",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "含额外理由"
+      ],
+      "acceptableEvidence": [
+        "优先方案甲"
+      ]
+    },
+    {
+      "id": "gold-grouping-045",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "建议方案甲。第一，客户价值高；第二，整体不错。",
+      "selfStatement": "建议方案甲",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "伪分点",
+        "无关内容"
+      ],
+      "acceptableEvidence": [
+        "建议方案甲"
+      ]
+    },
+    {
+      "id": "gold-grouping-046",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "第一，实施难度低；第二，维护成本小。",
+      "selfStatement": "选择方案甲",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "建议缺失",
+        "无关自填核心句"
+      ],
+      "acceptableEvidence": [
+        "第一，实施难度低；第二，维护成本小"
+      ]
+    },
+    {
+      "id": "gold-grouping-047",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "建议优先选择方案甲，因为客户价值高、实施难度低、维护成本小。",
+      "selfStatement": "建议优先选择方案甲",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "无显式分组",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议优先选择方案甲"
+      ]
+    },
+    {
+      "id": "gold-grouping-048",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "建议方案甲。第一，客户价值高；第二，客户收益更大。",
+      "selfStatement": "建议方案甲",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "重复分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "建议方案甲"
+      ]
+    },
+    {
+      "id": "gold-grouping-049",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "两个方案都可以再讨论。",
+      "selfStatement": "优先选择方案甲",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "回避建议",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "两个方案都可以再讨论"
+      ]
+    },
+    {
+      "id": "gold-grouping-050",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-far-01",
+      "answer": "建议方案甲。第一点，；第二点，实施难度低；第三点，维护成本小。",
+      "selfStatement": "建议方案甲",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "空分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "建议方案甲"
+      ]
+    },
+    {
+      "id": "gold-grouping-051",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "建议本月优先安排新人培训，理由有三点：第一，重复出错多；第二，带教占用资深成员时间；第三，标准流程尚未统一。",
+      "selfStatement": "建议本月优先安排新人培训",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "规范分组",
+        "三点结构"
+      ],
+      "acceptableEvidence": [
+        "建议本月优先安排新人培训"
+      ]
+    },
+    {
+      "id": "gold-grouping-052",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "这个月先培训新人 两点 一是老出错 二是带教太占时间而且流程没统一",
+      "selfStatement": "这个月先培训新人",
+      "expectedStatus": "met",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "口语",
+        "无标点",
+        "两点结构"
+      ],
+      "acceptableEvidence": [
+        "这个月先培训新人"
+      ]
+    },
+    {
+      "id": "gold-grouping-053",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "建议优先新人培训。第一，重复出错和返工很多。",
+      "selfStatement": "建议优先新人培训",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "单一分点",
+        "信息不足"
+      ],
+      "acceptableEvidence": [
+        "建议优先新人培训"
+      ]
+    },
+    {
+      "id": "gold-grouping-054",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "建议安排培训。第一，重复出错；第二，带教耗时；第三，流程不统一；第四，资料太多。",
+      "selfStatement": "建议安排培训",
+      "expectedStatus": "partial",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "分点过多",
+        "含额外理由"
+      ],
+      "acceptableEvidence": [
+        "建议安排培训"
+      ]
+    },
+    {
+      "id": "gold-grouping-055",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "建议培训新人。第一，重复出错；第二，大家要重视。",
+      "selfStatement": "建议培训新人",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "伪分点",
+        "无关内容"
+      ],
+      "acceptableEvidence": [
+        "建议培训新人"
+      ]
+    },
+    {
+      "id": "gold-grouping-056",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "第一，带教占用时间；第二，标准流程没统一。",
+      "selfStatement": "本月优先培训新人",
+      "expectedStatus": "uncertain",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "建议缺失",
+        "无关自填核心句"
+      ],
+      "acceptableEvidence": [
+        "第一，带教占用时间；第二，标准流程没统一"
+      ]
+    },
+    {
+      "id": "gold-grouping-057",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "建议本月优先安排新人培训，因为错误多、带教耗时、流程没统一。",
+      "selfStatement": "建议本月优先安排新人培训",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "无显式分组",
+        "信息堆叠"
+      ],
+      "acceptableEvidence": [
+        "建议本月优先安排新人培训"
+      ]
+    },
+    {
+      "id": "gold-grouping-058",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "建议培训新人。第一，重复出错；第二，错误确实很多。",
+      "selfStatement": "建议培训新人",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "partial",
+      "tags": [
+        "重复分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "建议培训新人"
+      ]
+    },
+    {
+      "id": "gold-grouping-059",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "本月工作比较多，大家辛苦了。",
+      "selfStatement": "优先安排新人培训",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "needs_work",
+      "tags": [
+        "无关回答",
+        "自检投机"
+      ],
+      "acceptableEvidence": [
+        "本月工作比较多，大家辛苦了"
+      ]
+    },
+    {
+      "id": "gold-grouping-060",
+      "skillId": "grouping",
+      "promptId": "stg-v04-grouping-delayed-01",
+      "answer": "建议安排培训。第一点，；第二点，带教占用时间；第三点，流程没统一。",
+      "selfStatement": "建议安排培训",
+      "expectedStatus": "needs_work",
+      "expectedTaskStatus": "met",
+      "tags": [
+        "空分点",
+        "形式投机"
+      ],
+      "acceptableEvidence": [
+        "建议安排培训"
+      ]
+    }
+  ]
+}

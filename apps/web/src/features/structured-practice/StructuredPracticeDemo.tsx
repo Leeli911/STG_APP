@@ -2,9 +2,19 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import {
   getStructuredPracticeScenario,
+  selectStructuredPracticePrompt,
   structuredPracticeScenarios
 } from "@/features/structured-practice/curriculum";
-import { evaluateStructuredAnswer } from "@/features/structured-practice/ruleEngine";
+import {
+  evaluateRevisionChange,
+  evaluateStructuredAnswer
+} from "@/features/structured-practice/ruleEngine";
+import {
+  completeDelayedPractice,
+  findDuePractice,
+  getStructuredSkillProgress,
+  scheduleDelayedPractice
+} from "@/features/structured-practice/progress";
 import type {
   SkillAssessment,
   SkillAssessmentStatus,
@@ -18,9 +28,31 @@ type PracticeStage =
   | "feedback"
   | "transfer_draft"
   | "transfer_self_check"
-  | "complete";
+  | "complete"
+  | "delayed_draft"
+  | "delayed_self_check"
+  | "delayed_complete";
 
-const PROGRESS_KEY = "stg:v0.3:structured-practice-progress";
+type PracticeSessionSnapshot = {
+  skillId: StructuredSkillId;
+  stage: PracticeStage;
+  draft: string;
+  coreStatement: string;
+  draftAssessment: SkillAssessment | null;
+  revision: string;
+  revisionAssessment: SkillAssessment | null;
+  revisionChange: ReturnType<typeof evaluateRevisionChange> | null;
+  transferAnswer: string;
+  transferCoreStatement: string;
+  transferAssessment: SkillAssessment | null;
+  dueRecordId: string | null;
+  delayedAnswer: string;
+  delayedCoreStatement: string;
+  delayedAssessment: SkillAssessment | null;
+};
+
+const PROGRESS_KEY = "stg:v0.4:structured-practice-progress";
+const SESSION_KEY = "stg:v0.4:structured-practice-session";
 const ANSWER_MIN_LENGTH = 20;
 const ANSWER_MAX_LENGTH = 600;
 const CORE_MIN_LENGTH = 4;
@@ -40,29 +72,165 @@ export function StructuredPracticeDemo() {
   const [transferCoreStatement, setTransferCoreStatement] = useState("");
   const [transferAssessment, setTransferAssessment] =
     useState<SkillAssessment | null>(null);
+  const [dueRecordId, setDueRecordId] = useState<string | null>(null);
+  const [delayedAnswer, setDelayedAnswer] = useState("");
+  const [delayedCoreStatement, setDelayedCoreStatement] = useState("");
+  const [delayedAssessment, setDelayedAssessment] =
+    useState<SkillAssessment | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [records, setRecords] = useState<StructuredPracticeRecord[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+  const [revisionChange, setRevisionChange] = useState<ReturnType<
+    typeof evaluateRevisionChange
+  > | null>(null);
 
   const scenario = useMemo(
     () => getStructuredPracticeScenario(skillId),
     [skillId]
   );
+  const usedPromptIds = useMemo(
+    () =>
+      records
+        .filter((record) => record.skillId === skillId)
+        .flatMap((record) => [
+          record.coldPromptId,
+          record.transferPromptId,
+          record.delayedPromptId
+        ])
+        .filter((promptId): promptId is string => Boolean(promptId)),
+    [records, skillId]
+  );
+  const coldPrompt = useMemo(
+    () =>
+      selectStructuredPracticePrompt({
+        skillId,
+        kinds: ["cold"],
+        excludedPromptIds: usedPromptIds
+      }),
+    [skillId, usedPromptIds]
+  );
+  const transferPrompt = useMemo(
+    () =>
+      selectStructuredPracticePrompt({
+        skillId,
+        kinds: ["near_transfer", "far_transfer"],
+        excludedPromptIds: usedPromptIds
+      }),
+    [skillId, usedPromptIds]
+  );
+  const dueRecord = useMemo(() => findDuePractice(records), [records]);
+  const activeDueRecord = useMemo(
+    () => records.find((record) => record.id === dueRecordId),
+    [dueRecordId, records]
+  );
+  const delayedPrompt = useMemo(
+    () =>
+      selectStructuredPracticePrompt({
+        skillId: activeDueRecord?.skillId ?? skillId,
+        kinds: ["delayed"],
+        excludedPromptIds: usedPromptIds
+      }),
+    [activeDueRecord?.skillId, skillId, usedPromptIds]
+  );
 
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(PROGRESS_KEY);
-      if (!stored) return;
-      const parsed = JSON.parse(stored) as StructuredPracticeRecord[];
-      if (Array.isArray(parsed)) setRecords(parsed.slice(-30));
+      if (stored) {
+        const parsed = JSON.parse(stored) as StructuredPracticeRecord[];
+        if (Array.isArray(parsed)) {
+          setRecords(
+            parsed
+              .filter((record) => record?.version === 2)
+              .slice(-30)
+          );
+        }
+      }
     } catch {
       // A broken local record must never block a practice session.
     }
+    try {
+      const storedSession = window.sessionStorage.getItem(SESSION_KEY);
+      if (storedSession) {
+        const parsed = JSON.parse(storedSession) as PracticeSessionSnapshot;
+        if (
+          isPracticeStage(parsed.stage) &&
+          isStructuredSkill(parsed.skillId) &&
+          parsed.stage !== "complete" &&
+          parsed.stage !== "delayed_complete"
+        ) {
+          setSkillId(parsed.skillId);
+          setStage(parsed.stage);
+          setDraft(parsed.draft ?? "");
+          setCoreStatement(parsed.coreStatement ?? "");
+          setDraftAssessment(parsed.draftAssessment ?? null);
+          setRevision(parsed.revision ?? "");
+          setRevisionAssessment(parsed.revisionAssessment ?? null);
+          setRevisionChange(parsed.revisionChange ?? null);
+          setTransferAnswer(parsed.transferAnswer ?? "");
+          setTransferCoreStatement(parsed.transferCoreStatement ?? "");
+          setTransferAssessment(parsed.transferAssessment ?? null);
+          setDueRecordId(parsed.dueRecordId ?? null);
+          setDelayedAnswer(parsed.delayedAnswer ?? "");
+          setDelayedCoreStatement(parsed.delayedCoreStatement ?? "");
+          setDelayedAssessment(parsed.delayedAssessment ?? null);
+        } else {
+          window.sessionStorage.removeItem(SESSION_KEY);
+        }
+      }
+    } catch {
+      window.sessionStorage.removeItem(SESSION_KEY);
+    }
+    setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const snapshot: PracticeSessionSnapshot = {
+      skillId,
+      stage,
+      draft,
+      coreStatement,
+      draftAssessment,
+      revision,
+      revisionAssessment,
+      revisionChange,
+      transferAnswer,
+      transferCoreStatement,
+      transferAssessment,
+      dueRecordId,
+      delayedAnswer,
+      delayedCoreStatement,
+      delayedAssessment
+    };
+    try {
+      window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(snapshot));
+    } catch {
+      // Session recovery is optional and never uploads the answer.
+    }
+  }, [
+    coreStatement,
+    draft,
+    draftAssessment,
+    dueRecordId,
+    delayedAnswer,
+    delayedAssessment,
+    delayedCoreStatement,
+    hydrated,
+    revision,
+    revisionAssessment,
+    revisionChange,
+    skillId,
+    stage,
+    transferAnswer,
+    transferAssessment,
+    transferCoreStatement
+  ]);
 
   return (
     <main className="mx-auto max-w-4xl space-y-6">
       <section className="space-y-3">
-        <p className="text-sm font-medium text-focus">免费公开训练 · 第 0.3 版</p>
+        <p className="text-sm font-medium text-focus">免费公开训练 · 第 0.4 版</p>
         <h1 className="text-3xl font-semibold text-slate-950 sm:text-4xl">
           五分钟结构化表达训练
         </h1>
@@ -72,15 +240,60 @@ export function StructuredPracticeDemo() {
         </p>
         <div className="flex flex-wrap gap-2 text-sm text-slate-600">
           <span className="rounded-full bg-slate-100 px-3 py-1">
-            当前浏览器已完成 {records.length} 次迁移练习
+            当前浏览器已完成 {records.length} 次训练闭环
           </span>
           <span className="rounded-full bg-slate-100 px-3 py-1">
-            不使用百分制能力评分
+            其中 {records.filter((record) => record.skillMet).length} 次迁移达标
           </span>
+        </div>
+        <div
+          aria-label="三天训练状态"
+          className="grid gap-2 pt-1 sm:grid-cols-3"
+        >
+          {structuredPracticeScenarios.map((item) => {
+            const progress = getStructuredSkillProgress(
+              records,
+              item.skillId
+            );
+            return (
+              <div
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                key={item.id}
+              >
+                <span className="text-slate-500">第 {item.day} 天</span>
+                <span className="ml-2 font-medium text-slate-900">
+                  {skillProgressLabels[progress]}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      <StepIndicator stage={stage} />
+      {stage.startsWith("delayed") ? (
+        <DelayedStepIndicator stage={stage} />
+      ) : (
+        <StepIndicator stage={stage} />
+      )}
+
+      {stage === "draft" && dueRecord ? (
+        <section className="rounded-xl border border-violet-200 bg-violet-50 p-5 sm:p-6">
+          <p className="text-sm font-medium text-violet-700">今日冷测已到期</p>
+          <h2 className="mt-2 text-xl font-semibold text-violet-950">
+            先不看方法，检验 24 小时后的独立使用
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-violet-900">
+            这是间隔练习，不会把智能体模拟或单次结果称为稳定能力。
+          </p>
+          <button
+            className={`${primaryButtonClass} mt-4`}
+            onClick={() => startDelayedPractice(dueRecord)}
+            type="button"
+          >
+            开始今日冷测
+          </button>
+        </section>
+      ) : null}
 
       {stage === "draft" ? (
         <section className="space-y-6">
@@ -112,9 +325,9 @@ export function StructuredPracticeDemo() {
           </div>
 
           <ScenarioCard
-            audience={scenario.audience}
-            desiredOutcome={scenario.desiredOutcome}
-            prompt={scenario.prompt}
+            audience={coldPrompt.audience}
+            desiredOutcome={coldPrompt.desiredOutcome}
+            prompt={coldPrompt.prompt}
             title={`第 ${scenario.day} 天 · 无提示回答`}
           />
 
@@ -232,17 +445,31 @@ export function StructuredPracticeDemo() {
           {revisionAssessment ? (
             <section className="space-y-6" aria-live="polite">
               <AssessmentCard assessment={revisionAssessment} title="重写结果" />
+              {revisionChange ? (
+                <p
+                  className={
+                    revisionChange.canContinue
+                      ? "rounded-md bg-emerald-50 p-4 text-sm text-emerald-800"
+                      : "rounded-md bg-amber-50 p-4 text-sm text-amber-800"
+                  }
+                  role="status"
+                >
+                  {revisionChange.message}
+                </p>
+              ) : null}
               <div className="grid gap-4 md:grid-cols-2">
                 <AnswerSnapshot answer={draft} title="原始回答" />
                 <AnswerSnapshot answer={revision} title="我的重写" />
               </div>
-              <button
-                className={primaryButtonClass}
-                onClick={startTransfer}
-                type="button"
-              >
-                进入迁移练习
-              </button>
+              {revisionChange?.canContinue ? (
+                <button
+                  className={primaryButtonClass}
+                  onClick={startTransfer}
+                  type="button"
+                >
+                  进入迁移练习
+                </button>
+              ) : null}
             </section>
           ) : null}
         </section>
@@ -257,9 +484,9 @@ export function StructuredPracticeDemo() {
             </h2>
           </section>
           <ScenarioCard
-            audience={scenario.transferAudience}
-            desiredOutcome={scenario.transferDesiredOutcome}
-            prompt={scenario.transferPrompt}
+            audience={transferPrompt.audience}
+            desiredOutcome={transferPrompt.desiredOutcome}
+            prompt={transferPrompt.prompt}
             title="迁移题"
           />
           <AnswerForm
@@ -311,11 +538,101 @@ export function StructuredPracticeDemo() {
         </section>
       ) : null}
 
+      {stage === "delayed_draft" ? (
+        <section className="space-y-6">
+          <section className="rounded-xl border border-violet-200 bg-violet-50 p-5 sm:p-6">
+            <p className="text-sm font-medium text-violet-700">24 小时间隔冷测</p>
+            <h2 className="mt-2 text-2xl font-semibold text-violet-950">
+              不查看方法，直接完成新的工作情境
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-violet-900">
+              本次只记录间隔后的规则表现，不把一次结果称为完整能力。
+            </p>
+          </section>
+          <ScenarioCard
+            audience={delayedPrompt.audience}
+            desiredOutcome={delayedPrompt.desiredOutcome}
+            prompt={delayedPrompt.prompt}
+            title="今日冷测"
+          />
+          <AnswerForm
+            error={validationError}
+            label="你的冷测回答"
+            onChange={(value) => updateText(setDelayedAnswer, value)}
+            onSubmit={submitDelayedDraft}
+            submitLabel="提交冷测回答"
+            value={delayedAnswer}
+          />
+        </section>
+      ) : null}
+
+      {stage === "delayed_self_check" ? (
+        <section className="space-y-6">
+          <AnswerSnapshot answer={delayedAnswer} title="刚才的冷测回答" />
+          <form
+            className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6"
+            onSubmit={finishDelayedPractice}
+          >
+            <p className="text-sm font-medium text-focus">不查看方法，最后自检一次</p>
+            <h2 className="mt-2 text-xl font-semibold text-slate-950">
+              这次回答真正要让对方知道或决定什么？
+            </h2>
+            <label
+              className="mt-5 block text-sm font-medium text-slate-800"
+              htmlFor="delayed-core-statement"
+            >
+              冷测核心结论
+            </label>
+            <input
+              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
+              id="delayed-core-statement"
+              maxLength={CORE_MAX_LENGTH}
+              onChange={(event) =>
+                updateText(setDelayedCoreStatement, event.target.value)
+              }
+              value={delayedCoreStatement}
+            />
+            <CharacterCount
+              current={delayedCoreStatement.length}
+              max={CORE_MAX_LENGTH}
+            />
+            <FormError message={validationError} />
+            <button className={primaryButtonClass} type="submit">
+              检查冷测结果
+            </button>
+          </form>
+        </section>
+      ) : null}
+
+      {stage === "delayed_complete" && delayedAssessment ? (
+        <section className="space-y-6">
+          <AssessmentCard assessment={delayedAssessment} title="间隔冷测结果" />
+          <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+            <p className="text-sm font-medium text-slate-500">本次真实记录</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+              {delayedAssessment.status === "met"
+                ? "间隔后仍在新情境中做到"
+                : "已完成冷测，仍需要继续巩固"}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              “初步稳定”只表示两个不同场景中至少包含一次间隔冷测达标，不代表完整沟通能力。
+            </p>
+            <button
+              className={`${primaryButtonClass} mt-5`}
+              onClick={finishDelayedAndReturn}
+              type="button"
+            >
+              返回日常训练
+            </button>
+          </section>
+        </section>
+      ) : null}
+
       {stage === "complete" && transferAssessment && revisionAssessment ? (
         <section className="space-y-6">
           <AssessmentCard assessment={transferAssessment} title="迁移结果" />
           <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
-            <p className="text-sm font-medium text-slate-500">本次掌握证据</p>
+            <p className="text-sm font-medium text-slate-500">本次行为记录</p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">
               {transferAssessment.status === "met"
                 ? "已在新情境中独立使用"
@@ -327,7 +644,7 @@ export function StructuredPracticeDemo() {
               <StatusSummary label="新题迁移" status={transferAssessment.status} />
             </div>
             <p className="mt-5 text-sm leading-6 text-slate-600">
-              单次通过不等于已经形成能力。后续版本会在次日安排一次无提示回忆，连续两个不同场景成功后才标记为掌握。
+              完成闭环与规则达标是两件事。系统将在 24 小时后安排未见冷测；单次通过不代表已经形成稳定能力。
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <button className={primaryButtonClass} onClick={repeatSkill} type="button">
@@ -369,7 +686,8 @@ export function StructuredPracticeDemo() {
     const assessment = evaluateStructuredAnswer({
       skillId,
       answer: draft,
-      coreStatement
+      selfStatement: coreStatement,
+      evaluation: coldPrompt.evaluation
     });
     setDraftAssessment(assessment);
     setRevision(draft);
@@ -379,14 +697,22 @@ export function StructuredPracticeDemo() {
 
   function submitRevision() {
     if (!validateAnswer(revision)) return;
-    if (normalize(revision) === normalize(draft)) {
-      setValidationError("请根据反馈至少修改一处，再检查重写结果。");
-      return;
-    }
-    setRevisionAssessment(
-      evaluateStructuredAnswer({ skillId, answer: revision, coreStatement })
-    );
-    setValidationError(null);
+    if (!draftAssessment) return;
+    const nextAssessment = evaluateStructuredAnswer({
+      skillId,
+      answer: revision,
+      selfStatement: coreStatement,
+      evaluation: coldPrompt.evaluation
+    });
+    const change = evaluateRevisionChange({
+      beforeAnswer: draft,
+      afterAnswer: revision,
+      before: draftAssessment,
+      after: nextAssessment
+    });
+    setRevisionAssessment(nextAssessment);
+    setRevisionChange(change);
+    setValidationError(change.canContinue ? null : change.message);
   }
 
   function startTransfer() {
@@ -407,7 +733,8 @@ export function StructuredPracticeDemo() {
     const assessment = evaluateStructuredAnswer({
       skillId,
       answer: transferAnswer,
-      coreStatement: transferCoreStatement
+      selfStatement: transferCoreStatement,
+      evaluation: transferPrompt.evaluation
     });
     setTransferAssessment(assessment);
     saveRecord(assessment);
@@ -416,11 +743,18 @@ export function StructuredPracticeDemo() {
   }
 
   function saveRecord(assessment: SkillAssessment) {
+    const completedAt = new Date().toISOString();
     const record: StructuredPracticeRecord = {
+      version: 2,
       id: `${scenario.id}:${Date.now()}`,
-      completedAt: new Date().toISOString(),
+      completedAt,
+      dueAt: scheduleDelayedPractice(completedAt),
       scenarioId: scenario.id,
+      coldPromptId: coldPrompt.id,
+      transferPromptId: transferPrompt.id,
       skillId,
+      sessionCompleted: true,
+      skillMet: assessment.status === "met",
       draftStatus: draftAssessment?.status ?? "needs_work",
       revisionStatus: revisionAssessment?.status ?? "needs_work",
       transferStatus: assessment.status
@@ -435,6 +769,52 @@ export function StructuredPracticeDemo() {
       }
       return next;
     });
+  }
+
+  function startDelayedPractice(record: StructuredPracticeRecord) {
+    resetPractice();
+    setSkillId(record.skillId);
+    setDueRecordId(record.id);
+    setStage("delayed_draft");
+  }
+
+  function submitDelayedDraft(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!validateAnswer(delayedAnswer)) return;
+    setValidationError(null);
+    setStage("delayed_self_check");
+  }
+
+  function finishDelayedPractice(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!validateCoreStatement(delayedCoreStatement) || !dueRecordId) return;
+    const assessment = evaluateStructuredAnswer({
+      skillId,
+      answer: delayedAnswer,
+      selfStatement: delayedCoreStatement,
+      evaluation: delayedPrompt.evaluation
+    });
+    setDelayedAssessment(assessment);
+    setRecords((current) => {
+      const next = completeDelayedPractice({
+        records: current,
+        recordId: dueRecordId,
+        promptId: delayedPrompt.id,
+        status: assessment.status
+      });
+      try {
+        window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(next));
+      } catch {
+        // The delayed result remains visible even when persistence is unavailable.
+      }
+      return next;
+    });
+    setValidationError(null);
+    setStage("delayed_complete");
+  }
+
+  function finishDelayedAndReturn() {
+    resetPractice();
   }
 
   function repeatSkill() {
@@ -459,9 +839,14 @@ export function StructuredPracticeDemo() {
     setDraftAssessment(null);
     setRevision("");
     setRevisionAssessment(null);
+    setRevisionChange(null);
     setTransferAnswer("");
     setTransferCoreStatement("");
     setTransferAssessment(null);
+    setDueRecordId(null);
+    setDelayedAnswer("");
+    setDelayedCoreStatement("");
+    setDelayedAssessment(null);
     setValidationError(null);
   }
 
@@ -509,6 +894,31 @@ function StepIndicator({ stage }: { stage: PracticeStage }) {
           className={
             index <= activeIndex
               ? "rounded-md bg-focus px-2 py-2 text-center text-xs font-medium text-white"
+              : "rounded-md bg-slate-200 px-2 py-2 text-center text-xs text-slate-500"
+          }
+          key={label}
+        >
+          {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function DelayedStepIndicator({ stage }: { stage: PracticeStage }) {
+  const activeIndex =
+    stage === "delayed_draft"
+      ? 0
+      : stage === "delayed_self_check"
+        ? 1
+        : 2;
+  return (
+    <ol className="grid grid-cols-3 gap-2" aria-label="冷测进度">
+      {["间隔冷答", "自我检查", "冷测结果"].map((label, index) => (
+        <li
+          className={
+            index <= activeIndex
+              ? "rounded-md bg-violet-600 px-2 py-2 text-center text-xs font-medium text-white"
               : "rounded-md bg-slate-200 px-2 py-2 text-center text-xs text-slate-500"
           }
           key={label}
@@ -605,6 +1015,8 @@ function AssessmentCard({
         <StatusPill status={assessment.status} label={assessment.statusLabel} />
       </div>
       <dl className="mt-5 space-y-4 text-sm leading-6">
+        <FeedbackRow label="任务完成" value={assessment.taskStatusLabel} />
+        <FeedbackRow label="自我检查" value={assessment.selfCheckLabel} />
         <FeedbackRow label="原文证据" value={assessment.evidence} />
         <FeedbackRow label="观察" value={assessment.observation} />
         <FeedbackRow label="对听众的影响" value={assessment.impact} />
@@ -689,8 +1101,22 @@ function FormError({ message }: { message: string | null }) {
   ) : null;
 }
 
-function normalize(value: string) {
-  return value.replace(/\s+/g, "").trim();
+function isPracticeStage(value: unknown): value is PracticeStage {
+  return [
+    "draft",
+    "self_check",
+    "feedback",
+    "transfer_draft",
+    "transfer_self_check",
+    "complete",
+    "delayed_draft",
+    "delayed_self_check",
+    "delayed_complete"
+  ].includes(String(value));
+}
+
+function isStructuredSkill(value: unknown): value is StructuredSkillId {
+  return ["purpose", "conclusion_first", "grouping"].includes(String(value));
 }
 
 const primaryButtonClass =
@@ -704,17 +1130,29 @@ const stageIndex: Record<PracticeStage, number> = {
   feedback: 2,
   transfer_draft: 3,
   transfer_self_check: 3,
-  complete: 3
+  complete: 3,
+  delayed_draft: 0,
+  delayed_self_check: 0,
+  delayed_complete: 3
 };
 
 const statusClasses: Record<SkillAssessmentStatus, string> = {
   met: "bg-emerald-100 text-emerald-800",
   partial: "bg-amber-100 text-amber-800",
-  needs_work: "bg-rose-100 text-rose-800"
+  needs_work: "bg-rose-100 text-rose-800",
+  uncertain: "bg-slate-200 text-slate-800"
 };
 
 const statusSummaryLabels: Record<SkillAssessmentStatus, string> = {
   met: "已做到",
   partial: "已经接近",
-  needs_work: "需要继续练"
+  needs_work: "需要继续练",
+  uncertain: "规则无法确定"
 };
+
+const skillProgressLabels = {
+  not_started: "未练习",
+  practicing: "练习中",
+  due: "待冷测",
+  initially_stable: "初步稳定"
+} as const;
