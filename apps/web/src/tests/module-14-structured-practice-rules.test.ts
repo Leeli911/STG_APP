@@ -1,121 +1,281 @@
-import { evaluateStructuredAnswer } from "@/features/structured-practice/ruleEngine";
+import {
+  getStructuredPracticePrompt,
+  structuredPracticeScenarios
+} from "@/features/structured-practice/curriculum";
+import {
+  evaluateRevisionChange,
+  evaluateStructuredAnswer
+} from "@/features/structured-practice/ruleEngine";
 import type {
-  SkillAssessmentStatus,
+  SkillAssessment,
   StructuredSkillId
 } from "@/features/structured-practice/types";
 
-type RuleCase = {
-  id: string;
-  skillId: StructuredSkillId;
-  answer: string;
-  coreStatement: string;
-  expected: SkillAssessmentStatus;
-};
+describe("v0.4 可信结构化表达规则", () => {
+  it("课程包含 3 个技能和 18 个不重复场景题", () => {
+    const prompts = structuredPracticeScenarios.flatMap(
+      (scenario) => scenario.prompts
+    );
 
-const purposeCases: RuleCase[] = [
-  ["P01", "项目延期三天，需要主管决定是否调整发布日期。", "项目延期三天，需要主管决定是否调整发布日期。", "met"],
-  ["P02", "数据还需核对，请负责人决定延后还是先发暂定数据。", "数据还需核对，请负责人决定延后还是先发暂定数据。", "met"],
-  ["P03", "我建议本周先暂停投放，请市场负责人今天确认。", "我建议本周先暂停投放，请市场负责人今天确认。", "met"],
-  ["P04", "客户交付可能晚两天，需要销售确认新的沟通时间。", "客户交付可能晚两天，需要销售确认新的沟通时间。", "met"],
-  ["P05", "测试资源不足，请主管决定是否调配一名工程师。", "测试资源不足，请主管决定是否调配一名工程师。", "met"],
-  ["P06", "预算已经接近上限，需要项目负责人批准缩减范围。", "预算已经接近上限，需要项目负责人批准缩减范围。", "met"],
-  ["P07", "用户投诉增加，我建议立即回滚并请负责人确认。", "用户投诉增加，我建议立即回滚并请负责人确认。", "met"],
-  ["P08", "合作方尚未签字，需要法务决定是否延后启动。", "合作方尚未签字，需要法务决定是否延后启动。", "met"],
-  ["P09", "目前新版本登录异常仍在排查，多个团队都在同步信息，需要负责人决定。", "需要负责人决定", "partial"],
-  ["P10", "客户提供的原始数据缺少两个字段，分析和复核都无法继续，需要客户补充数据。", "需要客户补充数据", "partial"],
-  ["P11", "本周已经连续出现三次构建失败，发布窗口越来越紧张，建议推迟发布。", "建议推迟发布", "partial"],
-  ["P12", "现有方案会增加客服和运营的重复工作，长期维护成本较高，需要重新选择方案。", "需要重新选择方案", "partial"],
-  ["P13", "供应商交货时间还没有确认，生产排期和对外承诺都会受到影响，请确认排期。", "交货时间未确认，请确认排期", "partial"],
-  ["P14", "两名关键成员下周同时休假，测试和上线支持都存在缺口，需要增加支援。", "需要增加支援", "partial"],
-  ["P15", "今天讨论了页面颜色、字体大小和图标风格。", "需要主管批准调整发布日期", "needs_work"],
-  ["P16", "会议从上午十点开始，大家依次介绍了近期工作。", "请客户补充缺失数据", "needs_work"],
-  ["P17", "团队最近阅读了三份行业报告并整理了资料。", "决定是否暂停广告投放", "needs_work"],
-  ["P18", "办公室下周会调整座位，行政已经发出通知。", "确认是否回滚线上版本", "needs_work"],
-  ["P19", "我们更新了设计稿中的按钮和页脚样式。", "批准增加测试工程师", "needs_work"],
-  ["P20", "午餐分享会有八位同事报名参加。", "决定是否缩减项目范围", "needs_work"]
-].map(([id, answer, coreStatement, expected]) => ({
-  id,
-  skillId: "purpose",
-  answer,
-  coreStatement,
-  expected
-})) as RuleCase[];
-
-const conclusionCases: RuleCase[] = [
-  ["C01", "项目存在延期风险，建议把发布日期调整到下周一。联调仍需三天。", "项目存在延期风险，建议把发布日期调整到下周一。", "met"],
-  ["C02", "投诉增加源于登录异常，团队正在回滚。异常从昨晚开始出现。", "投诉增加源于登录异常，团队正在回滚。", "met"],
-  ["C03", "本周目标可以完成，但需要减少一个低优先级需求。剩余开发时间只有两天。", "本周目标可以完成，但需要减少一个低优先级需求。", "met"],
-  ["C04", "我建议选择方案二，因为它的上线风险更低。两个方案成本接近。", "我建议选择方案二，因为它的上线风险更低。", "met"],
-  ["C05", "客户交付需要延后两天，我们今天通知客户。测试发现一个阻断问题。", "客户交付需要延后两天，我们今天通知客户。", "met"],
-  ["C06", "数据暂时不能发布，关键字段仍需复核。复核预计明天完成。", "数据暂时不能发布，关键字段仍需复核。", "met"],
-  ["C07", "活动效果低于目标，建议停止追加预算。当前转化率只有预期的一半。", "活动效果低于目标，建议停止追加预算。", "met"],
-  ["C08", "新流程可以上线，我建议周三开始小范围试用。所有阻断问题已经关闭。", "新流程可以上线，我建议周三开始小范围试用。", "met"],
-  ["C09", "核心功能已经完成，但联调仍有问题。项目存在上线风险，建议延后发布。", "项目存在上线风险，建议延后发布。", "partial"],
-  ["C10", "昨晚开始出现大量失败记录。主要原因是登录服务异常。", "主要原因是登录服务异常。", "partial"],
-  ["C11", "我们比较了成本、周期和维护难度。我建议选择方案一。", "我建议选择方案一。", "partial"],
-  ["C12", "客户刚补充了一批需求，测试时间已经不足。交付需要延后一周。", "交付需要延后一周。", "partial"],
-  ["C13", "本周访谈了六名用户并复盘了数据。当前最重要的问题是注册流程过长。", "当前最重要的问题是注册流程过长。", "partial"],
-  ["C14", "现有预算已经使用八成，还有两个渠道未测试。建议暂停新增投放。", "建议暂停新增投放。", "partial"],
-  ["C15", "今天团队整理了需求文档并更新了会议纪要。", "项目需要延后发布。", "needs_work"],
-  ["C16", "客服收集了用户截图，研发正在查看日志。", "主要原因是支付服务异常。", "needs_work"],
-  ["C17", "三个候选方案都已经放进共享文档。", "我建议选择方案二。", "needs_work"],
-  ["C18", "团队计划明天继续进行用户访谈。", "本周目标能够按时完成。", "needs_work"],
-  ["C19", "会议讨论了下季度的培训安排。", "数据现在不能对外发布。", "needs_work"],
-  ["C20", "设计师更新了首页插图和配色。", "活动效果低于预期。", "needs_work"]
-].map(([id, answer, coreStatement, expected]) => ({
-  id,
-  skillId: "conclusion_first",
-  answer,
-  coreStatement,
-  expected
-})) as RuleCase[];
-
-const groupingCases: RuleCase[] = [
-  ["G01", "我建议优先优化引导，主要有两点。第一点，前三步流失高。第二点，客服咨询多。", "我建议优先优化引导。", "met"],
-  ["G02", "原因有三点：第一点，成本低。第二点，周期短。第三点，风险小。", "我建议采用这个方案。", "met"],
-  ["G03", "主要有两方面。一是减少重复工作，二是降低出错概率。", "新流程值得上线。", "met"],
-  ["G04", "建议增加支援。首先，需求并行增加；其次，测试排期冲突；最后，成员持续加班。", "建议增加支援。", "met"],
-  ["G05", "我的判断基于两点。1. 用户需求明确；2. 技术方案成熟。", "项目可以启动。", "met"],
-  ["G06", "需要处理三项工作：\n- 修复登录问题\n- 核对影响用户\n- 发布说明", "需要立即处理故障。", "met"],
-  ["G07", "我有两个理由。第一，客户价值更高；第二，实施成本更低。", "建议优先方案甲。", "met"],
-  ["G08", "接下来分三步。第一项，确认范围。第二项，完成测试。第三项，通知客户。", "建议按三个步骤推进。", "met"],
-  ["G09", "我先说第一点，当前人手不足。", "需要增加协作人员。", "partial"],
-  ["G10", "一是可以降低成本，但其他理由稍后补充。", "建议调整供应商。", "partial"],
-  ["G11", "有四点。第一点，成本；第二点，周期；第三点，质量；第四点，风险。", "需要比较四个因素。", "partial"],
-  ["G12", "共有五项。1. 需求；2. 设计；3. 开发；4. 测试；5. 发布。", "项目包含五项工作。", "partial"],
-  ["G13", "首先要确认范围，其他安排还没有整理。", "先确认范围。", "partial"],
-  ["G14", "- 只列出了一项工作", "需要拆分工作。", "partial"],
-  ["G15", "用户流失集中在前三步，客服咨询也很多，改动成本不高。", "建议优化新用户引导。", "needs_work"],
-  ["G16", "需求增加导致排期拥挤，成员加班也越来越多。", "建议增加一名协作人员。", "needs_work"],
-  ["G17", "这个方案成本较低、上线较快、维护也简单。", "建议采用这个方案。", "needs_work"],
-  ["G18", "团队需要修复问题，核对用户，随后发布说明。", "需要尽快处理故障。", "needs_work"],
-  ["G19", "客户价值更高，而且实施难度更小。", "建议优先方案甲。", "needs_work"],
-  ["G20", "范围已经确认，测试也已完成，可以通知客户。", "项目可以发布。", "needs_work"]
-].map(([id, answer, coreStatement, expected]) => ({
-  id,
-  skillId: "grouping",
-  answer,
-  coreStatement,
-  expected
-})) as RuleCase[];
-
-const labelledCases = [...purposeCases, ...conclusionCases, ...groupingCases];
-
-describe("v0.3 结构化表达规则样本", () => {
-  it("包含 60 个唯一标注案例，并均衡覆盖三个训练方法", () => {
-    expect(labelledCases).toHaveLength(60);
-    expect(new Set(labelledCases.map((item) => item.id)).size).toBe(60);
-    expect(purposeCases).toHaveLength(20);
-    expect(conclusionCases).toHaveLength(20);
-    expect(groupingCases).toHaveLength(20);
+    expect(structuredPracticeScenarios).toHaveLength(3);
+    expect(prompts).toHaveLength(18);
+    expect(new Set(prompts.map((prompt) => prompt.id)).size).toBe(18);
+    structuredPracticeScenarios.forEach((scenario) => {
+      expect(
+        scenario.prompts.filter((prompt) => prompt.kind === "cold")
+      ).toHaveLength(3);
+      expect(
+        scenario.prompts.filter((prompt) => prompt.kind === "delayed")
+      ).toHaveLength(1);
+    });
   });
 
-  it.each(labelledCases)("$id 应判定为 $expected", (sample) => {
-    const result = evaluateStructuredAnswer(sample);
-    const citedText = result.evidence.slice(1, -1).replace(/…$/, "");
+  it("明确目的必须完成题目目标，不能由用户自填核心句自证通过", () => {
+    const result = evaluate(
+      "purpose",
+      "stg-v04-purpose-cold-01",
+      "我们今天讨论了字体颜色和按钮大小，会议记录已经整理完成。",
+      "我们今天讨论了字体颜色和按钮大小。"
+    );
 
-    expect(result.status).toBe(sample.expected);
-    expect(result.ruleVersion).toBe("stg-structure-rules-v1");
-    expect(sample.answer).toContain(citedText);
+    expect(result.status).toBe("needs_work");
+    expect(result.taskStatus).toBe("needs_work");
+    expect(result.selfCheckStatus).toBe("uncertain");
+  });
+
+  it("明确目的覆盖事实、对象和行动时达标", () => {
+    const result = evaluate(
+      "purpose",
+      "stg-v04-purpose-cold-01",
+      "项目将延期三天，我建议把发布日期调整到下周一，请主管今天确认。",
+      "项目延期，需要主管确认调整发布日期。"
+    );
+
+    expect(result.status).toBe("met");
+    expect(result.taskStatus).toBe("met");
+    expect(result.matchedIntentIds).toEqual([
+      "delay",
+      "release",
+      "decision"
+    ]);
+  });
+
+  it("明确目的信息不完整时只判部分达标", () => {
+    const result = evaluate(
+      "purpose",
+      "stg-v04-purpose-cold-01",
+      "项目会延期三天，发布日期可能受影响。",
+      "项目延期会影响发布日期。"
+    );
+
+    expect(result.status).toBe("partial");
+    expect(result.taskStatus).toBe("partial");
+  });
+
+  it("只有决定关键词、没有向听众提出请求时不能判明确目的达标", () => {
+    const result = evaluate(
+      "purpose",
+      "stg-v04-purpose-far-01",
+      "第一预算上限，第二新增渠道超支，第三决定暂停投放。",
+      "需要决定是否暂停投放。"
+    );
+
+    expect(result.taskStatus).toBe("met");
+    expect(result.status).toBe("partial");
+    expect(result.observation).toContain("请求语气");
+  });
+
+  it("结论在第一句且完成任务时达标", () => {
+    const result = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-cold-01",
+      "项目存在周五上线风险，我建议先解决联调问题再发布。核心功能已经完成。",
+      "项目存在上线风险，建议先解决联调问题。"
+    );
+
+    expect(result.status).toBe("met");
+    expect(result.targetSentenceIndex).toBe(0);
+  });
+
+  it("结论在后文时只判接近", () => {
+    const result = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-cold-01",
+      "目前核心功能已经完成。联调问题可能影响周五上线，我建议调整发布安排。",
+      "联调问题可能影响周五上线。"
+    );
+
+    expect(result.status).toBe("partial");
+    expect(result.targetSentenceIndex).toBe(1);
+    expect(result.observation).toContain("开场铺垫之后");
+  });
+
+  it("无关首句即使被复制为核心句也不能判结论先行", () => {
+    const result = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-cold-01",
+      "今天开了项目周会，大家更新了会议记录。",
+      "今天开了项目周会。"
+    );
+
+    expect(result.status).toBe("needs_work");
+    expect(result.taskStatus).toBe("needs_work");
+  });
+
+  it("用方法名和评分词包装关键词碎片不能判为达标", () => {
+    const result = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-near-01",
+      "建议、选择、方案二、上线风险更低，第一结论，第二原因，这就是结论先行。",
+      "建议选择方案二。"
+    );
+
+    expect(result.taskStatus).toBe("met");
+    expect(result.status).toBe("uncertain");
+    expect(result.observation).toContain("命中方法或评分");
+  });
+
+  it("两到三点必须覆盖不同的相关理由", () => {
+    const result = evaluate(
+      "grouping",
+      "stg-v04-grouping-cold-01",
+      "我建议优化新用户引导，主要有三点。第一点，前三步流失高。第二点，客服咨询很多。第三点，改动成本较低。",
+      "我建议优化新用户引导。"
+    );
+
+    expect(result.status).toBe("met");
+    expect(result.groupCount).toBe(3);
+    expect(result.distinctGroupCount).toBe(3);
+  });
+
+  it("重复分点不能靠序号刷成达标", () => {
+    const result = evaluate(
+      "grouping",
+      "stg-v04-grouping-cold-01",
+      "我建议优化新用户引导。第一点，客服咨询很多。第二点，客服咨询还是很多。",
+      "我建议优化新用户引导。"
+    );
+
+    expect(result.status).toBe("needs_work");
+    expect(result.groupCount).toBe(2);
+    expect(result.distinctGroupCount).toBe(1);
+  });
+
+  it("即使总共命中多个理由，跨分点重复同一理由也不能达标", () => {
+    const result = evaluate(
+      "grouping",
+      "stg-v04-grouping-far-01",
+      "第一客户价值，第二客户价值更高，第三选择方案甲，实施难度低且维护成本小。",
+      "建议选择方案甲。"
+    );
+
+    expect(result.taskStatus).toBe("met");
+    expect(result.status).toBe("needs_work");
+    expect(result.observation).toContain("内容重复");
+  });
+
+  it("只有分点形式但内容无关时拒绝乐观判定", () => {
+    const result = evaluate(
+      "grouping",
+      "stg-v04-grouping-cold-01",
+      "第一点，苹果很好吃。第二点，今天阳光很好。",
+      "我想分享两件事。"
+    );
+
+    expect(["needs_work", "uncertain"]).toContain(result.status);
+    expect(result.status).not.toBe("met");
+  });
+
+  it("没有显式结构时不能视为两到三点框架", () => {
+    const result = evaluate(
+      "grouping",
+      "stg-v04-grouping-cold-01",
+      "我建议优化新用户引导，因为前三步流失高，客服咨询很多，改动成本也较低。",
+      "我建议优化新用户引导。"
+    );
+
+    expect(result.status).toBe("needs_work");
+    expect(result.groupCount).toBe(0);
+  });
+
+  it("反馈证据始终来自回答原文", () => {
+    const answer =
+      "核心功能已经完成。联调问题可能影响周五上线，我建议调整发布安排。";
+    const result = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-cold-01",
+      answer,
+      "联调问题可能影响周五上线。"
+    );
+    const cited = result.evidence.slice(1, -1).replace(/…$/, "");
+
+    expect(answer).toContain(cited);
+  });
+
+  it("仅修改标点不能算有效重写", () => {
+    const before = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-cold-01",
+      "核心功能已经完成。联调问题可能影响周五上线。",
+      "联调问题可能影响周五上线。"
+    );
+    const after = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-cold-01",
+      "核心功能已经完成；联调问题可能影响周五上线！",
+      "联调问题可能影响周五上线。"
+    );
+
+    expect(
+      evaluateRevisionChange({
+        beforeAnswer: "核心功能已经完成。联调问题可能影响周五上线。",
+        afterAnswer: "核心功能已经完成；联调问题可能影响周五上线！",
+        before,
+        after
+      })
+    ).toMatchObject({ kind: "unchanged", canContinue: false });
+  });
+
+  it("结构状态真正改善后才能进入迁移", () => {
+    const beforeAnswer =
+      "核心功能已经完成。联调问题可能影响周五上线，我建议调整发布安排。";
+    const afterAnswer =
+      "联调问题可能影响周五上线，我建议调整发布安排。核心功能已经完成。";
+    const before = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-cold-01",
+      beforeAnswer,
+      "联调问题可能影响周五上线。"
+    );
+    const after = evaluate(
+      "conclusion_first",
+      "stg-v04-conclusion-cold-01",
+      afterAnswer,
+      "联调问题可能影响周五上线。"
+    );
+
+    expect(
+      evaluateRevisionChange({
+        beforeAnswer,
+        afterAnswer,
+        before,
+        after
+      })
+    ).toMatchObject({ kind: "improved", canContinue: true });
   });
 });
+
+function evaluate(
+  skillId: StructuredSkillId,
+  promptId: string,
+  answer: string,
+  selfStatement: string
+): SkillAssessment {
+  const prompt = getStructuredPracticePrompt(promptId);
+  return evaluateStructuredAnswer({
+    skillId,
+    answer,
+    selfStatement,
+    evaluation: prompt.evaluation
+  });
+}
