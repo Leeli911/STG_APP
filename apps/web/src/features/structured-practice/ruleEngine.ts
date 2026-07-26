@@ -173,6 +173,35 @@ export function splitChineseSentences(answer: string) {
   return sentences.length > 0 ? sentences : [answer.trim()];
 }
 
+export function extractSelfCheckOptions(answer: string) {
+  const sentences = splitChineseSentences(answer).filter(
+    (sentence) => sentence.length >= 4
+  );
+  const candidates =
+    sentences.length > 1
+      ? sentences
+      : answer
+          .trim()
+          .split(/(?<=[，,。！？!?；;])|\n+/)
+          .map((unit) => unit.trim())
+          .filter((unit) => unit.length >= 4);
+  const unique = new Map<string, string>();
+
+  candidates.forEach((candidate) => {
+    const key = normalizeText(candidate);
+    if (key && !unique.has(key)) {
+      unique.set(key, candidate);
+    }
+  });
+
+  const options = [...unique.values()];
+  if (options.length <= 4) return options;
+
+  return [options[0], options[1], options.at(-2), options.at(-1)].filter(
+    (option): option is string => Boolean(option)
+  );
+}
+
 function splitConclusionUnits(answer: string) {
   const units = answer
     .trim()

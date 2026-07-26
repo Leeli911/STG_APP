@@ -50,8 +50,10 @@ test("从首页进入免费训练，并完成结论先行的冷答、重写与�
 
   await expect(page.getByText("先自己检查")).toBeVisible();
   await page
-    .getByLabel("我的核心结论")
-    .fill("项目存在上线风险，我建议先解决联调问题再发布。");
+    .getByRole("radio", {
+      name: "项目存在上线风险，我建议先解决联调问题再发布。"
+    })
+    .check();
   await page.getByRole("button", { name: "查看单点反馈" }).click();
 
   await expect(page.getByRole("heading", { name: "结论先行" })).toBeVisible();
@@ -61,11 +63,13 @@ test("从首页进入免费训练，并完成结论先行的冷答、重写与�
   await expect(page.getByText("原文证据")).toBeVisible();
   await expect(page.getByRole("button", { name: /采用/ })).toHaveCount(0);
 
-  await page
-    .getByLabel("亲自重写")
-    .fill(
-      "项目存在上线风险，我建议先解决联调问题再发布。目前核心功能已经完成，但几个联调问题可能影响周五上线。"
-    );
+  const revision = page.getByLabel("在原回答上修改");
+  await expect(revision).toHaveValue(
+    "目前核心功能已经完成，但还有几个联调问题。项目存在上线风险，我建议先解决联调问题再发布。"
+  );
+  await revision.fill(
+    "项目存在上线风险，我建议先解决联调问题再发布。目前核心功能已经完成，但几个联调问题可能影响周五上线。"
+  );
   await page.getByRole("button", { name: "检查我的重写" }).click();
   await expect(page.getByRole("heading", { name: "重写结果" })).toBeVisible();
   await page.getByRole("button", { name: "进入迁移练习" }).click();
@@ -80,8 +84,10 @@ test("从首页进入免费训练，并完成结论先行的冷答、重写与�
     );
   await page.getByRole("button", { name: "提交迁移回答" }).click();
   await page
-    .getByLabel("迁移题核心结论")
-    .fill("建议选择方案二，因为它的上线风险更低。");
+    .getByRole("radio", {
+      name: "建议选择方案二，因为它的上线风险更低。"
+    })
+    .check();
   await page.getByRole("button", { name: "检查迁移结果" }).click();
 
   await expect(
@@ -102,8 +108,10 @@ test("无关回答不能通过复制自填核心句刷成明确目的达标", as
     .fill("我们今天讨论了字体颜色和按钮大小，会议记录也已经整理完成。");
   await page.getByRole("button", { name: "提交冷回答" }).click();
   await page
-    .getByLabel("我的核心结论")
-    .fill("我们今天讨论了字体颜色和按钮大小。");
+    .getByRole("radio", {
+      name: "我们今天讨论了字体颜色和按钮大小，"
+    })
+    .check();
   await page.getByRole("button", { name: "查看单点反馈" }).click();
 
   await expect(page.getByText("未完成本题任务")).toBeVisible();
@@ -122,7 +130,7 @@ test("刷新后恢复尚未完成的训练步骤和本地回答", async ({ page 
   await page.reload();
 
   await expect(page.getByText("先自己检查")).toBeVisible();
-  await expect(page.getByText(answer)).toBeVisible();
+  await expect(page.getByText(answer, { exact: true })).toBeVisible();
 });
 
 test("两到三点必须是不同且相关的内容", async ({ page }) => {
@@ -135,8 +143,10 @@ test("两到三点必须是不同且相关的内容", async ({ page }) => {
     );
   await page.getByRole("button", { name: "提交冷回答" }).click();
   await page
-    .getByLabel("我的核心结论")
-    .fill("我建议优先优化新用户引导。");
+    .getByRole("radio", {
+      name: "我建议优化新用户引导，主要有三点。"
+    })
+    .check();
   await page.getByRole("button", { name: "查看单点反馈" }).click();
 
   await expect(
@@ -180,8 +190,10 @@ test("到期记录可以进入24小时间隔冷测并单独保存结果", async 
     .fill("合同尚未签署，我建议延后项目启动，请业务负责人今天确认。");
   await page.getByRole("button", { name: "提交冷测回答" }).click();
   await page
-    .getByLabel("冷测核心结论")
-    .fill("合同未签，需要负责人确认延后项目启动。");
+    .getByRole("radio", {
+      name: "我建议延后项目启动，"
+    })
+    .check();
   await page.getByRole("button", { name: "检查冷测结果" }).click();
 
   await expect(
