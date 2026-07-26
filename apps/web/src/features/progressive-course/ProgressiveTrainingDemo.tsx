@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   type FormEvent,
   type ReactNode,
@@ -48,7 +47,11 @@ const implementedDays = [1, 2, 3, 4] as const;
 
 type CheckResult = "success" | "retry" | null;
 
-export function ProgressiveTrainingDemo() {
+export function ProgressiveTrainingDemo({
+  classicHref = "/training-demo/classic"
+}: {
+  classicHref?: string;
+} = {}) {
   const [progress, setProgress] = useState<ProgressiveCourseProgress>(() =>
     createProgressiveCourseProgress()
   );
@@ -157,7 +160,10 @@ export function ProgressiveTrainingDemo() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-6">
-      <CourseHeader completedCount={progress.completedDays.length} />
+      <CourseHeader
+        classicHref={classicHref}
+        completedCount={progress.completedDays.length}
+      />
       <CourseMap
         currentDay={session.day}
         onSelectDay={selectDay}
@@ -667,19 +673,25 @@ export function ProgressiveTrainingDemo() {
   }
 }
 
-function CourseHeader({ completedCount }: { completedCount: number }) {
+function CourseHeader({
+  classicHref,
+  completedCount
+}: {
+  classicHref: string;
+  completedCount: number;
+}) {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-focus">
           免费公开训练 · v0.5 预览
         </p>
-        <Link
+        <a
           className="text-sm font-medium text-slate-600 underline decoration-slate-300 underline-offset-4"
-          href="/training-demo/classic"
+          href={classicHref}
         >
           我有基础，直接做水平检查
-        </Link>
+        </a>
       </div>
       <h1 className="max-w-3xl text-3xl font-semibold leading-tight text-slate-950 sm:text-4xl">
         七天完成一个结构化工作汇报
