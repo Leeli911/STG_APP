@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.3.0-beta.1",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "NEXT_TEST_WASM=1 NEXT_TEST_WASM_DIR=../../node_modules/@next/swc-wasm-nodejs next dev",
+    "build": "NEXT_TEST_WASM=1 NEXT_TEST_WASM_DIR=../../node_modules/@next/swc-wasm-nodejs next build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -13,26 +13,30 @@
     "verify:live-attempt": "vite-node --config vitest.config.ts scripts/verify-live-attempt.ts"
   },
   "dependencies": {
-    "@next/env": "^15.0.0",
-    "next": "^15.0.0",
+    "@next/env": "^15.5.21",
+    "next": "^15.5.21",
     "openai": "^6.44.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.2.11",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
     "autoprefixer": "^10.4.20",
-    "eslint": "^9.17.0",
-    "eslint-config-next": "^15.0.0",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
     "jsdom": "^25.0.1",
-    "postcss": "^8.4.49",
+    "postcss": "8.5.23",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^3.2.6"
   }
 }
