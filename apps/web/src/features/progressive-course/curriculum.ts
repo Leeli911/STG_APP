@@ -99,6 +99,59 @@ export const dayThreeOrderExercise = {
   correctOrder: ["conclusion", "reason", "detail"]
 } as const;
 
+export const dayFourKnowledgeChecks: KnowledgeCheck[] = [
+  {
+    id: "day-4-direct-support",
+    prompt: "哪一条信息最能直接支撑“本周应更新客服 FAQ”？",
+    context:
+      "客服主管问是否需要更新 FAQ。上周四十条咨询中，有二十五条都在询问同一个已变更的退款步骤。",
+    options: [
+      {
+        id: "direct-evidence",
+        label: "上周四十条咨询中，二十五条都在询问已变更的退款步骤。"
+      },
+      {
+        id: "process-detail",
+        label: "现有 FAQ 是三个月前由运营同事整理的。"
+      },
+      {
+        id: "circular",
+        label: "因为 FAQ 需要更新，所以我们应该更新 FAQ。"
+      }
+    ],
+    correctOptionId: "direct-evidence",
+    successExplanation: "正确。咨询数量与已变更步骤直接说明旧 FAQ 正在造成重复问题。",
+    retryExplanation: "选择能证明“为什么现在要更新”的事实，而不是过程信息或重复结论。"
+  }
+];
+
+export const dayFourGuidedExercise = {
+  context:
+    "入职负责人问：是否要在本周更新新人入职清单？最近十名新人中有六人漏交权限申请，旧清单没有写这一步。",
+  conclusion: "建议本周更新新人入职清单。",
+  reasons: [
+    {
+      id: "direct-reason",
+      text: "因为最近十名新人中有六人漏交权限申请，旧清单也没有写这一步。"
+    },
+    {
+      id: "weak-background",
+      text: "因为这份清单已经使用了比较长的时间。"
+    },
+    {
+      id: "personal-preference",
+      text: "因为我觉得新版清单看起来会更完整。"
+    }
+  ],
+  correctReasonId: "direct-reason"
+} as const;
+
+export const dayFourIndependentPrompt = {
+  audience: "运营主管",
+  prompt:
+    "最近四次周报中有三次漏填新增的风险字段，现有提交检查清单没有这个字段。主管问：是否需要调整周报提交流程？请用两句话回答，第一句给判断，第二句只给最关键依据。"
+} as const;
+
 export const progressiveCourse: ProgressiveCourseLesson[] = [
   {
     id: "stg-v05-day-1-recognize-purpose",
@@ -233,7 +286,24 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
     title: "用一个理由支撑结论",
     conceptGoal: "能写出结论与最关键依据",
     estimatedMinutes: 5,
-    implemented: false,
+    implemented: true,
+    lesson: {
+      definition: "支撑理由是能够直接解释“为什么这个结论成立”的事实或依据。",
+      value: "只给结论容易像个人看法；补一个最关键依据，听众才有判断和行动的理由。",
+      formula: "我的判断是［结论］。最关键的依据是［一个可核对事实］。",
+      badExample: {
+        label: "重复结论",
+        text: "建议更新周报流程，因为这个流程需要更新。",
+        explanation: "后半句只是换词重复结论，没有提供新的依据。"
+      },
+      goodExample: {
+        label: "理由直接",
+        text: "建议更新周报提交检查清单。最近四次周报有三次漏填新增的风险字段。",
+        explanation: "第二句是可核对事实，并且直接解释为什么需要更新。"
+      },
+      commonMistake: "堆很多背景，却没有挑出一条能直接证明结论的关键事实。"
+    },
+    knowledgeChecks: dayFourKnowledgeChecks,
     exercises: [
       {
         id: "day-4-guided",
@@ -320,7 +390,7 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
   }
 ];
 
-export function getProgressiveLesson(day: 1 | 2 | 3) {
+export function getProgressiveLesson(day: 1 | 2 | 3 | 4) {
   const lesson = progressiveCourse.find(
     (item) => item.day === day && item.implemented
   );

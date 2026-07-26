@@ -193,7 +193,84 @@ test("Day 3 从首句识别和排序进入无提示结论先行表达", async ({
   await expect(page.getByText("当前完成 3 / 7 课")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Day 4 用一个理由支撑结论 后续开发"
+      name: "Day 4 用一个理由支撑结论 已解锁"
+    })
+  ).toBeEnabled();
+});
+
+test("Day 4 从理由识别进入两句话独立表达，并拒绝循环理由", async ({
+  page
+}) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "stg:v0.5:progressive-course",
+      JSON.stringify({
+        version: 1,
+        completedDays: [1, 2, 3],
+        lessonViewedDays: [1, 2, 3],
+        scaffoldUses: {},
+        updatedAt: new Date().toISOString()
+      })
+    );
+  });
+
+  await page.goto("/training-demo");
+  await page
+    .getByRole("button", {
+      name: "Day 4 用一个理由支撑结论 已解锁"
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "用一个理由支撑结论" })
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "我理解了，做一个简单检查" })
+    .click();
+  await page
+    .getByRole("radio", {
+      name: "上周四十条咨询中，二十五条都在询问已变更的退款步骤。"
+    })
+    .check();
+  await page.getByRole("button", { name: "检查这条依据" }).click();
+
+  await page
+    .getByRole("radio", {
+      name: "因为最近十名新人中有六人漏交权限申请，旧清单也没有写这一步。"
+    })
+    .check();
+  await page.getByRole("button", { name: "组合结论和理由" }).click();
+  await expect(page.getByText("理由匹配")).toBeVisible();
+  await page
+    .getByRole("button", { name: "进入两句话独立练习" })
+    .click();
+
+  const answer = page.getByLabel("你的两句话回答");
+  await answer.fill(
+    "建议更新周报提交检查清单。因为这个检查清单现在需要更新。"
+  );
+  await page.getByRole("button", { name: "检查结论和理由" }).click();
+  await expect(
+    page.getByRole("heading", { name: "理由还不能直接支撑结论" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "完成第 4 课" })
+  ).toHaveCount(0);
+
+  await answer.fill(
+    "建议更新周报提交检查清单。最近四次周报中有三次漏填新增的风险字段。"
+  );
+  await page.getByRole("button", { name: "检查结论和理由" }).click();
+  await expect(page.getByText("结论与理由达标")).toBeVisible();
+  await page.getByRole("button", { name: "完成第 4 课" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "让结论有一个站得住的理由" })
+  ).toBeVisible();
+  await expect(page.getByText("当前完成 4 / 7 课")).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Day 5 把信息整理成两到三点 后续开发"
     })
   ).toBeDisabled();
 });

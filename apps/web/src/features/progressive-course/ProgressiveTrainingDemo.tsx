@@ -10,6 +10,8 @@ import {
 } from "react";
 
 import {
+  dayFourGuidedExercise,
+  dayFourIndependentPrompt,
   dayThreeOrderExercise,
   getProgressiveLesson,
   progressiveCourse
@@ -32,6 +34,7 @@ import type {
   ProgressiveCourseProgress,
   ProgressiveLessonContent
 } from "@/features/progressive-course/types";
+import { evaluateDayFourAnswer } from "@/features/progressive-course/supportEvaluator";
 import { getStructuredPracticePrompt } from "@/features/structured-practice/curriculum";
 import { evaluateStructuredAnswer } from "@/features/structured-practice/ruleEngine";
 
@@ -41,7 +44,7 @@ const dayTwoPracticePrompt = getStructuredPracticePrompt(
 const dayThreePracticePrompt = getStructuredPracticePrompt(
   "stg-v04-conclusion-cold-01"
 );
-const implementedDays = [1, 2, 3] as const;
+const implementedDays = [1, 2, 3, 4] as const;
 
 type CheckResult = "success" | "retry" | null;
 
@@ -62,6 +65,10 @@ export function ProgressiveTrainingDemo() {
   const [dayThreeKnowledgeResult, setDayThreeKnowledgeResult] =
     useState<CheckResult>(null);
   const [dayThreeOrderResult, setDayThreeOrderResult] =
+    useState<CheckResult>(null);
+  const [dayFourKnowledgeResult, setDayFourKnowledgeResult] =
+    useState<CheckResult>(null);
+  const [dayFourGuidedResult, setDayFourGuidedResult] =
     useState<CheckResult>(null);
 
   const currentLesson = getProgressiveLesson(session.day);
@@ -92,6 +99,16 @@ export function ProgressiveTrainingDemo() {
       evaluation: dayThreePracticePrompt.evaluation
     });
   }, [session.dayThreeAnswer, session.dayThreeChecked]);
+  const dayFourAssessment = useMemo(() => {
+    if (
+      !session.dayFourChecked ||
+      session.dayFourAnswer.trim().length === 0
+    ) {
+      return null;
+    }
+
+    return evaluateDayFourAnswer(session.dayFourAnswer);
+  }, [session.dayFourAnswer, session.dayFourChecked]);
 
   useEffect(() => {
     const storedProgress = parseProgressiveCourseProgress(
@@ -314,16 +331,80 @@ export function ProgressiveTrainingDemo() {
         <CompletionCard
           description="你已经先给出项目判断，再补充背景和依据。排序题只帮助理解；本次无提示短答才构成结论先行的课程内证据。"
           eyebrow="Day 3 已完成"
+          nextLabel="进入 Day 4：用一个理由支撑结论"
+          onNext={() => selectDay(4)}
+          title="让听众先听到答案"
+        />
+      ) : null}
+
+      {session.day === 4 && session.stage === "knowledge" ? (
+        <KnowledgeCheckForm
+          error={formError}
+          eyebrow="Day 4 · 理由识别"
+          onSelect={(_, optionId) => {
+            setDayFourKnowledgeResult(null);
+            setFormError(null);
+            updateSession({ dayFourKnowledgeSelection: optionId });
+          }}
+          onSubmit={submitDayFourKnowledgeCheck}
+          questions={currentLesson.knowledgeChecks}
+          result={dayFourKnowledgeResult}
+          selections={{
+            [currentLesson.knowledgeChecks[0].id]:
+              session.dayFourKnowledgeSelection
+          }}
+          submitLabel="检查这条依据"
+        />
+      ) : null}
+
+      {session.day === 4 && session.stage === "guided" ? (
+        <GuidedSupportPractice
+          error={formError}
+          onContinue={() => updateSession({ stage: "independent" })}
+          onSelect={(value) => {
+            setDayFourGuidedResult(null);
+            setFormError(null);
+            updateSession({ dayFourGuidedSelection: value });
+          }}
+          onSubmit={submitDayFourGuidedPractice}
+          result={dayFourGuidedResult}
+          selection={session.dayFourGuidedSelection}
+        />
+      ) : null}
+
+      {session.day === 4 && session.stage === "independent" ? (
+        <IndependentSupportPractice
+          answer={session.dayFourAnswer}
+          assessment={dayFourAssessment}
+          error={formError}
+          onAnswerChange={(value) => {
+            setFormError(null);
+            updateSession({
+              dayFourAnswer: value,
+              dayFourChecked: false
+            });
+          }}
+          onComplete={completeDayFour}
+          onShowScaffold={showDayFourScaffold}
+          onSubmit={submitDayFourAnswer}
+          scaffoldVisible={session.scaffoldVisible}
+        />
+      ) : null}
+
+      {session.day === 4 && session.stage === "complete" ? (
+        <CompletionCard
+          description="你已经用第一句给出判断，再用第二句提供一个直接、可核对的依据。选择题和组合练习只用于理解，独立回答才构成课程内证据。"
+          eyebrow="Day 4 已完成"
           nextLabel="查看后续课程"
           onNext={() =>
             document
               .getElementById("course-map")
               ?.scrollIntoView({ behavior: "smooth" })
           }
-          title="让听众先听到答案"
+          title="让结论有一个站得住的理由"
         >
           <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-            Day 4“用一个理由支撑结论”将在下一批实现。当前页面已展示完整七天难度线，
+            Day 5“把信息整理成两到三点”将在下一批实现。当前页面已展示完整七天难度线，
             但不会把尚未开发的课程伪装成可用功能。
           </div>
         </CompletionCard>
@@ -335,7 +416,7 @@ export function ProgressiveTrainingDemo() {
     setSession((current) => ({ ...current, ...update }));
   }
 
-  function selectDay(day: 1 | 2 | 3) {
+  function selectDay(day: 1 | 2 | 3 | 4) {
     if (!isProgressiveDayUnlocked(progress, day)) return;
     setFormError(null);
     setDayOneResult(null);
@@ -343,6 +424,8 @@ export function ProgressiveTrainingDemo() {
     setDayTwoGuidedResult(null);
     setDayThreeKnowledgeResult(null);
     setDayThreeOrderResult(null);
+    setDayFourKnowledgeResult(null);
+    setDayFourGuidedResult(null);
     setSession({
       ...createProgressiveCourseSession(),
       day
@@ -515,6 +598,73 @@ export function ProgressiveTrainingDemo() {
     setProgress((current) => completeProgressiveDay(current, 3));
     updateSession({ stage: "complete" });
   }
+
+  function submitDayFourKnowledgeCheck(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+    const question = currentLesson.knowledgeChecks[0];
+    if (!session.dayFourKnowledgeSelection) {
+      setFormError("请先选择一条最能支撑结论的依据。");
+      return;
+    }
+    if (session.dayFourKnowledgeSelection !== question.correctOptionId) {
+      setDayFourKnowledgeResult("retry");
+      setFormError(null);
+      return;
+    }
+
+    setDayFourKnowledgeResult("success");
+    setFormError(null);
+    updateSession({ stage: "guided" });
+  }
+
+  function submitDayFourGuidedPractice(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+    if (!session.dayFourGuidedSelection) {
+      setFormError("请选择一条理由补全这组表达。");
+      return;
+    }
+    if (
+      session.dayFourGuidedSelection !==
+      dayFourGuidedExercise.correctReasonId
+    ) {
+      setDayFourGuidedResult("retry");
+      setFormError(null);
+      return;
+    }
+
+    setDayFourGuidedResult("success");
+    setFormError(null);
+  }
+
+  function submitDayFourAnswer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (session.dayFourAnswer.trim().length < 24) {
+      setFormError("请用两句话完成，至少输入 24 个字符。");
+      return;
+    }
+
+    setFormError(null);
+    updateSession({ dayFourChecked: true });
+  }
+
+  function showDayFourScaffold() {
+    if (!session.scaffoldVisible) {
+      setProgress((current) =>
+        recordProgressiveScaffoldUse(current, 4)
+      );
+    }
+    updateSession({ scaffoldVisible: true });
+  }
+
+  function completeDayFour() {
+    if (!dayFourAssessment?.passed) return;
+    setProgress((current) => completeProgressiveDay(current, 4));
+    updateSession({ stage: "complete" });
+  }
 }
 
 function CourseHeader({ completedCount }: { completedCount: number }) {
@@ -558,8 +708,8 @@ function CourseMap({
   onSelectDay,
   progress
 }: {
-  currentDay: 1 | 2 | 3;
-  onSelectDay(day: 1 | 2 | 3): void;
+  currentDay: 1 | 2 | 3 | 4;
+  onSelectDay(day: 1 | 2 | 3 | 4): void;
   progress: ProgressiveCourseProgress;
 }) {
   return (
@@ -586,7 +736,7 @@ function CourseMap({
           const interactive =
             lesson.implemented &&
             prerequisiteMet &&
-            implementedDays.includes(lesson.day as 1 | 2 | 3);
+            implementedDays.includes(lesson.day as 1 | 2 | 3 | 4);
           const active = lesson.day === currentDay;
           const status = completed
             ? "已完成"
@@ -609,7 +759,7 @@ function CourseMap({
               }
               disabled={!interactive}
               key={lesson.id}
-              onClick={() => onSelectDay(lesson.day as 1 | 2 | 3)}
+              onClick={() => onSelectDay(lesson.day as 1 | 2 | 3 | 4)}
               type="button"
             >
               <span className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500">
@@ -633,7 +783,7 @@ function LessonProgress({
   stage,
   title
 }: {
-  day: 1 | 2 | 3;
+  day: 1 | 2 | 3 | 4;
   stage: ProgressiveCourseSession["stage"];
   title: string;
 }) {
@@ -668,7 +818,7 @@ function LessonCard({
   title
 }: {
   content: ProgressiveLessonContent;
-  day: 1 | 2 | 3;
+  day: 1 | 2 | 3 | 4;
   estimatedMinutes: number;
   goal: string;
   knowledgeCount: number;
@@ -1144,6 +1294,229 @@ function IndependentConclusionPractice({
               type="button"
             >
               查看顺序支架后再改一次
+            </button>
+          )}
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function GuidedSupportPractice({
+  error,
+  onContinue,
+  onSelect,
+  onSubmit,
+  result,
+  selection
+}: {
+  error: string | null;
+  onContinue(): void;
+  onSelect(value: string): void;
+  onSubmit(event: FormEvent<HTMLFormElement>): void;
+  result: CheckResult;
+  selection: string;
+}) {
+  const selectedReason = dayFourGuidedExercise.reasons.find(
+    (reason) => reason.id === dayFourGuidedExercise.correctReasonId
+  );
+
+  return (
+    <section className="space-y-6">
+      <form
+        className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
+        onSubmit={onSubmit}
+      >
+        <p className="text-sm font-medium text-focus">Day 4 · 有支架练习</p>
+        <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+          给结论配一个最直接的理由
+        </h2>
+        <div className="mt-5 rounded-xl bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+          情境：{dayFourGuidedExercise.context}
+        </div>
+        <p className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4 font-medium leading-7 text-blue-950">
+          结论：{dayFourGuidedExercise.conclusion}
+        </p>
+        <fieldset className="mt-5">
+          <legend className="font-medium text-slate-900">
+            哪一个理由能最直接支撑这个结论？
+          </legend>
+          <div className="mt-3 space-y-3">
+            {dayFourGuidedExercise.reasons.map((reason) => (
+              <label
+                className="flex cursor-pointer gap-3 rounded-lg border border-slate-200 p-4 text-sm leading-6 has-[:checked]:border-focus has-[:checked]:bg-blue-50"
+                key={reason.id}
+              >
+                <input
+                  checked={selection === reason.id}
+                  className="mt-1 accent-blue-600"
+                  name="guided-support"
+                  onChange={() => onSelect(reason.id)}
+                  type="radio"
+                  value={reason.id}
+                />
+                <span>{reason.text}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <FormError message={error} />
+        {result === "retry" ? (
+          <p
+            className="mt-4 rounded-lg bg-amber-50 p-4 text-sm leading-6 text-amber-900"
+            role="status"
+          >
+            使用时间和个人偏好都不能直接证明问题。寻找包含人数、遗漏行为和旧清单缺口的事实。
+          </p>
+        ) : null}
+        <button className={`${primaryButtonClass} mt-5`} type="submit">
+          组合结论和理由
+        </button>
+      </form>
+
+      {result === "success" ? (
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-7">
+          <p className="text-sm font-medium text-emerald-800">理由匹配</p>
+          <p className="mt-3 text-lg font-semibold leading-8 text-emerald-950">
+            {dayFourGuidedExercise.conclusion}
+            {selectedReason?.text}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-emerald-900">
+            这一步帮助你识别“直接依据”，不计为技能达标。下一步需要在新情境中独立写两句话。
+          </p>
+          <button
+            className={`${primaryButtonClass} mt-5`}
+            onClick={onContinue}
+            type="button"
+          >
+            进入两句话独立练习
+          </button>
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function IndependentSupportPractice({
+  answer,
+  assessment,
+  error,
+  onAnswerChange,
+  onComplete,
+  onShowScaffold,
+  onSubmit,
+  scaffoldVisible
+}: {
+  answer: string;
+  assessment: ReturnType<typeof evaluateDayFourAnswer> | null;
+  error: string | null;
+  onAnswerChange(value: string): void;
+  onComplete(): void;
+  onShowScaffold(): void;
+  onSubmit(event: FormEvent<HTMLFormElement>): void;
+  scaffoldVisible: boolean;
+}) {
+  const passed = assessment?.passed === true;
+
+  return (
+    <section className="space-y-6">
+      <form
+        className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
+        onSubmit={onSubmit}
+      >
+        <p className="text-sm font-medium text-focus">Day 4 · 独立表达</p>
+        <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+          只写一个结论和一个关键理由
+        </h2>
+        <div className="mt-5 rounded-xl bg-slate-50 p-5">
+          <p className="text-xs font-medium text-slate-500">
+            受众：{dayFourIndependentPrompt.audience}
+          </p>
+          <p className="mt-2 leading-7 text-slate-900">
+            {dayFourIndependentPrompt.prompt}
+          </p>
+        </div>
+        {scaffoldVisible ? (
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+            <p className="font-semibold">两句话支架</p>
+            <p className="mt-1">
+              第一句：建议［调整什么］。第二句：最近［一个可核对的遗漏事实］。
+            </p>
+            <p className="mt-2 text-xs text-blue-800">
+              不要写“因为需要调整，所以要调整”；理由必须增加新的事实。
+            </p>
+          </div>
+        ) : null}
+        <label
+          className="mt-5 block text-sm font-medium text-slate-800"
+          htmlFor="day-four-answer"
+        >
+          你的两句话回答
+        </label>
+        <textarea
+          className="mt-2 min-h-28 w-full rounded-md border border-slate-300 px-3 py-3 text-base leading-7 shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
+          id="day-four-answer"
+          maxLength={180}
+          onChange={(event) => onAnswerChange(event.target.value)}
+          placeholder="第一句给建议，第二句只写最关键的事实依据"
+          value={answer}
+        />
+        <p className="mt-1 text-right text-xs text-slate-500">
+          {answer.length} / 180
+        </p>
+        <FormError message={error} />
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button className={primaryButtonClass} type="submit">
+            检查结论和理由
+          </button>
+          {!scaffoldVisible ? (
+            <button
+              className={secondaryButtonClass}
+              onClick={onShowScaffold}
+              type="button"
+            >
+              我卡住了，查看两句话支架
+            </button>
+          ) : null}
+        </div>
+      </form>
+
+      {assessment ? (
+        <section
+          aria-live="polite"
+          className={
+            passed
+              ? "rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-7"
+              : "rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-7"
+          }
+        >
+          <p className="text-sm font-medium">
+            {passed ? "结论与理由达标" : "还需要调整一处"}
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-950">
+            {assessment.statusLabel}
+          </h2>
+          <dl className="mt-4 space-y-3 text-sm leading-6">
+            <FeedbackItem label="原文证据" value={assessment.evidence} />
+            <FeedbackItem label="系统观察" value={assessment.observation} />
+            <FeedbackItem label="对听众的影响" value={assessment.impact} />
+            <FeedbackItem label="下一步" value={assessment.action} />
+          </dl>
+          {passed ? (
+            <button
+              className={`${primaryButtonClass} mt-5`}
+              onClick={onComplete}
+              type="button"
+            >
+              完成第 4 课
+            </button>
+          ) : (
+            <button
+              className={`${secondaryButtonClass} mt-5`}
+              onClick={onShowScaffold}
+              type="button"
+            >
+              查看两句话支架后再改一次
             </button>
           )}
         </section>

@@ -39,6 +39,11 @@ describe("Module 16 progressive public training route", () => {
         name: "Day 3 把结论放到第一句 未解锁"
       })
     ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Day 4 用一个理由支撑结论 未解锁"
+      })
+    ).toBeDisabled();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -279,6 +284,114 @@ describe("Module 16 progressive public training route", () => {
     );
     expect(screen.getByText("顺序支架")).toBeInTheDocument();
   });
+
+  it("unlocks Day 4 and requires one direct reason after the conclusion", async () => {
+    unlockDayFour();
+    render(<TrainingDemoPage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Day 4 用一个理由支撑结论 已解锁"
+      })
+    );
+    expect(
+      screen.getByRole("heading", {
+        name: "用一个理由支撑结论"
+      })
+    ).toBeInTheDocument();
+
+    await startCurrentLesson("我理解了，做一个简单检查");
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "上周四十条咨询中，二十五条都在询问已变更的退款步骤。"
+      })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "检查这条依据" }));
+
+    expect(
+      screen.getByRole("heading", {
+        name: "给结论配一个最直接的理由"
+      })
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "因为最近十名新人中有六人漏交权限申请，旧清单也没有写这一步。"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "组合结论和理由" })
+    );
+    expect(screen.getByText("理由匹配")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "进入两句话独立练习" })
+    );
+
+    fireEvent.change(screen.getByLabelText("你的两句话回答"), {
+      target: {
+        value:
+          "建议更新周报提交检查清单。最近四次周报中有三次漏填新增的风险字段。"
+      }
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查结论和理由" })
+    );
+    expect(screen.getByText("结论与理由达标")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "完成第 4 课" }));
+
+    expect(
+      screen.getByRole("heading", {
+        name: "让结论有一个站得住的理由"
+      })
+    ).toBeInTheDocument();
+    const saved = JSON.parse(
+      window.localStorage.getItem(PROGRESSIVE_COURSE_KEY) ?? "{}"
+    );
+    expect(saved.completedDays).toEqual([1, 2, 3, 4]);
+  });
+
+  it("does not complete Day 4 when the reason merely repeats the conclusion", async () => {
+    unlockDayFour();
+    window.sessionStorage.setItem(
+      PROGRESSIVE_SESSION_KEY,
+      JSON.stringify({
+        version: 1,
+        day: 4,
+        stage: "independent",
+        dayFourAnswer: "",
+        dayFourChecked: false,
+        scaffoldVisible: false
+      })
+    );
+    render(<TrainingDemoPage />);
+
+    fireEvent.change(
+      await screen.findByLabelText("你的两句话回答"),
+      {
+        target: {
+          value:
+            "建议更新周报提交检查清单。因为这个检查清单现在需要更新。"
+        }
+      }
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查结论和理由" })
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "理由还不能直接支撑结论"
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "完成第 4 课" })
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "查看两句话支架后再改一次"
+      })
+    );
+    expect(screen.getByText("两句话支架")).toBeInTheDocument();
+  });
 });
 
 async function startCurrentLesson(buttonName: string) {
@@ -309,6 +422,19 @@ function unlockDayThree() {
       version: 1,
       completedDays: [1, 2],
       lessonViewedDays: [1, 2],
+      scaffoldUses: {},
+      updatedAt: "2026-07-26T00:00:00.000Z"
+    })
+  );
+}
+
+function unlockDayFour() {
+  window.localStorage.setItem(
+    PROGRESSIVE_COURSE_KEY,
+    JSON.stringify({
+      version: 1,
+      completedDays: [1, 2, 3],
+      lessonViewedDays: [1, 2, 3],
       scaffoldUses: {},
       updatedAt: "2026-07-26T00:00:00.000Z"
     })
