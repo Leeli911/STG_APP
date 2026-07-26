@@ -58,7 +58,8 @@ npm run dev
 - 首页：`http://localhost:3000`
 - v0.5 渐进课程：`http://localhost:3000/training-demo`
 - v0.4 经典水平检查：`http://localhost:3000/training-demo/classic`
-- 免费线上 Demo（当前 GitHub Pages 仍为经典版本）：<https://leeli911.github.io/STG_APP/training-demo/>
+- Vercel 生产版：<https://stg-app-beta.vercel.app/training-demo>
+- GitHub Pages 备用入口：<https://leeli911.github.io/STG_APP/training-demo/>
 
 本地默认使用 Mock AI。需要开发账号时，在 `apps/web/.env.local` 中显式设置 `STG_ENABLE_DEV_AUTH=true`；该开关在生产环境中始终失效。
 完整 Revision/Delta 主流程由服务端 `LIVE_TRAINING_V2` 控制；本地示例为 `true`，Production 在 Staging Gate 通过前必须保持 `false`。

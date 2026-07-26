@@ -12,7 +12,7 @@ STG 的免费公开训练入口：
 https://leeli911.github.io/STG_APP/training-demo/
 ```
 
-Next.js 的 `/training-demo` 当前为 v0.5 渐进课程，`/training-demo/classic` 保留 v0.4 可信水平检查。GitHub Pages 静态入口仍为经典训练；线上入口只有在相应版本完成发布后才会更新，本地分支的新功能不等于已经部署。
+Next.js 的 `/training-demo` 当前为 v0.5 渐进课程，`/training-demo/classic` 保留 v0.4 可信水平检查。GitHub Pages 默认展示同一套 v0.5 Day 1–4 渐进课程，并通过页面内“我有基础”入口切换到 v0.4 经典水平检查。
 
 ## v0.5 当前展示内容
 
