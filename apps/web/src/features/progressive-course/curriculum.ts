@@ -53,6 +53,52 @@ export const dayTwoKnowledgeChecks: KnowledgeCheck[] = [
   }
 ];
 
+export const dayThreeKnowledgeChecks: KnowledgeCheck[] = [
+  {
+    id: "day-3-conclusion-first",
+    prompt: "哪一句更适合作为回答的第一句？",
+    context:
+      "主管问：新员工培训是否需要调整？反馈显示新人最容易卡在系统权限配置。",
+    options: [
+      {
+        id: "background-first",
+        label: "上个月我们收集了十二份新人反馈，也访谈了三名带教同事。"
+      },
+      {
+        id: "conclusion-first",
+        label: "建议先调整权限配置培训，因为这是新人最集中的卡点。"
+      },
+      {
+        id: "process-first",
+        label: "我先介绍一下这次调研采用的方法和参与人员。"
+      }
+    ],
+    correctOptionId: "conclusion-first",
+    successExplanation: "正确。它先回答“是否调整”，随后还可以再补充调研依据。",
+    retryExplanation: "主管先需要听到判断；调研过程和背景可以放在后面。"
+  }
+];
+
+export const dayThreeOrderExercise = {
+  context:
+    "负责人问：本周是否按计划发布内部报表？一个关键字段还没有复核，预计明天才能确认。",
+  sentences: [
+    {
+      id: "conclusion",
+      text: "建议暂缓发布内部报表，等关键字段明天复核完成后再发布。"
+    },
+    {
+      id: "reason",
+      text: "目前一个关键字段仍未完成复核。"
+    },
+    {
+      id: "detail",
+      text: "其他字段已经检查完毕，报表格式也已确认。"
+    }
+  ],
+  correctOrder: ["conclusion", "reason", "detail"]
+} as const;
+
 export const progressiveCourse: ProgressiveCourseLesson[] = [
   {
     id: "stg-v05-day-1-recognize-purpose",
@@ -147,7 +193,24 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
     title: "把结论放到第一句",
     conceptGoal: "能先回答问题，再补背景和依据",
     estimatedMinutes: 5,
-    implemented: false,
+    implemented: true,
+    lesson: {
+      definition: "结论先行是先给出判断、结果或建议，再补充原因和背景。",
+      value: "听众先知道答案，就能更快理解后续信息为什么重要。",
+      formula: "第一句回答问题 ＋ 后面说明关键依据",
+      badExample: {
+        label: "背景先行",
+        text: "过去两周我们访谈了十位用户，也整理了客服记录，最后发现注册流程需要调整。",
+        explanation: "听众要等到句末才知道你真正的判断。"
+      },
+      goodExample: {
+        label: "结论先行",
+        text: "建议优先调整注册流程，因为用户流失和客服咨询都集中在前三步。",
+        explanation: "第一句先给建议，后半句再说明最关键的依据。"
+      },
+      commonMistake: "把“我先介绍一下背景”当成开场，让听众一直等待真正答案。"
+    },
+    knowledgeChecks: dayThreeKnowledgeChecks,
     exercises: [
       {
         id: "day-3-reorder",
@@ -257,7 +320,7 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
   }
 ];
 
-export function getProgressiveLesson(day: 1 | 2) {
+export function getProgressiveLesson(day: 1 | 2 | 3) {
   const lesson = progressiveCourse.find(
     (item) => item.day === day && item.implemented
   );

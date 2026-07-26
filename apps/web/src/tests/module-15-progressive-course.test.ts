@@ -24,18 +24,28 @@ describe("Module 15 progressive course contract", () => {
     ]);
     expect(
       progressiveCourse.filter((lesson) => lesson.implemented).map((lesson) => lesson.day)
-    ).toEqual([1, 2]);
+    ).toEqual([1, 2, 3]);
   });
 
   it("keeps recognition separate from authoritative skill evidence", () => {
     const dayOne = getProgressiveLesson(1);
     const dayTwo = getProgressiveLesson(2);
+    const dayThree = getProgressiveLesson(3);
 
     expect(
       dayOne.exercises.every((exercise) => !exercise.countsForSkillStatus)
     ).toBe(true);
     expect(
       dayTwo.exercises.find(
+        (exercise) => exercise.kind === "independent_write"
+      )?.countsForSkillStatus
+    ).toBe(true);
+    expect(
+      dayThree.exercises.find((exercise) => exercise.kind === "reorder")
+        ?.countsForSkillStatus
+    ).toBe(false);
+    expect(
+      dayThree.exercises.find(
         (exercise) => exercise.kind === "independent_write"
       )?.countsForSkillStatus
     ).toBe(true);

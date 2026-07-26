@@ -36,7 +36,7 @@ describe("Module 16 progressive public training route", () => {
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Day 3 把结论放到第一句 后续开发"
+        name: "Day 3 把结论放到第一句 未解锁"
       })
     ).toBeDisabled();
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -184,6 +184,101 @@ describe("Module 16 progressive public training route", () => {
       await screen.findByLabelText("用一句话写出你的明确目的")
     ).toHaveValue("本期预算已使用九成，请负责人批准缩小本期范围。");
   });
+
+  it("unlocks Day 3 and requires sentence order before independent conclusion-first writing", async () => {
+    unlockDayThree();
+    render(<TrainingDemoPage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Day 3 把结论放到第一句 已解锁"
+      })
+    );
+    expect(
+      screen.getByRole("heading", { name: "把结论放到第一句" })
+    ).toBeInTheDocument();
+
+    await startCurrentLesson("我理解了，做一个简单检查");
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "建议先调整权限配置培训，因为这是新人最集中的卡点。"
+      })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "检查第一句" }));
+
+    fireEvent.change(screen.getByLabelText("第 1 句"), {
+      target: { value: "conclusion" }
+    });
+    fireEvent.change(screen.getByLabelText("第 2 句"), {
+      target: { value: "reason" }
+    });
+    fireEvent.change(screen.getByLabelText("第 3 句"), {
+      target: { value: "detail" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "检查句子顺序" }));
+    expect(screen.getByText("顺序正确")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "进入结论先行独立练习" })
+    );
+
+    fireEvent.change(screen.getByLabelText("你的 2–3 句回答"), {
+      target: {
+        value:
+          "项目存在周五上线风险，我建议先解决联调问题再发布。目前核心功能已经完成，但联调问题可能影响周五计划。"
+      }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "检查我的首句" }));
+    expect(screen.getByText("结论先行达标")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "完成第 3 课" }));
+
+    expect(
+      screen.getByRole("heading", { name: "让听众先听到答案" })
+    ).toBeInTheDocument();
+    const saved = JSON.parse(
+      window.localStorage.getItem(PROGRESSIVE_COURSE_KEY) ?? "{}"
+    );
+    expect(saved.completedDays).toEqual([1, 2, 3]);
+  });
+
+  it("shows a targeted scaffold when Day 3 starts with background", async () => {
+    unlockDayThree();
+    window.sessionStorage.setItem(
+      PROGRESSIVE_SESSION_KEY,
+      JSON.stringify({
+        version: 1,
+        day: 3,
+        stage: "independent",
+        dayOneSelections: {},
+        dayTwoKnowledgeSelection: "",
+        dayTwoGuidedSelection: "",
+        dayTwoAnswer: "",
+        dayTwoChecked: false,
+        dayThreeKnowledgeSelection: "conclusion-first",
+        dayThreeOrder: ["conclusion", "reason", "detail"],
+        dayThreeAnswer: "",
+        dayThreeChecked: false,
+        scaffoldVisible: false
+      })
+    );
+    render(<TrainingDemoPage />);
+
+    fireEvent.change(
+      await screen.findByLabelText("你的 2–3 句回答"),
+      {
+        target: {
+          value:
+            "目前核心功能已经完成，但还有几个联调问题。项目存在上线风险，我建议先解决联调问题再发布。"
+        }
+      }
+    );
+    fireEvent.click(screen.getByRole("button", { name: "检查我的首句" }));
+
+    expect(screen.getByText("第一句还没有直接回答")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "查看顺序支架后再改一次" })
+    );
+    expect(screen.getByText("顺序支架")).toBeInTheDocument();
+  });
 });
 
 async function startCurrentLesson(buttonName: string) {
@@ -201,6 +296,19 @@ function unlockDayTwo() {
       version: 1,
       completedDays: [1],
       lessonViewedDays: [1],
+      scaffoldUses: {},
+      updatedAt: "2026-07-26T00:00:00.000Z"
+    })
+  );
+}
+
+function unlockDayThree() {
+  window.localStorage.setItem(
+    PROGRESSIVE_COURSE_KEY,
+    JSON.stringify({
+      version: 1,
+      completedDays: [1, 2],
+      lessonViewedDays: [1, 2],
       scaffoldUses: {},
       updatedAt: "2026-07-26T00:00:00.000Z"
     })

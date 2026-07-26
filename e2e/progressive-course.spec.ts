@@ -122,7 +122,7 @@ test("课程锁定后续难度，并在刷新后恢复 Day 2 回答和支架", a
   await expect(page.getByText("句式骨架")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Day 3 把结论放到第一句 后续开发"
+      name: "Day 3 把结论放到第一句 未解锁"
     })
   ).toBeDisabled();
 
@@ -131,4 +131,69 @@ test("课程锁定后续难度，并在刷新后恢复 Day 2 回答和支架", a
     "本期预算已使用九成，请负责人批准缩小本期范围。"
   );
   await expect(page.getByText("句式骨架")).toBeVisible();
+});
+
+test("Day 3 从首句识别和排序进入无提示结论先行表达", async ({
+  page
+}) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "stg:v0.5:progressive-course",
+      JSON.stringify({
+        version: 1,
+        completedDays: [1, 2],
+        lessonViewedDays: [1, 2],
+        scaffoldUses: {},
+        updatedAt: new Date().toISOString()
+      })
+    );
+  });
+
+  await page.goto("/training-demo");
+  await page
+    .getByRole("button", {
+      name: "Day 3 把结论放到第一句 已解锁"
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "把结论放到第一句" })
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "我理解了，做一个简单检查" })
+    .click();
+  await page
+    .getByRole("radio", {
+      name: "建议先调整权限配置培训，因为这是新人最集中的卡点。"
+    })
+    .check();
+  await page.getByRole("button", { name: "检查第一句" }).click();
+
+  await page.getByLabel("第 1 句").selectOption("conclusion");
+  await page.getByLabel("第 2 句").selectOption("reason");
+  await page.getByLabel("第 3 句").selectOption("detail");
+  await page.getByRole("button", { name: "检查句子顺序" }).click();
+  await expect(page.getByText("顺序正确")).toBeVisible();
+  await page
+    .getByRole("button", { name: "进入结论先行独立练习" })
+    .click();
+
+  await page
+    .getByLabel("你的 2–3 句回答")
+    .fill(
+      "项目存在周五上线风险，我建议先解决联调问题再发布。目前核心功能已经完成，但联调问题可能影响周五计划。"
+    );
+  await page.getByRole("button", { name: "检查我的首句" }).click();
+  await expect(page.getByText("结论先行达标")).toBeVisible();
+  await page.getByRole("button", { name: "完成第 3 课" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "让听众先听到答案" })
+  ).toBeVisible();
+  await expect(page.getByText("当前完成 3 / 7 课")).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Day 4 用一个理由支撑结论 后续开发"
+    })
+  ).toBeDisabled();
 });

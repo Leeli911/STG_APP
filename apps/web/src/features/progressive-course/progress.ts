@@ -19,13 +19,17 @@ export type ProgressiveSessionStage = (typeof sessionStages)[number];
 
 export type ProgressiveCourseSession = {
   version: 1;
-  day: 1 | 2;
+  day: 1 | 2 | 3;
   stage: ProgressiveSessionStage;
   dayOneSelections: Record<string, string>;
   dayTwoKnowledgeSelection: string;
   dayTwoGuidedSelection: string;
   dayTwoAnswer: string;
   dayTwoChecked: boolean;
+  dayThreeKnowledgeSelection: string;
+  dayThreeOrder: string[];
+  dayThreeAnswer: string;
+  dayThreeChecked: boolean;
   scaffoldVisible: boolean;
 };
 
@@ -51,6 +55,10 @@ export function createProgressiveCourseSession(): ProgressiveCourseSession {
     dayTwoGuidedSelection: "",
     dayTwoAnswer: "",
     dayTwoChecked: false,
+    dayThreeKnowledgeSelection: "",
+    dayThreeOrder: ["", "", ""],
+    dayThreeAnswer: "",
+    dayThreeChecked: false,
     scaffoldVisible: false
   };
 }
@@ -63,7 +71,7 @@ export function parseProgressiveCourseSession(
 
   try {
     const parsed = JSON.parse(value) as Partial<ProgressiveCourseSession>;
-    const day = parsed.day === 2 ? 2 : 1;
+    const day = parsed.day === 3 ? 3 : parsed.day === 2 ? 2 : 1;
     const stage = sessionStages.includes(
       parsed.stage as ProgressiveSessionStage
     )
@@ -81,6 +89,12 @@ export function parseProgressiveCourseSession(
       dayTwoGuidedSelection: normalizeString(parsed.dayTwoGuidedSelection),
       dayTwoAnswer: normalizeString(parsed.dayTwoAnswer),
       dayTwoChecked: parsed.dayTwoChecked === true,
+      dayThreeKnowledgeSelection: normalizeString(
+        parsed.dayThreeKnowledgeSelection
+      ),
+      dayThreeOrder: normalizeOrder(parsed.dayThreeOrder),
+      dayThreeAnswer: normalizeString(parsed.dayThreeAnswer),
+      dayThreeChecked: parsed.dayThreeChecked === true,
       scaffoldVisible: parsed.scaffoldVisible === true
     };
   } catch {
@@ -202,4 +216,9 @@ function normalizeSelections(value: unknown) {
 
 function normalizeString(value: unknown) {
   return typeof value === "string" ? value.slice(0, 300) : "";
+}
+
+function normalizeOrder(value: unknown) {
+  if (!Array.isArray(value)) return ["", "", ""];
+  return [0, 1, 2].map((index) => normalizeString(value[index]).slice(0, 40));
 }
