@@ -1,99 +1,115 @@
-# Demo Guide
+# Public Demo Guide
 
-STG includes a deterministic demo route for public portfolio review:
+STG 的免费公开训练入口：
 
 ```text
 /training-demo
 ```
 
-The free static deployment is available at:
+当前线上入口：
 
 ```text
 https://leeli911.github.io/STG_APP/training-demo/
 ```
 
-The GitHub Pages entry imports the same `DemoAdapter`, Controller, DTOs, and training screen as the Next.js route. It is a static hosting shell, not a copied scoring implementation.
+Next.js 的 `/training-demo` 当前为 v0.5 渐进课程，`/training-demo/classic` 保留 v0.4 可信水平检查。GitHub Pages 静态入口仍为经典训练；线上入口只有在相应版本完成发布后才会更新，本地分支的新功能不等于已经部署。
 
-The demo is designed for GitHub reviewers, portfolio visitors, interviewers, and PhD advisors who want to understand the system quickly without setting up paid services.
-
-## What the Demo Shows
-
-The demo walks through the complete deterministic Human-AI revision loop:
+## v0.5 当前展示内容
 
 ```text
-Question
-→ Draft
-→ Explainable feedback
-→ AI suggestion
-→ Accept / reject / edit
-→ Final answer
-→ Re-score and delta
+60–90 秒微课
+→ 正反例
+→ 选择式知识检查
+→ 有支架练习
+→ 一句话独立表达
+→ 顺序解锁
 ```
 
-You first submit a draft answer, then inspect the score breakdown, compare the AI suggestion, choose one of three revision actions, and review the final score delta.
+当前第二批实现：
 
-## How to Run Locally
+- Day 1：识别受众和期望行动，不要求文本输入；
+- Day 2：识别明确目的、补全行动、独立写一句目的；
+- Day 3：识别结论首句、安排句子顺序、独立写 2–3 句结论先行短答；
+- Day 4：识别直接依据、组合结论与理由、独立写两句话并拒绝循环理由；
+- Day 5–7：展示完整难度线和开发状态，不伪装成可用课程；
+- 本地恢复当前课程步骤、回答和支架状态；
+- 所有知识选择不计为技能达标。
 
-From the repository root:
+## v0.4 经典水平检查
+
+```text
+无提示冷答
+→ 从自己的原回答中选择核心句
+→ 单点原文证据反馈
+→ 在自动带入的原稿上修改
+→ 未见题迁移
+→ 24 小时后未见冷测
+```
+
+首批只训练三个微技能：
+
+- 明确目的
+- 结论先行
+- 两到三点框架
+
+训练结果区分任务信息、当前微技能状态、自检对齐和是否完成闭环，不输出未经验证的“能力提升百分比”。
+
+## 本地运行
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Then open:
+打开：
 
 ```text
 http://localhost:3000/training-demo
+http://localhost:3000/training-demo/classic
 ```
 
-No login is required.
+无需登录。
 
-## What to Try
+## 建议验收路径
 
-Try each decision path:
+1. 首次进入 v0.5，确认先看到微课和正反例，页面没有开放文本框。
+2. 完成 Day 1 两道识别题，确认 Day 2 解锁而 Day 3 仍显示后续开发。
+3. 在 Day 2 依次完成知识检查、行动补全和一句话独立表达。
+4. 在 Day 3 完成首句识别和句子排序，确认排序正确还不能直接完成课程。
+5. 用背景开头作答，确认系统提供结论先行的顺序支架；改为结论开头后完成。
+6. 刷新进行中的 Day 2/3，确认步骤、回答和支架恢复。
+7. 进入 `/training-demo/classic`，确认 v0.4 冷答、反馈、重写、迁移和冷测仍可用。
+8. 在浏览器网络面板确认两个免费流程均没有 App API、OpenAI、Supabase 或第三方分析请求。
 
-1. Accept the AI suggestion and confirm the final answer matches the suggestion.
-2. Reject the suggestion and confirm the final answer stays as the original draft.
-3. Edit the answer and confirm the final answer reflects your edited text.
-4. Confirm the final score and dimension changes are shown with the disclaimer that a system score delta is not validated learning impact.
+自动化验收：
 
-The route uses the same training-session screen as the live product, so the demo is not a separate mock page.
+```bash
+npm run test:e2e:install
+npm run test:e2e
+npm run eval:structured
+npm run audit:synthetic
+```
 
-## What This Demo Proves
+## 本地数据和隐私
 
-The demo proves that the public experience is not a separate mock page.
+- v0.5 当前步骤和进行中答案保存在当前标签页的 `sessionStorage`。
+- v0.5 完成课次、知识阅读和支架使用保存在当前浏览器的 `localStorage`。
+- v0.4 最近 30 次完成状态和冷测到期时间继续保存在 `localStorage`。
+- 不调用 OpenAI、Supabase、App API 或第三方分析。
+- 清理站点数据即可删除本地训练记录。
 
-- It uses the same UI as the live training-session flow.
-- It uses the same DTO shape expected by the live workflow.
-- It uses the same accept / reject / edit interaction model.
-- It changes only the data source: deterministic in-memory data instead of live services.
+## 能证明与不能证明
 
-This keeps the demo reliable for portfolio review while still representing the real product architecture.
+公开 Demo 可以证明：
 
-## What the Demo Does Not Require
+- 提交、反馈、重写、迁移、恢复和冷测流程真实可运行。
+- 当前规则版本对同一输入产生确定结果。
+- 反馈证据来自用户回答，而不是模型虚构。
+- 免费流程不依赖外部服务。
 
-The demo does not use:
+公开 Demo 不能证明：
 
-- login
-- OpenAI
-- Supabase
-- external API calls
-- localStorage
-- sessionStorage
-
-It is intentionally deterministic so it can be shown reliably in a portfolio setting.
-
-## Current Scope
-
-The demo currently shows:
-
-- draft answer
-- total score
-- score breakdown
-- AI suggestion
-- accept / reject / edit controls
-- final answer after revision
-- total and per-dimension score changes
-
-It intentionally does not show authenticated history, long-term progress, or live AI latency. Those belong to the live product rather than the public deterministic route.
+- 真实目标用户需要、喜欢或会持续使用产品。
+- 单次迁移达标等于长期能力提升。
+- 规则覆盖所有自然中文表达。
+- 合成用户审计等于真实 Pilot。

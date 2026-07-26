@@ -8,46 +8,46 @@ export default function HomePage() {
           结构化表达训练场
         </p>
         <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">
-          把“知道方法”练成
-          <span className="text-focus">“在真实工作中说得清楚”</span>
+          从第一句话开始，
+          <span className="text-focus">七天完成结构化工作汇报</span>
         </h1>
         <p className="max-w-2xl text-lg leading-8 text-slate-600">
-          每天五分钟：先无提示回答，再看一个最重要的问题，亲自重写，并用新情境检验自己是否真的会用。
+          每天三到六分钟：先看一个知识点和正反例，再从简单选择逐步练到独立表达与毕业项目。
         </p>
         <div className="flex flex-wrap gap-3">
           <Link
             href="/training-demo"
             className="inline-flex rounded-md bg-focus px-5 py-3 text-sm font-semibold text-white shadow-sm"
           >
-            开始免费五分钟训练
+            从第一课开始
           </Link>
           <Link
-            href="/login"
+            href="/training-demo/classic"
             className="inline-flex rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800"
           >
-            登录并保存训练进度
+            我有基础，先做水平检查
           </Link>
         </div>
         <p className="text-sm text-slate-500">
-          免费训练无需注册，只使用浏览器内的确定性规则，不调用付费模型或数据库。
+          免费训练无需注册，进度保存在当前浏览器，不调用付费模型或数据库。
         </p>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3" aria-label="训练流程">
         <FeatureCard
           index="01"
-          title="无提示回答"
-          description="先按你平时的方式表达，避免把照着方法写误认为已经掌握。"
+          title="先理解一个动作"
+          description="用 60–90 秒微课和正反例看懂今天只练什么，不在第一步面对完整难题。"
         />
         <FeatureCard
           index="02"
-          title="只改一个问题"
-          description="反馈引用你的原文，只解释一个主要问题及其对听众的影响。"
+          title="支架逐步减少"
+          description="从选择、填空和排序进入一句话表达；失败时回到最接近的简单步骤。"
         />
         <FeatureCard
           index="03"
-          title="亲自重写并迁移"
-          description="没有一键采用；你必须自己修改，再到新工作情境中独立使用。"
+          title="最后独立完成"
+          description="选择题不算技能达标；无提示表达、修改和未见迁移才形成课程证据。"
         />
       </section>
 
@@ -69,9 +69,9 @@ export default function HomePage() {
             emphasized
             title="结构化表达训练场"
             items={[
-              "先锁定一个微技能，再进行无提示冷回答",
-              "只给一个有原文证据的反馈，并强制亲自重写",
-              "立刻换题迁移，记录的是行为证据而非黑盒高分"
+              "知识讲解、正反例与练习沿同一条难度线展开",
+              "每次只增加一个难度，卡住时提供对应支架",
+              "最终仍需独立表达和迁移，不把选择正确当成已经会用"
             ]}
           />
         </div>

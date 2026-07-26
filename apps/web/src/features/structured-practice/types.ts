@@ -3,7 +3,48 @@ export type StructuredSkillId =
   | "conclusion_first"
   | "grouping";
 
-export type SkillAssessmentStatus = "met" | "partial" | "needs_work";
+export type SkillAssessmentStatus =
+  | "met"
+  | "partial"
+  | "needs_work"
+  | "uncertain";
+
+export type SelfCheckStatus =
+  | "aligned"
+  | "partial"
+  | "misaligned"
+  | "uncertain";
+
+export type StructuredPromptKind =
+  | "cold"
+  | "near_transfer"
+  | "far_transfer"
+  | "delayed";
+
+export type EvaluationConcept = {
+  id: string;
+  label: string;
+  terms: string[];
+};
+
+export type StructuredEvaluationAnchor = {
+  intentConcepts: EvaluationConcept[];
+  requiredIntentMatches: number;
+  conclusionConcepts: EvaluationConcept[];
+  requiredConclusionMatches: number;
+  positionConceptIds?: string[];
+  groupingConcepts?: EvaluationConcept[];
+  minimumDistinctGroups?: number;
+};
+
+export type StructuredPracticePrompt = {
+  id: string;
+  kind: StructuredPromptKind;
+  audience: string;
+  desiredOutcome: string;
+  prompt: string;
+  evaluation: StructuredEvaluationAnchor;
+};
 
 export type StructuredPracticeScenario = {
   id: string;
@@ -11,12 +52,7 @@ export type StructuredPracticeScenario = {
   skillId: StructuredSkillId;
   title: string;
   shortDescription: string;
-  audience: string;
-  desiredOutcome: string;
-  prompt: string;
-  transferAudience: string;
-  transferDesiredOutcome: string;
-  transferPrompt: string;
+  prompts: StructuredPracticePrompt[];
   lesson: {
     principle: string;
     checklist: string[];
@@ -27,22 +63,42 @@ export type SkillAssessment = {
   skillId: StructuredSkillId;
   status: SkillAssessmentStatus;
   statusLabel: string;
+  taskStatus: SkillAssessmentStatus;
+  taskStatusLabel: string;
+  selfCheckStatus: SelfCheckStatus;
+  selfCheckLabel: string;
   evidence: string;
+  evidenceSpan: {
+    start: number;
+    end: number;
+  } | null;
   observation: string;
   impact: string;
   action: string;
   closestSentenceIndex: number | null;
+  targetSentenceIndex: number | null;
   similarity: number | null;
   groupCount: number | null;
-  ruleVersion: "stg-structure-rules-v1";
+  distinctGroupCount: number | null;
+  matchedIntentIds: string[];
+  ruleVersion: "stg-structure-rules-v2";
 };
 
 export type StructuredPracticeRecord = {
+  version: 2;
   id: string;
   completedAt: string;
+  dueAt: string;
   scenarioId: string;
+  coldPromptId: string;
+  transferPromptId: string;
   skillId: StructuredSkillId;
+  sessionCompleted: true;
+  skillMet: boolean;
   draftStatus: SkillAssessmentStatus;
   revisionStatus: SkillAssessmentStatus;
   transferStatus: SkillAssessmentStatus;
+  delayedPromptId?: string;
+  delayedCompletedAt?: string;
+  delayedStatus?: SkillAssessmentStatus;
 };

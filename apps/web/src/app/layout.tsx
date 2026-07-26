@@ -7,7 +7,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "结构化表达训练场",
-  description: "面向中文职场用户的五分钟结构化表达训练工具",
+  description: "从知识讲解到独立项目的七天中文结构化表达训练工具",
   icons: {
     icon: "/icon.svg"
   }
