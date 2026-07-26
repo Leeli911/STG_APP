@@ -152,6 +152,74 @@ export const dayFourIndependentPrompt = {
     "最近四次周报中有三次漏填新增的风险字段，现有提交检查清单没有这个字段。主管问：是否需要调整周报提交流程？请用两句话回答，第一句给判断，第二句只给最关键依据。"
 } as const;
 
+export const dayFiveKnowledgeChecks: KnowledgeCheck[] = [
+  {
+    id: "day-5-distinct-groups",
+    prompt: "哪一种分点方式最清楚，而且各点不重复？",
+    context:
+      "你要说明为什么应优先优化一个流程，手上有用户投诉、交付延期和维护返工三类信息。",
+    options: [
+      {
+        id: "distinct-groups",
+        label: "第一，用户影响；第二，交付风险；第三，维护成本。"
+      },
+      {
+        id: "repeated-groups",
+        label: "第一，用户投诉；第二，用户不满意；第三，用户体验不好。"
+      },
+      {
+        id: "chronological-groups",
+        label: "第一，周一发现的信息；第二，周二发现的信息；第三，其他信息。"
+      }
+    ],
+    correctOptionId: "distinct-groups",
+    successExplanation: "正确。三点分别回答不同问题，同时服务于同一个结论。",
+    retryExplanation: "不要按句子数量或发现顺序硬分组；每一点应代表一个不同类别。"
+  }
+];
+
+export const dayFiveGroupingExercise = {
+  context:
+    "你要向项目负责人说明为什么需要优化内部交付流程。请把六张信息卡放入最合适的三组。",
+  groups: [
+    { id: "customer-impact", label: "用户影响" },
+    { id: "delivery-risk", label: "交付风险" },
+    { id: "maintenance-cost", label: "维护成本" }
+  ],
+  cards: [
+    {
+      id: "complaints",
+      text: "近两周相关用户投诉增加了。",
+      groupId: "customer-impact"
+    },
+    {
+      id: "repeat-contact",
+      text: "同一问题经常需要用户再次联系确认。",
+      groupId: "customer-impact"
+    },
+    {
+      id: "delays",
+      text: "最近三个任务中有两个发生延期。",
+      groupId: "delivery-risk"
+    },
+    {
+      id: "milestone",
+      text: "关键里程碑依赖人工检查，容易被遗漏。",
+      groupId: "delivery-risk"
+    },
+    {
+      id: "rework",
+      text: "团队每周要花数小时重复返工。",
+      groupId: "maintenance-cost"
+    },
+    {
+      id: "manual-check",
+      text: "当前每次提交都需要两名同事手工核对。",
+      groupId: "maintenance-cost"
+    }
+  ]
+} as const;
+
 export const progressiveCourse: ProgressiveCourseLesson[] = [
   {
     id: "stg-v05-day-1-recognize-purpose",
@@ -326,7 +394,24 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
     title: "把信息整理成两到三点",
     conceptGoal: "能把不同信息分成少量且不重复的组",
     estimatedMinutes: 6,
-    implemented: false,
+    implemented: true,
+    lesson: {
+      definition: "分点表达是把同类信息放在一起，再用两到三个互不重复的要点支撑同一个结论。",
+      value: "听众能快速看出信息之间的关系，也能逐点判断你的结论是否成立。",
+      formula: "先给结论 ＋ 第一［类别一］＋ 第二［类别二］＋ 第三［类别三］",
+      badExample: {
+        label: "换词重复",
+        text: "第一，用户投诉多；第二，用户不满意；第三，用户体验不好。",
+        explanation: "三句话都在说用户感受，没有形成三个不同的信息类别。"
+      },
+      goodExample: {
+        label: "分类清楚",
+        text: "建议优先优化流程。第一，它影响用户；第二，它增加交付风险；第三，它带来维护成本。",
+        explanation: "三点从不同角度支撑同一个建议，彼此没有重复。"
+      },
+      commonMistake: "把写出三句话当成分成三点，却没有检查每一点是否代表不同类别。"
+    },
+    knowledgeChecks: dayFiveKnowledgeChecks,
     exercises: [
       {
         id: "day-5-group-cards",
@@ -390,7 +475,7 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
   }
 ];
 
-export function getProgressiveLesson(day: 1 | 2 | 3 | 4) {
+export function getProgressiveLesson(day: 1 | 2 | 3 | 4 | 5) {
   const lesson = progressiveCourse.find(
     (item) => item.day === day && item.implemented
   );

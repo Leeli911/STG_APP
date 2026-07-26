@@ -8,6 +8,8 @@ on:
       - "apps/demo/**"
       - "apps/web/src/app/training-demo/**"
       - "apps/web/src/components/training/**"
+      - "apps/web/src/features/progressive-course/**"
+      - "apps/web/src/features/structured-practice/**"
       - "apps/web/src/features/training-session/**"
       - "apps/web/src/lib/validation/revision.ts"
       - "apps/web/src/server/training-sessions/**"

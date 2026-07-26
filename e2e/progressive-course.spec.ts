@@ -270,7 +270,94 @@ test("Day 4 从理由识别进入两句话独立表达，并拒绝循环理由",
   await expect(page.getByText("当前完成 4 / 7 课")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Day 5 把信息整理成两到三点 后续开发"
+      name: "Day 5 把信息整理成两到三点 已解锁"
+    })
+  ).toBeEnabled();
+});
+
+test("Day 5 在移动端完成信息归组，并只接受互不重复的三个要点", async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "stg:v0.5:progressive-course",
+      JSON.stringify({
+        version: 1,
+        completedDays: [1, 2, 3, 4],
+        lessonViewedDays: [1, 2, 3, 4],
+        scaffoldUses: {},
+        updatedAt: new Date().toISOString()
+      })
+    );
+  });
+
+  await page.goto("/training-demo");
+  await page
+    .getByRole("button", {
+      name: "Day 5 把信息整理成两到三点 已解锁"
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "把信息整理成两到三点" })
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "我理解了，做一个简单检查" })
+    .click();
+  await page
+    .getByRole("radio", {
+      name: "第一，用户影响；第二，交付风险；第三，维护成本。"
+    })
+    .check();
+  await page.getByRole("button", { name: "检查分点方式" }).click();
+
+  await page
+    .getByLabel("“近两周相关用户投诉增加了。”所属分组")
+    .selectOption("customer-impact");
+  await page
+    .getByLabel("“同一问题经常需要用户再次联系确认。”所属分组")
+    .selectOption("customer-impact");
+  await page
+    .getByLabel("“最近三个任务中有两个发生延期。”所属分组")
+    .selectOption("delivery-risk");
+  await page
+    .getByLabel("“关键里程碑依赖人工检查，容易被遗漏。”所属分组")
+    .selectOption("delivery-risk");
+  await page
+    .getByLabel("“团队每周要花数小时重复返工。”所属分组")
+    .selectOption("maintenance-cost");
+  await page
+    .getByLabel("“当前每次提交都需要两名同事手工核对。”所属分组")
+    .selectOption("maintenance-cost");
+  await page.getByRole("button", { name: "检查信息分组" }).click();
+  await expect(page.getByText("三组信息清楚且不重复")).toBeVisible();
+  await page.getByRole("button", { name: "进入三点独立练习" }).click();
+
+  const answer = page.getByLabel("你的结论和三个要点");
+  await answer.fill(
+    "建议下一阶段优先优化新用户引导。第一，用户流失很多。第二，前三步用户流失严重。第三，流失影响转化。"
+  );
+  await page.getByRole("button", { name: "检查三个要点" }).click();
+  await expect(page.getByText("分点还需要调整")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "完成第 5 课" })
+  ).toHaveCount(0);
+
+  await answer.fill(
+    "建议下一阶段优先优化新用户引导。第一，用户流失集中在前三步。第二，相关客服咨询很多。第三，改动成本相对较低。"
+  );
+  await page.getByRole("button", { name: "检查三个要点" }).click();
+  await expect(page.getByText("三个要点清楚且不重复")).toBeVisible();
+  await page.getByRole("button", { name: "完成第 5 课" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "让多个信息各就各位" })
+  ).toBeVisible();
+  await expect(page.getByText("当前完成 5 / 7 课")).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Day 6 完成一次完整工作汇报 后续开发"
     })
   ).toBeDisabled();
 });

@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import {
+  dayFiveGroupingExercise,
   dayFourGuidedExercise,
   dayFourIndependentPrompt,
   dayThreeOrderExercise,
@@ -43,7 +44,10 @@ const dayTwoPracticePrompt = getStructuredPracticePrompt(
 const dayThreePracticePrompt = getStructuredPracticePrompt(
   "stg-v04-conclusion-cold-01"
 );
-const implementedDays = [1, 2, 3, 4] as const;
+const dayFivePracticePrompt = getStructuredPracticePrompt(
+  "stg-v04-grouping-cold-01"
+);
+const implementedDays = [1, 2, 3, 4, 5] as const;
 
 type CheckResult = "success" | "retry" | null;
 
@@ -72,6 +76,10 @@ export function ProgressiveTrainingDemo({
   const [dayFourKnowledgeResult, setDayFourKnowledgeResult] =
     useState<CheckResult>(null);
   const [dayFourGuidedResult, setDayFourGuidedResult] =
+    useState<CheckResult>(null);
+  const [dayFiveKnowledgeResult, setDayFiveKnowledgeResult] =
+    useState<CheckResult>(null);
+  const [dayFiveGroupingResult, setDayFiveGroupingResult] =
     useState<CheckResult>(null);
 
   const currentLesson = getProgressiveLesson(session.day);
@@ -112,6 +120,21 @@ export function ProgressiveTrainingDemo({
 
     return evaluateDayFourAnswer(session.dayFourAnswer);
   }, [session.dayFourAnswer, session.dayFourChecked]);
+  const dayFiveAssessment = useMemo(() => {
+    if (
+      !session.dayFiveChecked ||
+      session.dayFiveAnswer.trim().length === 0
+    ) {
+      return null;
+    }
+
+    return evaluateStructuredAnswer({
+      skillId: "grouping",
+      answer: session.dayFiveAnswer,
+      selfStatement: session.dayFiveAnswer,
+      evaluation: dayFivePracticePrompt.evaluation
+    });
+  }, [session.dayFiveAnswer, session.dayFiveChecked]);
 
   useEffect(() => {
     const storedProgress = parseProgressiveCourseProgress(
@@ -401,17 +424,76 @@ export function ProgressiveTrainingDemo({
         <CompletionCard
           description="你已经用第一句给出判断，再用第二句提供一个直接、可核对的依据。选择题和组合练习只用于理解，独立回答才构成课程内证据。"
           eyebrow="Day 4 已完成"
+          nextLabel="进入 Day 5：把信息整理成两到三点"
+          onNext={() => selectDay(5)}
+          title="让结论有一个站得住的理由"
+        />
+      ) : null}
+
+      {session.day === 5 && session.stage === "knowledge" ? (
+        <KnowledgeCheckForm
+          error={formError}
+          eyebrow="Day 5 · 分组识别"
+          onSelect={(_, optionId) => {
+            setDayFiveKnowledgeResult(null);
+            setFormError(null);
+            updateSession({ dayFiveKnowledgeSelection: optionId });
+          }}
+          onSubmit={submitDayFiveKnowledgeCheck}
+          questions={currentLesson.knowledgeChecks}
+          result={dayFiveKnowledgeResult}
+          selections={{
+            [currentLesson.knowledgeChecks[0].id]:
+              session.dayFiveKnowledgeSelection
+          }}
+          submitLabel="检查分点方式"
+        />
+      ) : null}
+
+      {session.day === 5 && session.stage === "guided" ? (
+        <InformationGroupingPractice
+          error={formError}
+          groups={session.dayFiveCardGroups}
+          onChange={updateDayFiveCardGroup}
+          onContinue={() => updateSession({ stage: "independent" })}
+          onSubmit={submitDayFiveGrouping}
+          result={dayFiveGroupingResult}
+        />
+      ) : null}
+
+      {session.day === 5 && session.stage === "independent" ? (
+        <IndependentGroupingPractice
+          answer={session.dayFiveAnswer}
+          assessment={dayFiveAssessment}
+          error={formError}
+          onAnswerChange={(value) => {
+            setFormError(null);
+            updateSession({
+              dayFiveAnswer: value,
+              dayFiveChecked: false
+            });
+          }}
+          onComplete={completeDayFive}
+          onShowScaffold={showDayFiveScaffold}
+          onSubmit={submitDayFiveAnswer}
+          scaffoldVisible={session.scaffoldVisible}
+        />
+      ) : null}
+
+      {session.day === 5 && session.stage === "complete" ? (
+        <CompletionCard
+          description="你已经用结论统领三个不同类别，并在未见情境中独立写出不重复的三点。信息卡归类只帮助理解，最终短答才构成课程内技能证据。"
+          eyebrow="Day 5 已完成"
           nextLabel="查看后续课程"
           onNext={() =>
             document
               .getElementById("course-map")
               ?.scrollIntoView({ behavior: "smooth" })
           }
-          title="让结论有一个站得住的理由"
+          title="让多个信息各就各位"
         >
           <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-            Day 5“把信息整理成两到三点”将在下一批实现。当前页面已展示完整七天难度线，
-            但不会把尚未开发的课程伪装成可用功能。
+            Day 6“完成一次完整工作汇报”将在下一批实现。当前不会把尚未完成的课程计为可用功能。
           </div>
         </CompletionCard>
       ) : null}
@@ -422,7 +504,7 @@ export function ProgressiveTrainingDemo({
     setSession((current) => ({ ...current, ...update }));
   }
 
-  function selectDay(day: 1 | 2 | 3 | 4) {
+  function selectDay(day: 1 | 2 | 3 | 4 | 5) {
     if (!isProgressiveDayUnlocked(progress, day)) return;
     setFormError(null);
     setDayOneResult(null);
@@ -432,6 +514,8 @@ export function ProgressiveTrainingDemo({
     setDayThreeOrderResult(null);
     setDayFourKnowledgeResult(null);
     setDayFourGuidedResult(null);
+    setDayFiveKnowledgeResult(null);
+    setDayFiveGroupingResult(null);
     setSession({
       ...createProgressiveCourseSession(),
       day
@@ -671,6 +755,80 @@ export function ProgressiveTrainingDemo({
     setProgress((current) => completeProgressiveDay(current, 4));
     updateSession({ stage: "complete" });
   }
+
+  function submitDayFiveKnowledgeCheck(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+    const question = currentLesson.knowledgeChecks[0];
+    if (!session.dayFiveKnowledgeSelection) {
+      setFormError("请先选择一种分点方式。");
+      return;
+    }
+    if (session.dayFiveKnowledgeSelection !== question.correctOptionId) {
+      setDayFiveKnowledgeResult("retry");
+      setFormError(null);
+      return;
+    }
+
+    setDayFiveKnowledgeResult("success");
+    setFormError(null);
+    updateSession({ stage: "guided" });
+  }
+
+  function updateDayFiveCardGroup(cardId: string, groupId: string) {
+    setDayFiveGroupingResult(null);
+    setFormError(null);
+    updateSession({
+      dayFiveCardGroups: {
+        ...session.dayFiveCardGroups,
+        [cardId]: groupId
+      }
+    });
+  }
+
+  function submitDayFiveGrouping(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const incomplete = dayFiveGroupingExercise.cards.some(
+      (card) => !session.dayFiveCardGroups[card.id]
+    );
+    if (incomplete) {
+      setFormError("请先为六张信息卡都选择一个分组。");
+      return;
+    }
+
+    const correct = dayFiveGroupingExercise.cards.every(
+      (card) => session.dayFiveCardGroups[card.id] === card.groupId
+    );
+    setFormError(null);
+    setDayFiveGroupingResult(correct ? "success" : "retry");
+  }
+
+  function submitDayFiveAnswer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (session.dayFiveAnswer.trim().length < 36) {
+      setFormError("请先给结论，再写三个不同要点，至少输入 36 个字符。");
+      return;
+    }
+
+    setFormError(null);
+    updateSession({ dayFiveChecked: true });
+  }
+
+  function showDayFiveScaffold() {
+    if (!session.scaffoldVisible) {
+      setProgress((current) =>
+        recordProgressiveScaffoldUse(current, 5)
+      );
+    }
+    updateSession({ scaffoldVisible: true });
+  }
+
+  function completeDayFive() {
+    if (dayFiveAssessment?.status !== "met") return;
+    setProgress((current) => completeProgressiveDay(current, 5));
+    updateSession({ stage: "complete" });
+  }
 }
 
 function CourseHeader({
@@ -720,8 +878,8 @@ function CourseMap({
   onSelectDay,
   progress
 }: {
-  currentDay: 1 | 2 | 3 | 4;
-  onSelectDay(day: 1 | 2 | 3 | 4): void;
+  currentDay: 1 | 2 | 3 | 4 | 5;
+  onSelectDay(day: 1 | 2 | 3 | 4 | 5): void;
   progress: ProgressiveCourseProgress;
 }) {
   return (
@@ -748,7 +906,7 @@ function CourseMap({
           const interactive =
             lesson.implemented &&
             prerequisiteMet &&
-            implementedDays.includes(lesson.day as 1 | 2 | 3 | 4);
+            implementedDays.includes(lesson.day as 1 | 2 | 3 | 4 | 5);
           const active = lesson.day === currentDay;
           const status = completed
             ? "已完成"
@@ -771,7 +929,7 @@ function CourseMap({
               }
               disabled={!interactive}
               key={lesson.id}
-              onClick={() => onSelectDay(lesson.day as 1 | 2 | 3 | 4)}
+              onClick={() => onSelectDay(lesson.day as 1 | 2 | 3 | 4 | 5)}
               type="button"
             >
               <span className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500">
@@ -795,7 +953,7 @@ function LessonProgress({
   stage,
   title
 }: {
-  day: 1 | 2 | 3 | 4;
+  day: 1 | 2 | 3 | 4 | 5;
   stage: ProgressiveCourseSession["stage"];
   title: string;
 }) {
@@ -830,7 +988,7 @@ function LessonCard({
   title
 }: {
   content: ProgressiveLessonContent;
-  day: 1 | 2 | 3 | 4;
+  day: 1 | 2 | 3 | 4 | 5;
   estimatedMinutes: number;
   goal: string;
   knowledgeCount: number;
@@ -1529,6 +1687,247 @@ function IndependentSupportPractice({
               type="button"
             >
               查看两句话支架后再改一次
+            </button>
+          )}
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function InformationGroupingPractice({
+  error,
+  groups,
+  onChange,
+  onContinue,
+  onSubmit,
+  result
+}: {
+  error: string | null;
+  groups: Record<string, string>;
+  onChange(cardId: string, groupId: string): void;
+  onContinue(): void;
+  onSubmit(event: FormEvent<HTMLFormElement>): void;
+  result: CheckResult;
+}) {
+  return (
+    <section className="space-y-6">
+      <form
+        className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
+        onSubmit={onSubmit}
+      >
+        <p className="text-sm font-medium text-focus">Day 5 · 信息卡归组</p>
+        <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+          先判断每条信息属于哪一类
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          不需要拖动。为每张卡选择分组，手机和键盘都可以完成。
+        </p>
+        <div className="mt-5 rounded-xl bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+          情境：{dayFiveGroupingExercise.context}
+        </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {dayFiveGroupingExercise.cards.map((card) => (
+            <label
+              className="block rounded-xl border border-slate-200 p-4"
+              htmlFor={`day-five-card-${card.id}`}
+              key={card.id}
+            >
+              <span className="block text-sm font-medium leading-6 text-slate-900">
+                {card.text}
+              </span>
+              <span className="mt-3 block text-xs text-slate-500">
+                所属分组
+              </span>
+              <select
+                aria-label={`“${card.text}”所属分组`}
+                className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-3 text-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
+                id={`day-five-card-${card.id}`}
+                onChange={(event) => onChange(card.id, event.target.value)}
+                value={groups[card.id] ?? ""}
+              >
+                <option value="">请选择分组</option>
+                {dayFiveGroupingExercise.groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+        <FormError message={error} />
+        {result === "retry" ? (
+          <p
+            className="mt-4 rounded-lg bg-amber-50 p-4 text-sm leading-6 text-amber-900"
+            role="status"
+          >
+            还有信息放错了组。分别检查它主要描述的是用户感受、进度风险，还是团队投入。
+          </p>
+        ) : null}
+        <button className={`${primaryButtonClass} mt-5`} type="submit">
+          检查信息分组
+        </button>
+      </form>
+
+      {result === "success" ? (
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-7">
+          <p className="text-sm font-medium text-emerald-800">三组信息清楚且不重复</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {dayFiveGroupingExercise.groups.map((group) => (
+              <article
+                className="rounded-lg bg-white/70 p-4"
+                key={group.id}
+              >
+                <p className="font-semibold text-emerald-950">
+                  {group.label}
+                </p>
+                <ul className="mt-2 space-y-2 text-sm leading-6 text-emerald-900">
+                  {dayFiveGroupingExercise.cards
+                    .filter((card) => card.groupId === group.id)
+                    .map((card) => (
+                      <li key={card.id}>· {card.text}</li>
+                    ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+          <p className="mt-4 text-sm leading-6 text-emerald-900">
+            归类只证明你能识别关系，不计为技能达标。下一步要在新情境中自己组织三个要点。
+          </p>
+          <button
+            className={`${primaryButtonClass} mt-5`}
+            onClick={onContinue}
+            type="button"
+          >
+            进入三点独立练习
+          </button>
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function IndependentGroupingPractice({
+  answer,
+  assessment,
+  error,
+  onAnswerChange,
+  onComplete,
+  onShowScaffold,
+  onSubmit,
+  scaffoldVisible
+}: {
+  answer: string;
+  assessment: ReturnType<typeof evaluateStructuredAnswer> | null;
+  error: string | null;
+  onAnswerChange(value: string): void;
+  onComplete(): void;
+  onShowScaffold(): void;
+  onSubmit(event: FormEvent<HTMLFormElement>): void;
+  scaffoldVisible: boolean;
+}) {
+  const passed = assessment?.status === "met";
+
+  return (
+    <section className="space-y-6">
+      <form
+        className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
+        onSubmit={onSubmit}
+      >
+        <p className="text-sm font-medium text-focus">Day 5 · 独立表达</p>
+        <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+          先给结论，再整理成三个不同要点
+        </h2>
+        <div className="mt-5 rounded-xl bg-slate-50 p-5">
+          <p className="text-xs font-medium text-slate-500">
+            受众：{dayFivePracticePrompt.audience}
+          </p>
+          <p className="mt-2 leading-7 text-slate-900">
+            {dayFivePracticePrompt.prompt}
+          </p>
+        </div>
+        {scaffoldVisible ? (
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+            <p className="font-semibold">三点支架</p>
+            <p className="mt-1">
+              建议［结论］。第一，［用户影响］；第二，［服务压力］；第三，［实施成本］。
+            </p>
+            <p className="mt-2 text-xs text-blue-800">
+              每一点只承担一个类别，不要把同一件事换词说三次。
+            </p>
+          </div>
+        ) : null}
+        <label
+          className="mt-5 block text-sm font-medium text-slate-800"
+          htmlFor="day-five-answer"
+        >
+          你的结论和三个要点
+        </label>
+        <textarea
+          className="mt-2 min-h-36 w-full rounded-md border border-slate-300 px-3 py-3 text-base leading-7 shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
+          id="day-five-answer"
+          maxLength={260}
+          onChange={(event) => onAnswerChange(event.target.value)}
+          placeholder="建议……。第一，……；第二，……；第三，……。"
+          value={answer}
+        />
+        <p className="mt-1 text-right text-xs text-slate-500">
+          {answer.length} / 260
+        </p>
+        <FormError message={error} />
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button className={primaryButtonClass} type="submit">
+            检查三个要点
+          </button>
+          {!scaffoldVisible ? (
+            <button
+              className={secondaryButtonClass}
+              onClick={onShowScaffold}
+              type="button"
+            >
+              我卡住了，查看三点支架
+            </button>
+          ) : null}
+        </div>
+      </form>
+
+      {assessment ? (
+        <section
+          aria-live="polite"
+          className={
+            passed
+              ? "rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-7"
+              : "rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-7"
+          }
+        >
+          <p className="text-sm font-medium">
+            {passed ? "三个要点清楚且不重复" : "分点还需要调整"}
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-950">
+            {assessment.statusLabel}
+          </h2>
+          <dl className="mt-4 space-y-3 text-sm leading-6">
+            <FeedbackItem label="原文证据" value={assessment.evidence} />
+            <FeedbackItem label="系统观察" value={assessment.observation} />
+            <FeedbackItem label="对听众的影响" value={assessment.impact} />
+            <FeedbackItem label="下一步" value={assessment.action} />
+          </dl>
+          {passed ? (
+            <button
+              className={`${primaryButtonClass} mt-5`}
+              onClick={onComplete}
+              type="button"
+            >
+              完成第 5 课
+            </button>
+          ) : (
+            <button
+              className={`${secondaryButtonClass} mt-5`}
+              onClick={onShowScaffold}
+              type="button"
+            >
+              查看三点支架后再改一次
             </button>
           )}
         </section>
