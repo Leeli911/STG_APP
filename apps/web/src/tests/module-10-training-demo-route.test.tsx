@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
-import TrainingDemoPage from "@/app/training-demo/page";
+import TrainingDemoPage from "@/app/training-demo/classic/page";
 import { isProtectedRoute } from "@/server/auth/protected-routes";
 
 const purposeDraft =
@@ -12,7 +12,7 @@ const transferAnswer =
   "关键数据还需要两天核对。我建议延后周报，请负责人今天决定。";
 const transferCore = "我建议延后周报，请负责人今天决定。";
 
-describe("Module 10 structured-practice public route", () => {
+describe("Module 10 classic structured-practice public route", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
@@ -27,7 +27,7 @@ describe("Module 10 structured-practice public route", () => {
       .spyOn(globalThis, "fetch")
       .mockRejectedValue(new Error("公开训练不得调用 fetch"));
 
-    expect(isProtectedRoute("/training-demo")).toBe(false);
+    expect(isProtectedRoute("/training-demo/classic")).toBe(false);
     render(<TrainingDemoPage />);
 
     expect(

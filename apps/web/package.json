@@ -1,7 +1,7 @@
 {
   "name": "@stg/web",
   "private": true,
-  "version": "0.4.0-beta.1",
+  "version": "0.5.0-beta.1",
   "scripts": {
     "dev": "NEXT_TEST_WASM=1 NEXT_TEST_WASM_DIR=../../node_modules/@next/swc-wasm-nodejs next dev",
     "build": "NEXT_TEST_WASM=1 NEXT_TEST_WASM_DIR=../../node_modules/@next/swc-wasm-nodejs next build",

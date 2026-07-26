@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("从首页进入免费训练，并完成结论先行的冷答、重写与迁移", async ({
+test("从首页进入经典水平检查，并完成结论先行的冷答、重写与迁移", async ({
   page,
   baseURL
 }) => {
@@ -22,16 +22,18 @@ test("从首页进入免费训练，并完成结论先行的冷答、重写与�
 
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: /把“知道方法”练成/ })
+    page.getByRole("heading", { name: /从第一句话开始/ })
   ).toBeVisible();
   await expect(
     page.getByRole("heading", {
       name: "不是帮你把这一次写得更好，而是训练你下一次自己说清楚"
     })
   ).toBeVisible();
-  await page.getByRole("link", { name: "开始免费五分钟训练" }).click();
+  await page
+    .getByRole("link", { name: "我有基础，先做水平检查" })
+    .click();
 
-  await expect(page).toHaveURL(/\/training-demo$/);
+  await expect(page).toHaveURL(/\/training-demo\/classic$/);
   await expect(
     page.getByRole("heading", { name: "五分钟结构化表达训练" })
   ).toBeVisible();
@@ -102,7 +104,7 @@ test("从首页进入免费训练，并完成结论先行的冷答、重写与�
 test("无关回答不能通过复制自填核心句刷成明确目的达标", async ({
   page
 }) => {
-  await page.goto("/training-demo");
+  await page.goto("/training-demo/classic");
   await page
     .getByLabel("你的无提示回答")
     .fill("我们今天讨论了字体颜色和按钮大小，会议记录也已经整理完成。");
@@ -120,7 +122,7 @@ test("无关回答不能通过复制自填核心句刷成明确目的达标", as
 });
 
 test("刷新后恢复尚未完成的训练步骤和本地回答", async ({ page }) => {
-  await page.goto("/training-demo");
+  await page.goto("/training-demo/classic");
   const answer =
     "项目会延期三天，我建议把发布日期调整到下周一，请主管今天确认。";
   await page.getByLabel("你的无提示回答").fill(answer);
@@ -134,7 +136,7 @@ test("刷新后恢复尚未完成的训练步骤和本地回答", async ({ page 
 });
 
 test("两到三点必须是不同且相关的内容", async ({ page }) => {
-  await page.goto("/training-demo");
+  await page.goto("/training-demo/classic");
   await page.getByRole("button", { name: "第 3 天 职场短答" }).click();
   await page
     .getByLabel("你的无提示回答")
@@ -181,7 +183,7 @@ test("到期记录可以进入24小时间隔冷测并单独保存结果", async 
       ])
     );
   });
-  await page.goto("/training-demo");
+  await page.goto("/training-demo/classic");
   await page.getByRole("button", { name: "开始今日冷测" }).click();
   await expect(page.getByText("24 小时间隔冷测")).toBeVisible();
 
