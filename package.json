@@ -25,10 +25,22 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
-    "@supabase/supabase-js": "^2.108.2"
+    "@supabase/supabase-js": "^2.108.2",
+    "next": "^15.5.21",
+    "postcss": "8.5.23",
+    "sharp": "0.35.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "$postcss",
+      "sharp": "$sharp"
+    }
   },
   "devDependencies": {
+    "@next/swc-wasm-nodejs": "15.5.21",
     "@playwright/test": "^1.61.1",
-    "vite": "^5.4.21"
+    "eslint": "^10.8.0",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.6"
   }
 }
