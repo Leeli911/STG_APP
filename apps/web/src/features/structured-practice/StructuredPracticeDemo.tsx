@@ -7,7 +7,8 @@ import {
 } from "@/features/structured-practice/curriculum";
 import {
   evaluateRevisionChange,
-  evaluateStructuredAnswer
+  evaluateStructuredAnswer,
+  extractSelfCheckOptions
 } from "@/features/structured-practice/ruleEngine";
 import {
   completeDelayedPractice,
@@ -54,9 +55,9 @@ type PracticeSessionSnapshot = {
 const PROGRESS_KEY = "stg:v0.4:structured-practice-progress";
 const SESSION_KEY = "stg:v0.4:structured-practice-session";
 const ANSWER_MIN_LENGTH = 20;
-const ANSWER_MAX_LENGTH = 600;
-const CORE_MIN_LENGTH = 4;
-const CORE_MAX_LENGTH = 60;
+const ANSWER_MAX_LENGTH = 300;
+const NO_CLEAR_STATEMENT = "__stg_no_clear_statement__";
+const NO_CLEAR_STATEMENT_LABEL = "我的回答里没有明确说出核心结论";
 
 export function StructuredPracticeDemo() {
   const [skillId, setSkillId] = useState<StructuredSkillId>("purpose");
@@ -345,37 +346,15 @@ export function StructuredPracticeDemo() {
       {stage === "self_check" ? (
         <section className="space-y-6">
           <AnswerSnapshot answer={draft} title="刚才的回答" />
-          <form
-            className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6"
+          <SelfCheckForm
+            answer={draft}
+            error={validationError}
+            name="cold-self-check"
+            onSelect={(value) => updateText(setCoreStatement, value)}
             onSubmit={submitSelfCheck}
-          >
-            <p className="text-sm font-medium text-focus">先自己检查</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-950">
-              用一句话写下你真正想让对方知道或决定的内容
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              这不是重写回答。它帮助你确认刚才的文字有没有承载真正的核心意思。
-            </p>
-            <label
-              className="mt-5 block text-sm font-medium text-slate-800"
-              htmlFor="core-statement"
-            >
-              我的核心结论
-            </label>
-            <input
-              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
-              id="core-statement"
-              maxLength={CORE_MAX_LENGTH}
-              onChange={(event) => updateText(setCoreStatement, event.target.value)}
-              placeholder="例如：项目存在延期风险，需要今天决定是否调整发布日期。"
-              value={coreStatement}
-            />
-            <CharacterCount current={coreStatement.length} max={CORE_MAX_LENGTH} />
-            <FormError message={validationError} />
-            <button className={primaryButtonClass} type="submit">
-              查看单点反馈
-            </button>
-          </form>
+            selectedValue={coreStatement}
+            submitLabel="查看单点反馈"
+          />
         </section>
       ) : null}
 
@@ -412,20 +391,23 @@ export function StructuredPracticeDemo() {
           <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
             <p className="text-sm font-medium text-focus">现在由你重写</p>
             <h2 className="mt-2 text-xl font-semibold text-slate-950">
-              不提供一键采用，请亲自完成修改
+              在你的原回答上直接修改
             </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              已带入刚才的回答，不用重新输入整段；只修改反馈指出的一个结构问题。
+            </p>
             <div className="mt-4 rounded-md bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-              <p className="font-medium text-slate-900">你的核心结论</p>
-              <p className="mt-1">{coreStatement}</p>
+              <p className="font-medium text-slate-900">你刚才选择的核心句</p>
+              <p className="mt-1">{selfCheckDisplay(coreStatement)}</p>
             </div>
             <label
               className="mt-5 block text-sm font-medium text-slate-800"
               htmlFor="revision-answer"
             >
-              亲自重写
+              在原回答上修改
             </label>
             <textarea
-              className="mt-2 min-h-40 w-full rounded-md border border-slate-300 px-3 py-3 text-base leading-7 shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
+              className="mt-2 min-h-32 w-full rounded-md border border-slate-300 px-3 py-3 text-base leading-7 shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
               id="revision-answer"
               maxLength={ANSWER_MAX_LENGTH}
               onChange={(event) => updateText(setRevision, event.target.value)}
@@ -503,38 +485,16 @@ export function StructuredPracticeDemo() {
       {stage === "transfer_self_check" ? (
         <section className="space-y-6">
           <AnswerSnapshot answer={transferAnswer} title="迁移回答" />
-          <form
-            className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6"
+          <SelfCheckForm
+            answer={transferAnswer}
+            error={validationError}
+            eyebrow="最后一次自检"
+            name="transfer-self-check"
+            onSelect={(value) => updateText(setTransferCoreStatement, value)}
             onSubmit={finishTransfer}
-          >
-            <p className="text-sm font-medium text-focus">最后一次自检</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-950">
-              这次回答的核心结论是什么？
-            </h2>
-            <label
-              className="mt-5 block text-sm font-medium text-slate-800"
-              htmlFor="transfer-core-statement"
-            >
-              迁移题核心结论
-            </label>
-            <input
-              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
-              id="transfer-core-statement"
-              maxLength={CORE_MAX_LENGTH}
-              onChange={(event) =>
-                updateText(setTransferCoreStatement, event.target.value)
-              }
-              value={transferCoreStatement}
-            />
-            <CharacterCount
-              current={transferCoreStatement.length}
-              max={CORE_MAX_LENGTH}
-            />
-            <FormError message={validationError} />
-            <button className={primaryButtonClass} type="submit">
-              检查迁移结果
-            </button>
-          </form>
+            selectedValue={transferCoreStatement}
+            submitLabel="检查迁移结果"
+          />
         </section>
       ) : null}
 
@@ -569,38 +529,16 @@ export function StructuredPracticeDemo() {
       {stage === "delayed_self_check" ? (
         <section className="space-y-6">
           <AnswerSnapshot answer={delayedAnswer} title="刚才的冷测回答" />
-          <form
-            className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6"
+          <SelfCheckForm
+            answer={delayedAnswer}
+            error={validationError}
+            eyebrow="不查看方法，最后自检一次"
+            name="delayed-self-check"
+            onSelect={(value) => updateText(setDelayedCoreStatement, value)}
             onSubmit={finishDelayedPractice}
-          >
-            <p className="text-sm font-medium text-focus">不查看方法，最后自检一次</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-950">
-              这次回答真正要让对方知道或决定什么？
-            </h2>
-            <label
-              className="mt-5 block text-sm font-medium text-slate-800"
-              htmlFor="delayed-core-statement"
-            >
-              冷测核心结论
-            </label>
-            <input
-              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
-              id="delayed-core-statement"
-              maxLength={CORE_MAX_LENGTH}
-              onChange={(event) =>
-                updateText(setDelayedCoreStatement, event.target.value)
-              }
-              value={delayedCoreStatement}
-            />
-            <CharacterCount
-              current={delayedCoreStatement.length}
-              max={CORE_MAX_LENGTH}
-            />
-            <FormError message={validationError} />
-            <button className={primaryButtonClass} type="submit">
-              检查冷测结果
-            </button>
-          </form>
+            selectedValue={delayedCoreStatement}
+            submitLabel="检查冷测结果"
+          />
         </section>
       ) : null}
 
@@ -682,11 +620,11 @@ export function StructuredPracticeDemo() {
 
   function submitSelfCheck(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!validateCoreStatement(coreStatement)) return;
+    if (!validateSelfCheckSelection(coreStatement, draft)) return;
     const assessment = evaluateStructuredAnswer({
       skillId,
       answer: draft,
-      selfStatement: coreStatement,
+      selfStatement: selfCheckStatement(coreStatement),
       evaluation: coldPrompt.evaluation
     });
     setDraftAssessment(assessment);
@@ -701,7 +639,7 @@ export function StructuredPracticeDemo() {
     const nextAssessment = evaluateStructuredAnswer({
       skillId,
       answer: revision,
-      selfStatement: coreStatement,
+      selfStatement: selfCheckStatement(coreStatement),
       evaluation: coldPrompt.evaluation
     });
     const change = evaluateRevisionChange({
@@ -729,11 +667,11 @@ export function StructuredPracticeDemo() {
 
   function finishTransfer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!validateCoreStatement(transferCoreStatement)) return;
+    if (!validateSelfCheckSelection(transferCoreStatement, transferAnswer)) return;
     const assessment = evaluateStructuredAnswer({
       skillId,
       answer: transferAnswer,
-      selfStatement: transferCoreStatement,
+      selfStatement: selfCheckStatement(transferCoreStatement),
       evaluation: transferPrompt.evaluation
     });
     setTransferAssessment(assessment);
@@ -787,11 +725,16 @@ export function StructuredPracticeDemo() {
 
   function finishDelayedPractice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!validateCoreStatement(delayedCoreStatement) || !dueRecordId) return;
+    if (
+      !validateSelfCheckSelection(delayedCoreStatement, delayedAnswer) ||
+      !dueRecordId
+    ) {
+      return;
+    }
     const assessment = evaluateStructuredAnswer({
       skillId,
       answer: delayedAnswer,
-      selfStatement: delayedCoreStatement,
+      selfStatement: selfCheckStatement(delayedCoreStatement),
       evaluation: delayedPrompt.evaluation
     });
     setDelayedAssessment(assessment);
@@ -863,14 +806,10 @@ export function StructuredPracticeDemo() {
     return true;
   }
 
-  function validateCoreStatement(value: string) {
-    const length = value.trim().length;
-    if (length < CORE_MIN_LENGTH) {
-      setValidationError(`核心结论请至少输入 ${CORE_MIN_LENGTH} 个字符。`);
-      return false;
-    }
-    if (length > CORE_MAX_LENGTH) {
-      setValidationError(`核心结论不能超过 ${CORE_MAX_LENGTH} 个字符。`);
+  function validateSelfCheckSelection(value: string, answer: string) {
+    const options = extractSelfCheckOptions(answer);
+    if (value !== NO_CLEAR_STATEMENT && !options.includes(value)) {
+      setValidationError("请先选择一句核心句，或选择回答里没有明确核心结论。");
       return false;
     }
     return true;
@@ -984,8 +923,11 @@ function AnswerForm({
       <label className="block text-sm font-medium text-slate-800" htmlFor="practice-answer">
         {label}
       </label>
+      <p className="mt-1 text-sm leading-6 text-slate-600">
+        不用写长文，建议用 2–4 句、40–120 字完成真实表达。
+      </p>
       <textarea
-        className="mt-2 min-h-44 w-full rounded-md border border-slate-300 px-3 py-3 text-base leading-7 shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
+        className="mt-2 min-h-32 w-full rounded-md border border-slate-300 px-3 py-3 text-base leading-7 shadow-sm focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/20"
         id="practice-answer"
         maxLength={ANSWER_MAX_LENGTH}
         onChange={(event) => onChange(event.target.value)}
@@ -993,6 +935,78 @@ function AnswerForm({
         value={value}
       />
       <CharacterCount current={value.length} max={ANSWER_MAX_LENGTH} />
+      <FormError message={error} />
+      <button className={primaryButtonClass} type="submit">
+        {submitLabel}
+      </button>
+    </form>
+  );
+}
+
+function SelfCheckForm({
+  answer,
+  error,
+  eyebrow = "先自己检查",
+  name,
+  onSelect,
+  onSubmit,
+  selectedValue,
+  submitLabel
+}: {
+  answer: string;
+  error: string | null;
+  eyebrow?: string;
+  name: string;
+  onSelect(value: string): void;
+  onSubmit(event: FormEvent<HTMLFormElement>): void;
+  selectedValue: string;
+  submitLabel: string;
+}) {
+  const options = extractSelfCheckOptions(answer);
+
+  return (
+    <form
+      className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6"
+      onSubmit={onSubmit}
+    >
+      <p className="text-sm font-medium text-focus">{eyebrow}</p>
+      <fieldset className="mt-2">
+        <legend className="text-xl font-semibold text-slate-950">
+          从原回答中选择最能代表核心结论的一句
+        </legend>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          不需要再次输入。这里只核对你认为的重点是否真的出现在原文中。
+        </p>
+        <div className="mt-5 space-y-3">
+          {options.map((option) => (
+            <label
+              className="flex cursor-pointer gap-3 rounded-lg border border-slate-200 p-4 text-sm leading-6 text-slate-800 has-[:checked]:border-focus has-[:checked]:bg-blue-50"
+              key={option}
+            >
+              <input
+                checked={selectedValue === option}
+                className="mt-1 h-4 w-4 shrink-0 accent-blue-600"
+                name={name}
+                onChange={() => onSelect(option)}
+                type="radio"
+                value={option}
+              />
+              <span>{option}</span>
+            </label>
+          ))}
+          <label className="flex cursor-pointer gap-3 rounded-lg border border-slate-200 p-4 text-sm leading-6 text-slate-800 has-[:checked]:border-focus has-[:checked]:bg-blue-50">
+            <input
+              checked={selectedValue === NO_CLEAR_STATEMENT}
+              className="mt-1 h-4 w-4 shrink-0 accent-blue-600"
+              name={name}
+              onChange={() => onSelect(NO_CLEAR_STATEMENT)}
+              type="radio"
+              value={NO_CLEAR_STATEMENT}
+            />
+            <span>{NO_CLEAR_STATEMENT_LABEL}</span>
+          </label>
+        </div>
+      </fieldset>
       <FormError message={error} />
       <button className={primaryButtonClass} type="submit">
         {submitLabel}
@@ -1088,9 +1102,17 @@ function StatusSummary({
 function CharacterCount({ current, max }: { current: number; max: number }) {
   return (
     <p className="mt-1 text-right text-xs text-slate-500">
-      {current} / {max}
+      已输入 {current} 字 · 建议 40–120 字（最多 {max} 字）
     </p>
   );
+}
+
+function selfCheckStatement(value: string) {
+  return value === NO_CLEAR_STATEMENT ? "" : value;
+}
+
+function selfCheckDisplay(value: string) {
+  return value === NO_CLEAR_STATEMENT ? NO_CLEAR_STATEMENT_LABEL : value;
 }
 
 function FormError({ message }: { message: string | null }) {

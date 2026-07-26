@@ -4,7 +4,8 @@ import {
 } from "@/features/structured-practice/curriculum";
 import {
   evaluateRevisionChange,
-  evaluateStructuredAnswer
+  evaluateStructuredAnswer,
+  extractSelfCheckOptions
 } from "@/features/structured-practice/ruleEngine";
 import type {
   SkillAssessment,
@@ -28,6 +29,32 @@ describe("v0.4 可信结构化表达规则", () => {
         scenario.prompts.filter((prompt) => prompt.kind === "delayed")
       ).toHaveLength(1);
     });
+  });
+
+  it("自检选项只来自用户原文，并限制为最多四项", () => {
+    const answer =
+      "先介绍背景。核心判断是项目需要延期。第一点是联调未完成。第二点是数据仍需核对。第三点是客户需要重新确认。";
+    const options = extractSelfCheckOptions(answer);
+
+    expect(options).toEqual([
+      "先介绍背景。",
+      "核心判断是项目需要延期。",
+      "第二点是数据仍需核对。",
+      "第三点是客户需要重新确认。"
+    ]);
+    options.forEach((option) => expect(answer).toContain(option));
+  });
+
+  it("单句回答会按逗号拆成可点选的短句", () => {
+    expect(
+      extractSelfCheckOptions(
+        "目前核心功能已经完成，但存在上线风险，我建议先解决联调问题再发布"
+      )
+    ).toEqual([
+      "目前核心功能已经完成，",
+      "但存在上线风险，",
+      "我建议先解决联调问题再发布"
+    ]);
   });
 
   it("明确目的必须完成题目目标，不能由用户自填核心句自证通过", () => {

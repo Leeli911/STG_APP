@@ -63,9 +63,7 @@ describe("Module 10 structured-practice public route", () => {
     submitAnswer("你的无提示回答", purposeDraft, "提交冷回答");
     expect(screen.getByText("刚才的回答")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("我的核心结论"), {
-      target: { value: purposeCore }
-    });
+    fireEvent.click(screen.getByRole("radio", { name: purposeCore }));
     fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
 
     expect(screen.getByRole("heading", { name: "明确目的" })).toBeInTheDocument();
@@ -73,8 +71,9 @@ describe("Module 10 structured-practice public route", () => {
     expect(within(feedback).getByText("原文证据")).toBeInTheDocument();
     expect(within(feedback).getByText("只做这一个动作")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /采用/ })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("在原回答上修改")).toHaveValue(purposeDraft);
 
-    fireEvent.change(screen.getByLabelText("亲自重写"), {
+    fireEvent.change(screen.getByLabelText("在原回答上修改"), {
       target: { value: purposeRevision }
     });
     fireEvent.click(screen.getByRole("button", { name: "检查我的重写" }));
@@ -82,9 +81,7 @@ describe("Module 10 structured-practice public route", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "进入迁移练习" }));
     submitAnswer("你的迁移回答", transferAnswer, "提交迁移回答");
-    fireEvent.change(screen.getByLabelText("迁移题核心结论"), {
-      target: { value: transferCore }
-    });
+    fireEvent.click(screen.getByRole("radio", { name: transferCore }));
     fireEvent.click(screen.getByRole("button", { name: "检查迁移结果" }));
 
     expect(
@@ -99,10 +96,9 @@ describe("Module 10 structured-practice public route", () => {
   it("必须实际修改原稿后才能检查重写", () => {
     render(<TrainingDemoPage />);
     submitAnswer("你的无提示回答", purposeDraft, "提交冷回答");
-    fireEvent.change(screen.getByLabelText("我的核心结论"), {
-      target: { value: purposeCore }
-    });
+    fireEvent.click(screen.getByRole("radio", { name: purposeCore }));
     fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
+    expect(screen.getByLabelText("在原回答上修改")).toHaveValue(purposeDraft);
     fireEvent.click(screen.getByRole("button", { name: "检查我的重写" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -124,9 +120,7 @@ describe("Module 10 structured-practice public route", () => {
     const core = "项目存在上线风险，我建议先解决联调问题再发布。";
 
     submitAnswer("你的无提示回答", answer, "提交冷回答");
-    fireEvent.change(screen.getByLabelText("我的核心结论"), {
-      target: { value: core }
-    });
+    fireEvent.click(screen.getByRole("radio", { name: core }));
     fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
 
     expect(screen.getByRole("heading", { name: "结论先行" })).toBeInTheDocument();
@@ -145,15 +139,49 @@ describe("Module 10 structured-practice public route", () => {
       "我建议优先优化新用户引导，主要有三点。第一点，流失集中在前三步。第二点，相关客服咨询很多。第三点，改动成本相对较低。";
 
     submitAnswer("你的无提示回答", answer, "提交冷回答");
-    fireEvent.change(screen.getByLabelText("我的核心结论"), {
-      target: { value: "我建议优先优化新用户引导。" }
-    });
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "我建议优先优化新用户引导，主要有三点。"
+      })
+    );
     fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
 
     expect(screen.getByRole("heading", { name: "两到三点框架" })).toBeInTheDocument();
     expect(
       screen.getByText("回答明确给出 3 个部分，并覆盖了 3 个不同理由。")
     ).toBeInTheDocument();
+  });
+
+  it("自检无需再次输入，并且未选择时会显示明确错误", () => {
+    render(<TrainingDemoPage />);
+    submitAnswer("你的无提示回答", purposeDraft, "提交冷回答");
+
+    expect(
+      screen.getByRole("group", {
+        name: "从原回答中选择最能代表核心结论的一句"
+      })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "请先选择一句核心句"
+    );
+  });
+
+  it("用户可以明确选择原回答没有核心结论并继续查看反馈", () => {
+    render(<TrainingDemoPage />);
+    submitAnswer("你的无提示回答", purposeDraft, "提交冷回答");
+
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "我的回答里没有明确说出核心结论"
+      })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "查看单点反馈" }));
+
+    expect(screen.getByText("自检与原文不一致")).toBeInTheDocument();
+    expect(screen.getByLabelText("在原回答上修改")).toHaveValue(purposeDraft);
   });
 
   it("已完成页面不会永久占用会话，次日到期后能够进入冷测", async () => {
