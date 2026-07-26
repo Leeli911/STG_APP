@@ -19,7 +19,7 @@ export type ProgressiveSessionStage = (typeof sessionStages)[number];
 
 export type ProgressiveCourseSession = {
   version: 1;
-  day: 1 | 2 | 3 | 4;
+  day: 1 | 2 | 3 | 4 | 5;
   stage: ProgressiveSessionStage;
   dayOneSelections: Record<string, string>;
   dayTwoKnowledgeSelection: string;
@@ -34,6 +34,10 @@ export type ProgressiveCourseSession = {
   dayFourGuidedSelection: string;
   dayFourAnswer: string;
   dayFourChecked: boolean;
+  dayFiveKnowledgeSelection: string;
+  dayFiveCardGroups: Record<string, string>;
+  dayFiveAnswer: string;
+  dayFiveChecked: boolean;
   scaffoldVisible: boolean;
 };
 
@@ -67,6 +71,10 @@ export function createProgressiveCourseSession(): ProgressiveCourseSession {
     dayFourGuidedSelection: "",
     dayFourAnswer: "",
     dayFourChecked: false,
+    dayFiveKnowledgeSelection: "",
+    dayFiveCardGroups: {},
+    dayFiveAnswer: "",
+    dayFiveChecked: false,
     scaffoldVisible: false
   };
 }
@@ -80,13 +88,15 @@ export function parseProgressiveCourseSession(
   try {
     const parsed = JSON.parse(value) as Partial<ProgressiveCourseSession>;
     const day =
-      parsed.day === 4
-        ? 4
-        : parsed.day === 3
-          ? 3
-          : parsed.day === 2
-            ? 2
-            : 1;
+      parsed.day === 5
+        ? 5
+        : parsed.day === 4
+          ? 4
+          : parsed.day === 3
+            ? 3
+            : parsed.day === 2
+              ? 2
+              : 1;
     const stage = sessionStages.includes(
       parsed.stage as ProgressiveSessionStage
     )
@@ -118,6 +128,12 @@ export function parseProgressiveCourseSession(
       ),
       dayFourAnswer: normalizeString(parsed.dayFourAnswer),
       dayFourChecked: parsed.dayFourChecked === true,
+      dayFiveKnowledgeSelection: normalizeString(
+        parsed.dayFiveKnowledgeSelection
+      ),
+      dayFiveCardGroups: normalizeSelections(parsed.dayFiveCardGroups),
+      dayFiveAnswer: normalizeString(parsed.dayFiveAnswer),
+      dayFiveChecked: parsed.dayFiveChecked === true,
       scaffoldVisible: parsed.scaffoldVisible === true
     };
   } catch {

@@ -44,6 +44,11 @@ describe("Module 16 progressive public training route", () => {
         name: "Day 4 用一个理由支撑结论 未解锁"
       })
     ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Day 5 把信息整理成两到三点 未解锁"
+      })
+    ).toBeDisabled();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -392,6 +397,125 @@ describe("Module 16 progressive public training route", () => {
     );
     expect(screen.getByText("两句话支架")).toBeInTheDocument();
   });
+
+  it("unlocks Day 5, groups information cards, and completes an independent three-point answer", async () => {
+    unlockDayFive();
+    render(<TrainingDemoPage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Day 5 把信息整理成两到三点 已解锁"
+      })
+    );
+    expect(
+      screen.getByRole("heading", {
+        name: "把信息整理成两到三点"
+      })
+    ).toBeInTheDocument();
+
+    await startCurrentLesson("我理解了，做一个简单检查");
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "第一，用户影响；第二，交付风险；第三，维护成本。"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查分点方式" })
+    );
+
+    for (const [card, group] of [
+      ["“近两周相关用户投诉增加了。”所属分组", "customer-impact"],
+      [
+        "“同一问题经常需要用户再次联系确认。”所属分组",
+        "customer-impact"
+      ],
+      ["“最近三个任务中有两个发生延期。”所属分组", "delivery-risk"],
+      [
+        "“关键里程碑依赖人工检查，容易被遗漏。”所属分组",
+        "delivery-risk"
+      ],
+      ["“团队每周要花数小时重复返工。”所属分组", "maintenance-cost"],
+      [
+        "“当前每次提交都需要两名同事手工核对。”所属分组",
+        "maintenance-cost"
+      ]
+    ] as const) {
+      fireEvent.change(screen.getByLabelText(card), {
+        target: { value: group }
+      });
+    }
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查信息分组" })
+    );
+    expect(
+      screen.getByText("三组信息清楚且不重复")
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "进入三点独立练习" })
+    );
+
+    fireEvent.change(screen.getByLabelText("你的结论和三个要点"), {
+      target: {
+        value:
+          "建议下一阶段优先优化新用户引导。第一，用户流失集中在前三步。第二，相关客服咨询很多。第三，改动成本相对较低。"
+      }
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查三个要点" })
+    );
+    expect(
+      screen.getByText("三个要点清楚且不重复")
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "完成第 5 课" }));
+
+    expect(
+      screen.getByRole("heading", { name: "让多个信息各就各位" })
+    ).toBeInTheDocument();
+    const saved = JSON.parse(
+      window.localStorage.getItem(PROGRESSIVE_COURSE_KEY) ?? "{}"
+    );
+    expect(saved.completedDays).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("does not complete Day 5 when three labels repeat the same idea", async () => {
+    unlockDayFive();
+    window.sessionStorage.setItem(
+      PROGRESSIVE_SESSION_KEY,
+      JSON.stringify({
+        version: 1,
+        day: 5,
+        stage: "independent",
+        dayFiveAnswer: "",
+        dayFiveChecked: false,
+        scaffoldVisible: false
+      })
+    );
+    render(<TrainingDemoPage />);
+
+    fireEvent.change(
+      await screen.findByLabelText("你的结论和三个要点"),
+      {
+        target: {
+          value:
+            "建议下一阶段优先优化新用户引导。第一，用户流失很多。第二，前三步用户流失严重。第三，流失影响转化。"
+        }
+      }
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查三个要点" })
+    );
+
+    expect(screen.getByText("分点还需要调整")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "完成第 5 课" })
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "查看三点支架后再改一次"
+      })
+    );
+    expect(screen.getByText("三点支架")).toBeInTheDocument();
+  });
 });
 
 async function startCurrentLesson(buttonName: string) {
@@ -437,6 +561,19 @@ function unlockDayFour() {
       lessonViewedDays: [1, 2, 3],
       scaffoldUses: {},
       updatedAt: "2026-07-26T00:00:00.000Z"
+    })
+  );
+}
+
+function unlockDayFive() {
+  window.localStorage.setItem(
+    PROGRESSIVE_COURSE_KEY,
+    JSON.stringify({
+      version: 1,
+      completedDays: [1, 2, 3, 4],
+      lessonViewedDays: [1, 2, 3, 4],
+      scaffoldUses: {},
+      updatedAt: "2026-07-27T00:00:00.000Z"
     })
   );
 }

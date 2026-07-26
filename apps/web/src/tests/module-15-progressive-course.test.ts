@@ -13,6 +13,8 @@ import {
   recordProgressiveScaffoldUse
 } from "@/features/progressive-course/progress";
 import { evaluateDayFourAnswer } from "@/features/progressive-course/supportEvaluator";
+import { getStructuredPracticePrompt } from "@/features/structured-practice/curriculum";
+import { evaluateStructuredAnswer } from "@/features/structured-practice/ruleEngine";
 
 describe("Module 15 progressive course contract", () => {
   it("defines one ordered difficulty step for each of seven days", () => {
@@ -25,7 +27,7 @@ describe("Module 15 progressive course contract", () => {
     ]);
     expect(
       progressiveCourse.filter((lesson) => lesson.implemented).map((lesson) => lesson.day)
-    ).toEqual([1, 2, 3, 4]);
+    ).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("keeps recognition separate from authoritative skill evidence", () => {
@@ -33,6 +35,7 @@ describe("Module 15 progressive course contract", () => {
     const dayTwo = getProgressiveLesson(2);
     const dayThree = getProgressiveLesson(3);
     const dayFour = getProgressiveLesson(4);
+    const dayFive = getProgressiveLesson(5);
 
     expect(
       dayOne.exercises.every((exercise) => !exercise.countsForSkillStatus)
@@ -61,6 +64,37 @@ describe("Module 15 progressive course contract", () => {
         (exercise) => exercise.kind === "independent_write"
       )?.countsForSkillStatus
     ).toBe(true);
+    expect(
+      dayFive.exercises.find((exercise) => exercise.id === "day-5-group-cards")
+        ?.countsForSkillStatus
+    ).toBe(false);
+    expect(
+      dayFive.exercises.find(
+        (exercise) => exercise.kind === "independent_write"
+      )?.countsForSkillStatus
+    ).toBe(true);
+  });
+
+  it("only passes Day 5 when the answer contains distinct explicit groups", () => {
+    const prompt = getStructuredPracticePrompt("stg-v04-grouping-cold-01");
+    const evaluate = (answer: string) =>
+      evaluateStructuredAnswer({
+        skillId: "grouping",
+        answer,
+        selfStatement: answer,
+        evaluation: prompt.evaluation
+      });
+
+    expect(
+      evaluate(
+        "建议下一阶段优先优化新用户引导。第一，流失集中在前三步；第二，相关客服咨询很多；第三，改动成本相对较低。"
+      )
+    ).toMatchObject({ status: "met" });
+    expect(
+      evaluate(
+        "建议下一阶段优先优化新用户引导。第一，用户流失很多；第二，前三步用户流失严重；第三，流失影响转化。"
+      )
+    ).not.toMatchObject({ status: "met" });
   });
 
   it("only passes Day 4 when a conclusion-first answer has one direct reason", () => {
@@ -175,6 +209,32 @@ describe("Module 15 progressive course contract", () => {
       day: 4,
       stage: "independent",
       dayFourAnswer: "建议更新检查清单。最近三次周报都漏填风险字段。"
+    });
+
+    expect(
+      parseProgressiveCourseSession(
+        JSON.stringify({
+          version: 1,
+          day: 5,
+          stage: "guided",
+          dayFiveKnowledgeSelection: "distinct-groups",
+          dayFiveCardGroups: {
+            complaints: "customer-impact",
+            invalid: 12
+          },
+          dayFiveAnswer: "建议优化新用户引导。",
+          dayFiveChecked: true
+        })
+      )
+    ).toMatchObject({
+      day: 5,
+      stage: "guided",
+      dayFiveKnowledgeSelection: "distinct-groups",
+      dayFiveCardGroups: {
+        complaints: "customer-impact"
+      },
+      dayFiveAnswer: "建议优化新用户引导。",
+      dayFiveChecked: true
     });
   });
 });
