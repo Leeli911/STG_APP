@@ -357,7 +357,87 @@ test("Day 5 在移动端完成信息归组，并只接受互不重复的三个�
   await expect(page.getByText("当前完成 5 / 7 课")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Day 6 完成一次完整工作汇报 后续开发"
+      name: "Day 6 完成一次完整工作汇报 已解锁"
     })
-  ).toBeDisabled();
+  ).toBeEnabled();
+});
+
+test("Day 6 先组装完整结构，再独立修改缺少行动请求的工作汇报", async ({
+  page
+}) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "stg:v0.5:progressive-course",
+      JSON.stringify({
+        version: 1,
+        completedDays: [1, 2, 3, 4, 5],
+        lessonViewedDays: [1, 2, 3, 4, 5],
+        scaffoldUses: {},
+        updatedAt: new Date().toISOString()
+      })
+    );
+  });
+
+  await page.goto("/training-demo");
+  await page
+    .getByRole("button", {
+      name: "Day 6 完成一次完整工作汇报 已解锁"
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "完成一次完整工作汇报" })
+  ).toBeVisible();
+  await expect(page.getByText("今天不是突然写一篇长文章")).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "我理解了，做一个简单检查" })
+    .click();
+  await page
+    .getByRole("radio", {
+      name: "先给结论，再分点说明依据，最后提出有时限的行动请求。"
+    })
+    .check();
+  await page.getByRole("button", { name: "检查汇报顺序" }).click();
+
+  await page.getByLabel("1. 先给结论").selectOption("conclusion");
+  await page.getByLabel("2. 第一项依据").selectOption("point-one");
+  await page.getByLabel("3. 第二项依据").selectOption("point-two");
+  await page.getByLabel("4. 行动请求").selectOption("request");
+  await page.getByRole("button", { name: "检查完整结构" }).click();
+  await expect(page.getByText("四个功能都在正确位置")).toBeVisible();
+  await page
+    .getByRole("button", { name: "进入完整汇报独立练习" })
+    .click();
+
+  const answer = page.getByLabel("你的 4–6 句完整汇报");
+  await answer.fill(
+    "建议将本周五发布推迟到下周一。第一，两个关键接口仍未通过联调。第二，最近三次测试有两次出现数据同步失败。第三，客户培训已经调整到下周一。以上是当前情况。"
+  );
+  await page.getByRole("button", { name: "检查完整汇报" }).click();
+  await expect(page.getByText("一次只改最优先的缺口")).toBeVisible();
+  await expect(page.getByText("待补 最后提出有时限的行动请求")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "完成第 6 课" })
+  ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "查看提纲后修改原文" }).click();
+  await expect(page.getByText("只给提纲，不给参考答案")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("你的 4–6 句完整汇报")).toHaveValue(
+    "建议将本周五发布推迟到下周一。第一，两个关键接口仍未通过联调。第二，最近三次测试有两次出现数据同步失败。第三，客户培训已经调整到下周一。以上是当前情况。"
+  );
+  await expect(page.getByText("只给提纲，不给参考答案")).toBeVisible();
+  await answer.fill(
+    "建议将本周五发布推迟到下周一。第一，两个关键接口仍未通过联调。第二，最近三次测试有两次出现数据同步失败。第三，客户培训已经调整到下周一。请负责人今天批准将发布推迟到下周一。"
+  );
+  await page.getByRole("button", { name: "检查完整汇报" }).click();
+  await expect(page.getByText("完整结构达标")).toBeVisible();
+  await page.getByRole("button", { name: "完成第 6 课" }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "完成了一次可行动的完整汇报"
+    })
+  ).toBeVisible();
+  await expect(page.getByText("当前完成 6 / 7 课")).toBeVisible();
 });

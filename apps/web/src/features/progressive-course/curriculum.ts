@@ -220,6 +220,61 @@ export const dayFiveGroupingExercise = {
   ]
 } as const;
 
+export const daySixKnowledgeChecks: KnowledgeCheck[] = [
+  {
+    id: "day-6-complete-report-order",
+    prompt: "哪一种顺序最适合一段需要负责人作决定的完整短汇报？",
+    context:
+      "项目存在发布风险，你需要说明判断、依据，并请负责人今天作出决定。",
+    options: [
+      {
+        id: "complete-order",
+        label: "先给结论，再分点说明依据，最后提出有时限的行动请求。"
+      },
+      {
+        id: "background-order",
+        label: "先完整介绍过程，再补充背景，最后视情况决定是否给结论。"
+      },
+      {
+        id: "request-only",
+        label: "先重复提出请求，再省略依据，最后补一句模糊判断。"
+      }
+    ],
+    correctOptionId: "complete-order",
+    successExplanation: "正确。负责人先知道你的判断，再核对依据，最后可以直接行动。",
+    retryExplanation: "完整汇报不能只有背景或请求；寻找“结论—依据—行动”的顺序。"
+  }
+];
+
+export const daySixGuidedExercise = {
+  context:
+    "客服主管需要判断是否本周更新 FAQ。上周四十条咨询中有二十五条询问已变更的退款步骤，客服需要反复解释，而更新预计只需两小时。",
+  slots: [
+    { id: "conclusion", label: "1. 先给结论", correctBlockId: "conclusion" },
+    { id: "point-one", label: "2. 第一项依据", correctBlockId: "point-one" },
+    { id: "point-two", label: "3. 第二项依据", correctBlockId: "point-two" },
+    { id: "request", label: "4. 行动请求", correctBlockId: "request" }
+  ],
+  blocks: [
+    { id: "conclusion", text: "建议本周更新客服 FAQ。" },
+    {
+      id: "point-one",
+      text: "第一，上周四十条咨询中有二十五条都在询问已变更的退款步骤。"
+    },
+    { id: "point-two", text: "第二，客服需要反复解释同一个问题。" },
+    { id: "request", text: "请主管今天确认把 FAQ 更新列入本周任务。" },
+    { id: "background", text: "现有 FAQ 是三个月前整理的。" },
+    { id: "duplicate", text: "第二，用户对现有 FAQ 的体验不够好。" },
+    { id: "vague-ending", text: "以上是本次需要同步的全部内容。" }
+  ]
+} as const;
+
+export const daySixIndependentPrompt = {
+  audience: "项目负责人",
+  prompt:
+    "客户上线项目原计划本周五发布。现在核心功能已完成，但两个关键接口仍未通过联调；最近三次测试有两次出现数据同步失败；客户已同意将培训调整到下周一。请用 4–6 句话完成汇报，并请负责人今天决定是否把发布推迟到下周一。"
+} as const;
+
 export const progressiveCourse: ProgressiveCourseLesson[] = [
   {
     id: "stg-v05-day-1-recognize-purpose",
@@ -434,7 +489,24 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
     title: "完成一次完整工作汇报",
     conceptGoal: "组合目的、结论、分点和行动请求",
     estimatedMinutes: 7,
-    implemented: false,
+    implemented: true,
+    lesson: {
+      definition: "完整短汇报是先给出判断，再用两到三个不同事实支撑，最后说清希望对方何时做什么。",
+      value: "负责人不只知道发生了什么，还能快速理解你的主张、判断依据并直接作出决定。",
+      formula: "结论先行 ＋ 两到三点依据 ＋ 有对象、有动作、有时限的请求",
+      badExample: {
+        label: "只有过程，没有落点",
+        text: "我们最近做了不少测试，也和客户沟通过，项目还有一些问题，以上是当前情况。",
+        explanation: "听众看到了背景，却不知道你的判断和需要他完成的决定。"
+      },
+      goodExample: {
+        label: "判断、依据、请求完整",
+        text: "建议把本周五发布推迟到下周一。第一，关键接口尚未通过联调。第二，数据同步仍不稳定。请负责人今天确认延期决定。",
+        explanation: "结论、不同依据和行动请求各自承担一个明确功能。"
+      },
+      commonMistake: "把 Day 2–5 的句子机械拼在一起，重复同一事实，或汇报完情况却没有提出行动请求。"
+    },
+    knowledgeChecks: daySixKnowledgeChecks,
     exercises: [
       {
         id: "day-6-guided-report",
@@ -475,7 +547,7 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
   }
 ];
 
-export function getProgressiveLesson(day: 1 | 2 | 3 | 4 | 5) {
+export function getProgressiveLesson(day: 1 | 2 | 3 | 4 | 5 | 6) {
   const lesson = progressiveCourse.find(
     (item) => item.day === day && item.implemented
   );

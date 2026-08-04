@@ -19,7 +19,7 @@ export type ProgressiveSessionStage = (typeof sessionStages)[number];
 
 export type ProgressiveCourseSession = {
   version: 1;
-  day: 1 | 2 | 3 | 4 | 5;
+  day: 1 | 2 | 3 | 4 | 5 | 6;
   stage: ProgressiveSessionStage;
   dayOneSelections: Record<string, string>;
   dayTwoKnowledgeSelection: string;
@@ -38,6 +38,10 @@ export type ProgressiveCourseSession = {
   dayFiveCardGroups: Record<string, string>;
   dayFiveAnswer: string;
   dayFiveChecked: boolean;
+  daySixKnowledgeSelection: string;
+  daySixGuidedSelections: Record<string, string>;
+  daySixAnswer: string;
+  daySixChecked: boolean;
   scaffoldVisible: boolean;
 };
 
@@ -75,6 +79,10 @@ export function createProgressiveCourseSession(): ProgressiveCourseSession {
     dayFiveCardGroups: {},
     dayFiveAnswer: "",
     dayFiveChecked: false,
+    daySixKnowledgeSelection: "",
+    daySixGuidedSelections: {},
+    daySixAnswer: "",
+    daySixChecked: false,
     scaffoldVisible: false
   };
 }
@@ -87,16 +95,7 @@ export function parseProgressiveCourseSession(
 
   try {
     const parsed = JSON.parse(value) as Partial<ProgressiveCourseSession>;
-    const day =
-      parsed.day === 5
-        ? 5
-        : parsed.day === 4
-          ? 4
-          : parsed.day === 3
-            ? 3
-            : parsed.day === 2
-              ? 2
-              : 1;
+    const day = normalizeSessionDay(parsed.day);
     const stage = sessionStages.includes(
       parsed.stage as ProgressiveSessionStage
     )
@@ -134,6 +133,14 @@ export function parseProgressiveCourseSession(
       dayFiveCardGroups: normalizeSelections(parsed.dayFiveCardGroups),
       dayFiveAnswer: normalizeString(parsed.dayFiveAnswer),
       dayFiveChecked: parsed.dayFiveChecked === true,
+      daySixKnowledgeSelection: normalizeString(
+        parsed.daySixKnowledgeSelection
+      ),
+      daySixGuidedSelections: normalizeSelections(
+        parsed.daySixGuidedSelections
+      ),
+      daySixAnswer: normalizeLongString(parsed.daySixAnswer),
+      daySixChecked: parsed.daySixChecked === true,
       scaffoldVisible: parsed.scaffoldVisible === true
     };
   } catch {
@@ -255,6 +262,22 @@ function normalizeSelections(value: unknown) {
 
 function normalizeString(value: unknown) {
   return typeof value === "string" ? value.slice(0, 300) : "";
+}
+
+function normalizeLongString(value: unknown) {
+  return typeof value === "string" ? value.slice(0, 420) : "";
+}
+
+function normalizeSessionDay(
+  value: unknown
+): ProgressiveCourseSession["day"] {
+  return value === 2 ||
+    value === 3 ||
+    value === 4 ||
+    value === 5 ||
+    value === 6
+    ? value
+    : 1;
 }
 
 function normalizeOrder(value: unknown) {

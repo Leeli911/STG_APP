@@ -49,6 +49,11 @@ describe("Module 16 progressive public training route", () => {
         name: "Day 5 把信息整理成两到三点 未解锁"
       })
     ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Day 6 完成一次完整工作汇报 未解锁"
+      })
+    ).toBeDisabled();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -516,6 +521,119 @@ describe("Module 16 progressive public training route", () => {
     );
     expect(screen.getByText("三点支架")).toBeInTheDocument();
   });
+
+  it("unlocks Day 6, assembles sentence blocks, and completes one independent report", async () => {
+    unlockDaySix();
+    render(<TrainingDemoPage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Day 6 完成一次完整工作汇报 已解锁"
+      })
+    );
+    expect(
+      screen.getByRole("heading", { name: "完成一次完整工作汇报" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("今天不是突然写一篇长文章")
+    ).toBeInTheDocument();
+
+    await startCurrentLesson("我理解了，做一个简单检查");
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "先给结论，再分点说明依据，最后提出有时限的行动请求。"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查汇报顺序" })
+    );
+
+    for (const [slot, block] of [
+      ["1. 先给结论", "conclusion"],
+      ["2. 第一项依据", "point-one"],
+      ["3. 第二项依据", "point-two"],
+      ["4. 行动请求", "request"]
+    ] as const) {
+      fireEvent.change(screen.getByLabelText(slot), {
+        target: { value: block }
+      });
+    }
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查完整结构" })
+    );
+    expect(
+      screen.getByText("四个功能都在正确位置")
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "进入完整汇报独立练习" })
+    );
+
+    fireEvent.change(screen.getByLabelText("你的 4–6 句完整汇报"), {
+      target: {
+        value:
+          "建议将本周五发布推迟到下周一。第一，两个关键接口仍未通过联调。第二，最近三次测试有两次出现数据同步失败。第三，客户培训已经调整到下周一。请负责人今天批准将发布推迟到下周一。"
+      }
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查完整汇报" })
+    );
+    expect(screen.getByText("完整结构达标")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "完整汇报结构达标" })
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "完成第 6 课" }));
+
+    expect(
+      screen.getByRole("heading", {
+        name: "完成了一次可行动的完整汇报"
+      })
+    ).toBeInTheDocument();
+    const saved = JSON.parse(
+      window.localStorage.getItem(PROGRESSIVE_COURSE_KEY) ?? "{}"
+    );
+    expect(saved.completedDays).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it("keeps Day 6 incomplete when the report has no actionable ending", async () => {
+    unlockDaySix();
+    window.sessionStorage.setItem(
+      PROGRESSIVE_SESSION_KEY,
+      JSON.stringify({
+        version: 1,
+        day: 6,
+        stage: "independent",
+        daySixAnswer: "",
+        daySixChecked: false,
+        scaffoldVisible: false
+      })
+    );
+    render(<TrainingDemoPage />);
+
+    fireEvent.change(
+      await screen.findByLabelText("你的 4–6 句完整汇报"),
+      {
+        target: {
+          value:
+            "建议将本周五发布推迟到下周一。第一，两个关键接口仍未通过联调。第二，最近三次测试有两次出现数据同步失败。第三，客户培训已经调整到下周一。以上是当前情况。"
+        }
+      }
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "检查完整汇报" })
+    );
+
+    expect(screen.getByText("一次只改最优先的缺口")).toBeInTheDocument();
+    expect(
+      screen.getByText("待补 最后提出有时限的行动请求")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "完成第 6 课" })
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "查看提纲后修改原文" })
+    );
+    expect(screen.getByText("只给提纲，不给参考答案")).toBeInTheDocument();
+  });
 });
 
 async function startCurrentLesson(buttonName: string) {
@@ -574,6 +692,19 @@ function unlockDayFive() {
       lessonViewedDays: [1, 2, 3, 4],
       scaffoldUses: {},
       updatedAt: "2026-07-27T00:00:00.000Z"
+    })
+  );
+}
+
+function unlockDaySix() {
+  window.localStorage.setItem(
+    PROGRESSIVE_COURSE_KEY,
+    JSON.stringify({
+      version: 1,
+      completedDays: [1, 2, 3, 4, 5],
+      lessonViewedDays: [1, 2, 3, 4, 5],
+      scaffoldUses: {},
+      updatedAt: "2026-08-04T00:00:00.000Z"
     })
   );
 }
