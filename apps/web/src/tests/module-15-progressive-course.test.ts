@@ -12,6 +12,7 @@ import {
   parseProgressiveCourseSession,
   recordProgressiveScaffoldUse
 } from "@/features/progressive-course/progress";
+import { evaluateDaySixReport } from "@/features/progressive-course/reportEvaluator";
 import { evaluateDayFourAnswer } from "@/features/progressive-course/supportEvaluator";
 import { getStructuredPracticePrompt } from "@/features/structured-practice/curriculum";
 import { evaluateStructuredAnswer } from "@/features/structured-practice/ruleEngine";
@@ -27,7 +28,7 @@ describe("Module 15 progressive course contract", () => {
     ]);
     expect(
       progressiveCourse.filter((lesson) => lesson.implemented).map((lesson) => lesson.day)
-    ).toEqual([1, 2, 3, 4, 5]);
+    ).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it("keeps recognition separate from authoritative skill evidence", () => {
@@ -36,6 +37,7 @@ describe("Module 15 progressive course contract", () => {
     const dayThree = getProgressiveLesson(3);
     const dayFour = getProgressiveLesson(4);
     const dayFive = getProgressiveLesson(5);
+    const daySix = getProgressiveLesson(6);
 
     expect(
       dayOne.exercises.every((exercise) => !exercise.countsForSkillStatus)
@@ -73,6 +75,61 @@ describe("Module 15 progressive course contract", () => {
         (exercise) => exercise.kind === "independent_write"
       )?.countsForSkillStatus
     ).toBe(true);
+    expect(
+      daySix.exercises.find((exercise) => exercise.kind === "guided_write")
+        ?.countsForSkillStatus
+    ).toBe(false);
+    expect(
+      daySix.exercises.find(
+        (exercise) => exercise.kind === "independent_write"
+      )?.countsForSkillStatus
+    ).toBe(true);
+  });
+
+  it("only passes Day 6 when conclusion, distinct evidence, and request all exist", () => {
+    expect(
+      evaluateDaySixReport(
+        "建议将本周五发布推迟到下周一。第一，两个关键接口仍未通过联调。第二，最近三次测试有两次出现数据同步失败。第三，客户培训已经调整到下周一。请负责人今天批准将发布推迟到下周一。"
+      )
+    ).toMatchObject({
+      status: "met",
+      passed: true,
+      checks: [
+        { id: "conclusion", passed: true },
+        { id: "points", passed: true },
+        { id: "evidence", passed: true },
+        { id: "request", passed: true }
+      ]
+    });
+
+    expect(
+      evaluateDaySixReport(
+        "建议将本周五发布推迟到下周一。第一，两个关键接口仍未通过联调。第二，最近三次测试有两次出现数据同步失败。第三，客户培训已经调整到下周一。以上是当前情况。"
+      )
+    ).toMatchObject({
+      status: "missing_request",
+      passed: false
+    });
+  });
+
+  it("rejects Day 6 reports that repeat evidence or explain scoring rules", () => {
+    expect(
+      evaluateDaySixReport(
+        "建议将本周五发布推迟到下周一。第一，两个关键接口仍未通过联调。第二，接口联调仍有问题。第三，联调问题影响发布。请负责人今天批准将发布推迟到下周一。"
+      )
+    ).toMatchObject({
+      status: "weak_evidence",
+      passed: false
+    });
+
+    expect(
+      evaluateDaySixReport(
+        "为了通过评分标准，我先命中规则。第一，写结论关键词。第二，写分点关键词。第三，写请求关键词。请负责人今天批准将发布推迟到下周一。"
+      )
+    ).toMatchObject({
+      status: "off_task",
+      passed: false
+    });
   });
 
   it("only passes Day 5 when the answer contains distinct explicit groups", () => {
@@ -235,6 +292,34 @@ describe("Module 15 progressive course contract", () => {
       },
       dayFiveAnswer: "建议优化新用户引导。",
       dayFiveChecked: true
+    });
+
+    expect(
+      parseProgressiveCourseSession(
+        JSON.stringify({
+          version: 1,
+          day: 6,
+          stage: "independent",
+          daySixKnowledgeSelection: "complete-order",
+          daySixGuidedSelections: {
+            conclusion: "conclusion",
+            request: "request",
+            invalid: 12
+          },
+          daySixAnswer: "建议将本周五发布推迟到下周一。",
+          daySixChecked: true
+        })
+      )
+    ).toMatchObject({
+      day: 6,
+      stage: "independent",
+      daySixKnowledgeSelection: "complete-order",
+      daySixGuidedSelections: {
+        conclusion: "conclusion",
+        request: "request"
+      },
+      daySixAnswer: "建议将本周五发布推迟到下周一。",
+      daySixChecked: true
     });
   });
 });
