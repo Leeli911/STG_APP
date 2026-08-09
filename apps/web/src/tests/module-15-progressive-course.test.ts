@@ -3,6 +3,7 @@ import {
   progressiveCourse
 } from "@/features/progressive-course/curriculum";
 import {
+  completeDaySevenProject,
   completeProgressiveDay,
   createProgressiveCourseProgress,
   createProgressiveCourseSession,
@@ -12,8 +13,14 @@ import {
   parseProgressiveCourseSession,
   recordProgressiveScaffoldUse
 } from "@/features/progressive-course/progress";
+import {
+  DAY_SEVEN_RULE_VERSION,
+  evaluateDaySevenReport,
+  evaluateDaySevenRevision
+} from "@/features/progressive-course/projectEvaluator";
 import { evaluateDaySixReport } from "@/features/progressive-course/reportEvaluator";
 import { evaluateDayFourAnswer } from "@/features/progressive-course/supportEvaluator";
+import type { ProgressiveCourseProgress } from "@/features/progressive-course/types";
 import { getStructuredPracticePrompt } from "@/features/structured-practice/curriculum";
 import { evaluateStructuredAnswer } from "@/features/structured-practice/ruleEngine";
 
@@ -28,7 +35,7 @@ describe("Module 15 progressive course contract", () => {
     ]);
     expect(
       progressiveCourse.filter((lesson) => lesson.implemented).map((lesson) => lesson.day)
-    ).toEqual([1, 2, 3, 4, 5, 6]);
+    ).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
   it("keeps recognition separate from authoritative skill evidence", () => {
@@ -38,6 +45,7 @@ describe("Module 15 progressive course contract", () => {
     const dayFour = getProgressiveLesson(4);
     const dayFive = getProgressiveLesson(5);
     const daySix = getProgressiveLesson(6);
+    const daySeven = getProgressiveLesson(7);
 
     expect(
       dayOne.exercises.every((exercise) => !exercise.countsForSkillStatus)
@@ -84,6 +92,71 @@ describe("Module 15 progressive course contract", () => {
         (exercise) => exercise.kind === "independent_write"
       )?.countsForSkillStatus
     ).toBe(true);
+    expect(daySeven.knowledgeChecks).toEqual([]);
+    expect(daySeven.exercises).toEqual([
+      expect.objectContaining({
+        kind: "final_project",
+        scaffoldLevel: "none",
+        countsForSkillStatus: true
+      }),
+      expect.objectContaining({
+        kind: "transfer",
+        scaffoldLevel: "none",
+        countsForSkillStatus: true
+      })
+    ]);
+  });
+
+  it("evaluates the Day 7 project and transfer against separate frozen facts", () => {
+    const project =
+      "建议将客服工单系统切换推迟到下周一。第一，历史工单目前只迁移了60%。第二，试运行中有8%的附件缺失。第三，供应商预计两天可修复，旧系统合同持续到月底。请运营总监今天批准将系统切换推迟到下周一。";
+    const transfer =
+      "建议把剩余预算集中投放到渠道A。第一，渠道A获客成本82元、转化率7.8%，效率更高。第二，渠道B获客成本146元、转化率3.1%。第三，剩余预算只够一个渠道，且渠道A素材已审核。请市场负责人今天批准把剩余预算集中到渠道A。";
+
+    expect(evaluateDaySevenReport(project, "project")).toMatchObject({
+      status: "met",
+      passed: true
+    });
+    expect(evaluateDaySevenReport(transfer, "transfer")).toMatchObject({
+      status: "met",
+      passed: true
+    });
+    expect(evaluateDaySevenReport(project, "transfer")).toMatchObject({
+      status: "off_task",
+      passed: false
+    });
+    expect(
+      evaluateDaySevenReport(
+        project.replace("60%", "72%"),
+        "project"
+      )
+    ).toMatchObject({ status: "unsupported_fact", passed: false });
+  });
+
+  it("requires a substantive Day 7 revision that remains structurally complete", () => {
+    const before =
+      "建议将客服工单系统切换推迟到下周一。第一，历史工单目前只迁移了60%。第二，试运行中有8%的附件缺失。第三，供应商预计两天可修复，旧系统合同持续到月底。以上是当前情况。";
+    const after =
+      "建议将客服工单系统切换推迟到下周一。第一，历史工单目前只迁移了60%。第二，试运行中有8%的附件缺失。第三，供应商预计两天可修复，旧系统合同持续到月底。请运营总监今天批准将系统切换推迟到下周一。";
+    const beforeAssessment = evaluateDaySevenReport(before, "project");
+    const afterAssessment = evaluateDaySevenReport(after, "project");
+
+    expect(
+      evaluateDaySevenRevision({
+        before,
+        after: `${before}  `,
+        beforeAssessment,
+        afterAssessment: beforeAssessment
+      })
+    ).toMatchObject({ status: "unchanged", passed: false });
+    expect(
+      evaluateDaySevenRevision({
+        before,
+        after,
+        beforeAssessment,
+        afterAssessment
+      })
+    ).toMatchObject({ status: "improved", passed: true });
   });
 
   it("only passes Day 6 when conclusion, distinct evidence, and request all exist", () => {
@@ -204,6 +277,37 @@ describe("Module 15 progressive course contract", () => {
     );
     expect(completed.completedDays).toEqual([1]);
     expect(isProgressiveDayUnlocked(completed, 2)).toBe(true);
+    expect(
+      isProgressiveDayUnlocked(
+        { ...initial, completedDays: [6] },
+        7
+      )
+    ).toBe(false);
+  });
+
+  it("records Day 7 completion and its no-answer evidence together", () => {
+    const progress: ProgressiveCourseProgress = {
+      ...createProgressiveCourseProgress(),
+      completedDays: [1, 2, 3, 4, 5, 6]
+    };
+    const completed = completeDaySevenProject(progress, {
+      ruleVersion: DAY_SEVEN_RULE_VERSION,
+      projectInitialPassed: false,
+      revisionKind: "improved",
+      transferFirstPassed: false,
+      transferFinalPassed: true,
+      revisionAttempts: 1,
+      transferAttempts: 2,
+      completedAt: "2026-08-09T00:00:00.000Z"
+    });
+
+    expect(completed.completedDays).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(completed.daySevenOutcome).toMatchObject({
+      projectInitialPassed: false,
+      transferFirstPassed: false,
+      transferFinalPassed: true
+    });
+    expect(JSON.stringify(completed)).not.toContain("客服工单系统");
   });
 
   it("records viewed lessons and scaffold use as support data, not scores", () => {
@@ -321,5 +425,20 @@ describe("Module 15 progressive course contract", () => {
       daySixAnswer: "建议将本周五发布推迟到下周一。",
       daySixChecked: true
     });
+
+    expect(
+      parseProgressiveCourseSession(
+        JSON.stringify({ version: 99, day: 7, stage: "complete" })
+      )
+    ).toEqual(createProgressiveCourseSession());
+    expect(
+      parseProgressiveCourseProgress(
+        JSON.stringify({
+          version: 1,
+          completedDays: [1, 3, 6, 7],
+          lessonViewedDays: []
+        })
+      ).completedDays
+    ).toEqual([1]);
   });
 });

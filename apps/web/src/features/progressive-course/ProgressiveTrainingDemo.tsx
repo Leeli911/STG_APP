@@ -18,7 +18,10 @@ import {
   getProgressiveLesson,
   progressiveCourse
 } from "@/features/progressive-course/curriculum";
+import { DaySevenProject } from "@/features/progressive-course/DaySevenProject";
+import { DAY_SEVEN_RULE_VERSION } from "@/features/progressive-course/projectEvaluator";
 import {
+  completeDaySevenProject,
   completeProgressiveDay,
   createProgressiveCourseProgress,
   createProgressiveCourseSession,
@@ -27,13 +30,16 @@ import {
   parseProgressiveCourseProgress,
   parseProgressiveCourseSession,
   PROGRESSIVE_COURSE_KEY,
+  PROGRESSIVE_DAY_SEVEN_SESSION_KEY,
   PROGRESSIVE_SESSION_KEY,
   recordProgressiveScaffoldUse,
   type ProgressiveCourseSession
 } from "@/features/progressive-course/progress";
 import { evaluateDaySixReport } from "@/features/progressive-course/reportEvaluator";
 import type {
+  DaySevenOutcome,
   KnowledgeCheck,
+  ProgressiveCourseDay,
   ProgressiveCourseProgress,
   ProgressiveLessonContent
 } from "@/features/progressive-course/types";
@@ -50,7 +56,7 @@ const dayThreePracticePrompt = getStructuredPracticePrompt(
 const dayFivePracticePrompt = getStructuredPracticePrompt(
   "stg-v04-grouping-cold-01"
 );
-const implementedDays = [1, 2, 3, 4, 5, 6] as const;
+const implementedDays: ProgressiveCourseDay[] = [1, 2, 3, 4, 5, 6, 7];
 
 type CheckResult = "success" | "retry" | null;
 
@@ -90,6 +96,13 @@ export function ProgressiveTrainingDemo({
     useState<CheckResult>(null);
 
   const currentLesson = getProgressiveLesson(session.day);
+  const nextCourseDay =
+    implementedDays.find((day) => !progress.completedDays.includes(day)) ??
+    7;
+  const scaffoldUseCount = Object.values(progress.scaffoldUses).reduce(
+    (total, count) => total + (count ?? 0),
+    0
+  );
   const dayTwoAssessment = useMemo(() => {
     if (!session.dayTwoChecked || session.dayTwoAnswer.trim().length === 0) {
       return null;
@@ -154,18 +167,19 @@ export function ProgressiveTrainingDemo({
   }, [session.daySixAnswer, session.daySixChecked]);
 
   useEffect(() => {
+    const rawSession = window.sessionStorage.getItem(PROGRESSIVE_SESSION_KEY);
     const storedProgress = parseProgressiveCourseProgress(
       window.localStorage.getItem(PROGRESSIVE_COURSE_KEY)
     );
-    const storedSession = parseProgressiveCourseSession(
-      window.sessionStorage.getItem(PROGRESSIVE_SESSION_KEY)
-    );
+    const storedSession = parseProgressiveCourseSession(rawSession);
+    const candidate =
+      rawSession === null ? createProgressiveCourseSession() : storedSession;
     const safeSession = !isProgressiveDayUnlocked(
       storedProgress,
-      storedSession.day
+      candidate.day
     )
-        ? createProgressiveCourseSession()
-        : storedSession;
+      ? createProgressiveCourseSession()
+      : candidate;
 
     setProgress(storedProgress);
     setSession(safeSession);
@@ -188,6 +202,14 @@ export function ProgressiveTrainingDemo({
     );
   }, [hydrated, session]);
 
+  useEffect(() => {
+    if (!hydrated || session.day !== 7) return;
+    window.sessionStorage.setItem(
+      PROGRESSIVE_DAY_SEVEN_SESSION_KEY,
+      JSON.stringify(session)
+    );
+  }, [hydrated, session]);
+
   if (!hydrated) {
     return (
       <main className="mx-auto max-w-5xl">
@@ -204,6 +226,12 @@ export function ProgressiveTrainingDemo({
         classicHref={classicHref}
         completedCount={progress.completedDays.length}
       />
+      <ContinueCourseCard
+        currentDay={session.day}
+        day={nextCourseDay}
+        onContinue={() => selectDay(nextCourseDay)}
+        outcome={progress.daySevenOutcome}
+      />
       <CourseMap
         currentDay={session.day}
         onSelectDay={selectDay}
@@ -215,7 +243,7 @@ export function ProgressiveTrainingDemo({
         title={currentLesson.title}
       />
 
-      {session.stage === "lesson" ? (
+      {session.stage === "lesson" && session.day !== 7 ? (
         <LessonCard
           content={currentLesson.lesson}
           day={session.day}
@@ -561,18 +589,27 @@ export function ProgressiveTrainingDemo({
         <CompletionCard
           description="你已经在一个新情境中独立组合结论、不同事实分点和明确行动请求。规则通过只说明本题结构满足要求，最终迁移仍要由 Day 7 检查。"
           eyebrow="Day 6 已完成"
-          nextLabel="查看毕业项目"
-          onNext={() =>
-            document
-              .getElementById("course-map")
-              ?.scrollIntoView({ behavior: "smooth" })
-          }
+          nextLabel="进入 Day 7 毕业项目"
+          onNext={() => selectDay(7)}
           title="完成了一次可行动的完整汇报"
-        >
-          <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-            Day 7“毕业项目”将在下一批实现。完成 Day 6 不代表完整课程或能力提升已经得到证明。
-          </div>
-        </CompletionCard>
+        />
+      ) : null}
+
+      {session.day === 7 ? (
+        <DaySevenProject
+          onCheckOriginal={checkDaySevenOriginal}
+          onCheckRevision={checkDaySevenRevision}
+          onCheckTransfer={checkDaySevenTransfer}
+          onComplete={completeDaySeven}
+          onStart={startDaySevenProject}
+          onUpdate={updateDaySeven}
+          onViewRevision={viewDaySevenRevision}
+          onViewTransfer={() => updateSession({ stage: "project_transfer" })}
+          outcome={progress.daySevenOutcome}
+          scaffoldUseCount={scaffoldUseCount}
+          session={session.daySeven}
+          stage={session.stage}
+        />
       ) : null}
     </main>
   );
@@ -581,7 +618,7 @@ export function ProgressiveTrainingDemo({
     setSession((current) => ({ ...current, ...update }));
   }
 
-  function selectDay(day: 1 | 2 | 3 | 4 | 5 | 6) {
+  function selectDay(day: ProgressiveCourseDay) {
     if (!isProgressiveDayUnlocked(progress, day)) return;
     setFormError(null);
     setDayOneResult(null);
@@ -595,10 +632,26 @@ export function ProgressiveTrainingDemo({
     setDayFiveGroupingResult(null);
     setDaySixKnowledgeResult(null);
     setDaySixGuidedResult(null);
-    setSession({
-      ...createProgressiveCourseSession(),
-      day
-    });
+    if (day === 7) {
+      if (progress.daySevenOutcome) {
+        setSession({
+          ...createProgressiveCourseSession(),
+          day: 7,
+          stage: "complete"
+        });
+        return;
+      }
+      const storedDaySeven = parseProgressiveCourseSession(
+        window.sessionStorage.getItem(PROGRESSIVE_DAY_SEVEN_SESSION_KEY)
+      );
+      setSession(
+        storedDaySeven.day === 7
+          ? storedDaySeven
+          : { ...createProgressiveCourseSession(), day: 7 }
+      );
+      return;
+    }
+    setSession({ ...createProgressiveCourseSession(), day });
   }
 
   function startKnowledgeCheck() {
@@ -988,6 +1041,80 @@ export function ProgressiveTrainingDemo({
     setProgress((current) => completeProgressiveDay(current, 6));
     updateSession({ stage: "complete" });
   }
+
+  function updateDaySeven(
+    update: Partial<ProgressiveCourseSession["daySeven"]>
+  ) {
+    setSession((current) => ({
+      ...current,
+      daySeven: { ...current.daySeven, ...update }
+    }));
+  }
+
+  function startDaySevenProject() {
+    setProgress((current) => markProgressiveLessonViewed(current, 7));
+    updateSession({ stage: "project_draft" });
+  }
+
+  function checkDaySevenOriginal(passed: boolean) {
+    updateDaySeven({
+      originalChecked: true,
+      projectInitialPassed:
+        session.daySeven.projectInitialPassed ?? passed,
+      projectAttempts: session.daySeven.projectAttempts + 1
+    });
+  }
+
+  function viewDaySevenRevision() {
+    updateSession({
+      stage: "project_revision",
+      daySeven: {
+        ...session.daySeven,
+        revisionAnswer:
+          session.daySeven.revisionAnswer || session.daySeven.originalAnswer,
+        revisionChecked: false
+      }
+    });
+  }
+
+  function checkDaySevenRevision() {
+    updateDaySeven({
+      revisionChecked: true,
+      revisionAttempts: session.daySeven.revisionAttempts + 1
+    });
+  }
+
+  function checkDaySevenTransfer(passed: boolean) {
+    updateDaySeven({
+      transferChecked: true,
+      transferFirstPassed:
+        session.daySeven.transferFirstPassed ?? passed,
+      transferAttempts: session.daySeven.transferAttempts + 1
+    });
+  }
+
+  function completeDaySeven(transferFinalPassed: boolean) {
+    if (!session.daySeven.revisionChecked || !session.daySeven.transferChecked) {
+      return;
+    }
+    const outcome: DaySevenOutcome = {
+      ruleVersion: DAY_SEVEN_RULE_VERSION,
+      projectInitialPassed:
+        session.daySeven.projectInitialPassed === true,
+      revisionKind:
+        session.daySeven.projectInitialPassed === true
+          ? "maintained"
+          : "improved",
+      transferFirstPassed:
+        session.daySeven.transferFirstPassed === true,
+      transferFinalPassed,
+      revisionAttempts: session.daySeven.revisionAttempts,
+      transferAttempts: session.daySeven.transferAttempts,
+      completedAt: new Date().toISOString()
+    };
+    setProgress((current) => completeDaySevenProject(current, outcome));
+    updateSession({ stage: "complete" });
+  }
 }
 
 function CourseHeader({
@@ -1019,7 +1146,7 @@ function CourseHeader({
       </p>
       <div className="flex flex-wrap gap-2 text-sm text-slate-600">
         <span className="rounded-full bg-slate-100 px-3 py-1">
-          每天约 3–7 分钟
+          前六天 3–7 分钟 · 毕业项目约 10 分钟
         </span>
         <span className="rounded-full bg-slate-100 px-3 py-1">
           当前完成 {completedCount} / 7 课
@@ -1032,13 +1159,49 @@ function CourseHeader({
   );
 }
 
+function ContinueCourseCard({
+  currentDay,
+  day,
+  onContinue,
+  outcome
+}: {
+  currentDay: ProgressiveCourseDay;
+  day: ProgressiveCourseDay;
+  onContinue(): void;
+  outcome?: DaySevenOutcome;
+}) {
+  const activeLesson = progressiveCourse.find((lesson) => lesson.day === day);
+  const isSummary = outcome !== undefined;
+  return (
+    <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
+      <div>
+        <p className="text-xs font-semibold text-blue-700">
+          {isSummary ? "你的课程总结" : "下一步"}
+        </p>
+        <p className="mt-1 font-medium text-blue-950">
+          {isSummary
+            ? "七天流程已完成，可随时回看无原文总结"
+            : `继续 Day ${day}：${activeLesson?.title ?? "继续训练"}`}
+        </p>
+      </div>
+      <button className={primaryButtonClass} onClick={onContinue} type="button">
+        {isSummary
+          ? "查看七天总结"
+          : currentDay === day
+            ? "继续当前步骤"
+            : `继续 Day ${day}`}
+      </button>
+    </section>
+  );
+}
+
 function CourseMap({
   currentDay,
   onSelectDay,
   progress
 }: {
-  currentDay: 1 | 2 | 3 | 4 | 5 | 6;
-  onSelectDay(day: 1 | 2 | 3 | 4 | 5 | 6): void;
+  currentDay: ProgressiveCourseDay;
+  onSelectDay(day: ProgressiveCourseDay): void;
   progress: ProgressiveCourseProgress;
 }) {
   return (
@@ -1065,7 +1228,7 @@ function CourseMap({
           const interactive =
             lesson.implemented &&
             prerequisiteMet &&
-            implementedDays.includes(lesson.day as 1 | 2 | 3 | 4 | 5 | 6);
+            implementedDays.includes(lesson.day);
           const active = lesson.day === currentDay;
           const status = completed
             ? "已完成"
@@ -1088,7 +1251,7 @@ function CourseMap({
               }
               disabled={!interactive}
               key={lesson.id}
-              onClick={() => onSelectDay(lesson.day as 1 | 2 | 3 | 4 | 5 | 6)}
+              onClick={() => onSelectDay(lesson.day)}
               type="button"
             >
               <span className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500">
@@ -1112,7 +1275,7 @@ function LessonProgress({
   stage,
   title
 }: {
-  day: 1 | 2 | 3 | 4 | 5 | 6;
+  day: ProgressiveCourseDay;
   stage: ProgressiveCourseSession["stage"];
   title: string;
 }) {
@@ -1121,6 +1284,9 @@ function LessonProgress({
     knowledge: "知识检查",
     guided: "有支架练习",
     independent: "独立表达",
+    project_draft: "毕业项目首稿",
+    project_revision: "原稿修改",
+    project_transfer: "未见迁移",
     complete: "完成"
   };
 
