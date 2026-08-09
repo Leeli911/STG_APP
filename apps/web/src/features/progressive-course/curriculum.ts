@@ -1,5 +1,6 @@
 import type {
   KnowledgeCheck,
+  ProgressiveCourseDay,
   ProgressiveCourseLesson
 } from "@/features/progressive-course/types";
 
@@ -529,7 +530,24 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
     title: "毕业项目：独立完成结构化汇报",
     conceptGoal: "在未见情境中独立规划、表达、修改和迁移",
     estimatedMinutes: 10,
-    implemented: false,
+    implemented: true,
+    lesson: {
+      definition: "毕业项目不再教授新公式，而是检查你能否在两个全新情境中独立使用前六天学过的结构动作。",
+      value: "首稿、亲自修改和未见迁移会分别保留，帮助你区分“这道题改好了”和“换一道题也能做到”。",
+      formula: "阅读材料 → 独立首稿 → 根据证据修改 → 未见情境迁移",
+      badExample: {
+        label: "把修改当成迁移",
+        text: "在同一道题上反复修改，最后把通过结果当作新情境能力。",
+        explanation: "同题修改只能说明本题被修正，不能替代第二个未见情境。"
+      },
+      goodExample: {
+        label: "三份证据互不覆盖",
+        text: "保留首稿，在原稿上完成一次实质修改，再独立回答另一道全新工作题。",
+        explanation: "这样能诚实观察修改行为和本次即时迁移，仍不等于长期能力提升。"
+      },
+      commonMistake: "为了命中规则堆关键词，或者只改标点和少量词语，却没有真正修复结构缺口。"
+    },
+    knowledgeChecks: [],
     exercises: [
       {
         id: "day-7-final-project",
@@ -547,7 +565,7 @@ export const progressiveCourse: ProgressiveCourseLesson[] = [
   }
 ];
 
-export function getProgressiveLesson(day: 1 | 2 | 3 | 4 | 5 | 6) {
+export function getProgressiveLesson(day: ProgressiveCourseDay) {
   const lesson = progressiveCourse.find(
     (item) => item.day === day && item.implemented
   );

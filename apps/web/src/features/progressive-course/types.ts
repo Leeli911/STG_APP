@@ -68,5 +68,17 @@ export type ProgressiveCourseProgress = {
   completedDays: ProgressiveCourseDay[];
   lessonViewedDays: ProgressiveCourseDay[];
   scaffoldUses: Partial<Record<ProgressiveCourseDay, number>>;
+  daySevenOutcome?: DaySevenOutcome;
   updatedAt: string;
+};
+
+export type DaySevenOutcome = {
+  ruleVersion: "stg-day-seven-rules-v1";
+  projectInitialPassed: boolean;
+  revisionKind: "improved" | "maintained";
+  transferFirstPassed: boolean;
+  transferFinalPassed: boolean;
+  revisionAttempts: number;
+  transferAttempts: number;
+  completedAt: string;
 };

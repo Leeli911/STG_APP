@@ -441,3 +441,112 @@ test("Day 6 先组装完整结构，再独立修改缺少行动请求的工作�
   ).toBeVisible();
   await expect(page.getByText("当前完成 6 / 7 课")).toBeVisible();
 });
+
+test("Day 7 冻结首稿、恢复主动修改并完成未见迁移，全程零外部请求", async ({
+  page,
+  baseURL
+}) => {
+  const forbiddenRequests: string[] = [];
+  const appOrigin = new URL(baseURL!).origin;
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    const isApiTransport = ["fetch", "xhr"].includes(request.resourceType());
+    const isAppApi = url.origin === appOrigin && url.pathname.startsWith("/api/");
+    const isExternalApi = url.origin !== appOrigin && isApiTransport;
+    const isKnownModelOrDatabase =
+      /(?:openai\.com|supabase\.(?:co|in))$/i.test(url.hostname);
+    if (isAppApi || isExternalApi || isKnownModelOrDatabase) {
+      forbiddenRequests.push(request.url());
+    }
+  });
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "stg:v0.5:progressive-course",
+      JSON.stringify({
+        version: 1,
+        completedDays: [1, 2, 3, 4, 5, 6],
+        lessonViewedDays: [1, 2, 3, 4, 5, 6],
+        scaffoldUses: { 2: 1, 5: 1 },
+        updatedAt: new Date().toISOString()
+      })
+    );
+  });
+
+  await page.goto("/training-demo");
+  await page
+    .getByRole("button", {
+      name: "Day 7 毕业项目：独立完成结构化汇报 已解锁"
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "毕业项目不是新知识，而是三份互不覆盖的证据"
+    })
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "我已了解规则，查看项目材料" })
+    .click();
+
+  const original =
+    "建议将客服工单系统切换推迟到下周一。第一，历史工单目前只迁移了60%。第二，试运行中有8%的附件缺失。第三，供应商预计两天可修复，旧系统合同持续到月底。以上是当前情况。";
+  const revised =
+    "建议将客服工单系统切换推迟到下周一。第一，历史工单目前只迁移了60%。第二，试运行中有8%的附件缺失。第三，供应商预计两天可修复，旧系统合同持续到月底。请运营总监今天批准将系统切换推迟到下周一。";
+  await page.getByLabel("你的毕业项目首稿").fill(original);
+  await page.getByRole("button", { name: "冻结首稿并查看证据" }).click();
+  await expect(page.getByText("待补 最后提出有时限的行动请求")).toBeVisible();
+  await expect(page.getByLabel("你的毕业项目首稿")).toHaveAttribute(
+    "readonly",
+    ""
+  );
+  await page
+    .getByRole("button", { name: "在原稿上完成一次修改" })
+    .click();
+  await expect(page.getByLabel("修改稿（已为你预填首稿）")).toHaveValue(
+    original
+  );
+
+  await page.reload();
+  await expect(page.getByLabel("修改稿（已为你预填首稿）")).toHaveValue(
+    original
+  );
+  await page.getByRole("button", { name: "检查我的修改" }).click();
+  await expect(
+    page.getByRole("heading", { name: "修改稿还没有发生变化" })
+  ).toBeVisible();
+  await page.getByLabel("修改稿（已为你预填首稿）").fill(revised);
+  await page.getByRole("button", { name: "检查我的修改" }).click();
+  await expect(page.getByText("主动修改证据成立")).toBeVisible();
+  await page
+    .getByRole("button", { name: "进入第二个未见情境" })
+    .click();
+
+  const transfer = page.getByLabel("你的未见迁移回答");
+  await expect(transfer).toHaveValue("");
+  await transfer.fill(revised);
+  await page.getByRole("button", { name: "检查未见迁移" }).click();
+  await expect(
+    page.getByRole("heading", { name: "请直接完成当前工作汇报" })
+  ).toBeVisible();
+  await page.reload();
+  await expect(transfer).toHaveValue(revised);
+
+  const transferAnswer =
+    "建议把剩余预算集中投放到渠道A。第一，渠道A获客成本82元、转化率7.8%，效率更高。第二，渠道B获客成本146元、转化率3.1%。第三，剩余预算只够一个渠道，且渠道A素材已审核。请市场负责人今天批准把剩余预算集中到渠道A。";
+  await transfer.fill(transferAnswer);
+  await page.getByRole("button", { name: "检查未见迁移" }).click();
+  await expect(page.getByText("本次迁移达到冻结规则")).toBeVisible();
+  await page.getByRole("button", { name: "完成七天课程" }).click();
+  await expect(
+    page.getByRole("heading", { name: "七天课程流程已完成" })
+  ).toBeVisible();
+  await expect(page.getByText("首次未达标，修改后达到规则")).toBeVisible();
+
+  const browserEvidence = await page.evaluate(() => ({
+    local: window.localStorage.getItem("stg:v0.5:progressive-course") ?? "",
+    overflow: document.documentElement.scrollWidth - window.innerWidth
+  }));
+  expect(browserEvidence.local).not.toContain("客服工单系统");
+  expect(browserEvidence.local).not.toContain("渠道A获客成本");
+  expect(browserEvidence.overflow).toBeLessThanOrEqual(0);
+  expect(forbiddenRequests).toEqual([]);
+});

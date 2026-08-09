@@ -1,10 +1,13 @@
 import type {
+  DaySevenOutcome,
   ProgressiveCourseDay,
   ProgressiveCourseProgress
 } from "@/features/progressive-course/types";
 
 export const PROGRESSIVE_COURSE_KEY = "stg:v0.5:progressive-course";
 export const PROGRESSIVE_SESSION_KEY = "stg:v0.5:progressive-session";
+export const PROGRESSIVE_DAY_SEVEN_SESSION_KEY =
+  "stg:v0.5:day-seven-session";
 
 const courseDays: ProgressiveCourseDay[] = [1, 2, 3, 4, 5, 6, 7];
 const sessionStages = [
@@ -12,14 +15,31 @@ const sessionStages = [
   "knowledge",
   "guided",
   "independent",
+  "project_draft",
+  "project_revision",
+  "project_transfer",
   "complete"
 ] as const;
 
 export type ProgressiveSessionStage = (typeof sessionStages)[number];
 
+export type DaySevenSession = {
+  originalAnswer: string;
+  originalChecked: boolean;
+  projectInitialPassed: boolean | null;
+  revisionAnswer: string;
+  revisionChecked: boolean;
+  transferAnswer: string;
+  transferChecked: boolean;
+  transferFirstPassed: boolean | null;
+  projectAttempts: number;
+  revisionAttempts: number;
+  transferAttempts: number;
+};
+
 export type ProgressiveCourseSession = {
   version: 1;
-  day: 1 | 2 | 3 | 4 | 5 | 6;
+  day: ProgressiveCourseDay;
   stage: ProgressiveSessionStage;
   dayOneSelections: Record<string, string>;
   dayTwoKnowledgeSelection: string;
@@ -42,6 +62,7 @@ export type ProgressiveCourseSession = {
   daySixGuidedSelections: Record<string, string>;
   daySixAnswer: string;
   daySixChecked: boolean;
+  daySeven: DaySevenSession;
   scaffoldVisible: boolean;
 };
 
@@ -83,7 +104,24 @@ export function createProgressiveCourseSession(): ProgressiveCourseSession {
     daySixGuidedSelections: {},
     daySixAnswer: "",
     daySixChecked: false,
+    daySeven: createDaySevenSession(),
     scaffoldVisible: false
+  };
+}
+
+export function createDaySevenSession(): DaySevenSession {
+  return {
+    originalAnswer: "",
+    originalChecked: false,
+    projectInitialPassed: null,
+    revisionAnswer: "",
+    revisionChecked: false,
+    transferAnswer: "",
+    transferChecked: false,
+    transferFirstPassed: null,
+    projectAttempts: 0,
+    revisionAttempts: 0,
+    transferAttempts: 0
   };
 }
 
@@ -95,6 +133,7 @@ export function parseProgressiveCourseSession(
 
   try {
     const parsed = JSON.parse(value) as Partial<ProgressiveCourseSession>;
+    if (parsed.version !== 1) return fallback;
     const day = normalizeSessionDay(parsed.day);
     const stage = sessionStages.includes(
       parsed.stage as ProgressiveSessionStage
@@ -141,6 +180,7 @@ export function parseProgressiveCourseSession(
       ),
       daySixAnswer: normalizeLongString(parsed.daySixAnswer),
       daySixChecked: parsed.daySixChecked === true,
+      daySeven: normalizeDaySevenSession(parsed.daySeven),
       scaffoldVisible: parsed.scaffoldVisible === true
     };
   } catch {
@@ -160,9 +200,10 @@ export function parseProgressiveCourseProgress(
 
     return {
       version: 1 as const,
-      completedDays: normalizeDays(parsed.completedDays),
+      completedDays: normalizeCompletedDays(parsed.completedDays),
       lessonViewedDays: normalizeDays(parsed.lessonViewedDays),
       scaffoldUses: normalizeScaffoldUses(parsed.scaffoldUses),
+      daySevenOutcome: normalizeDaySevenOutcome(parsed.daySevenOutcome),
       updatedAt:
         typeof parsed.updatedAt === "string"
           ? parsed.updatedAt
@@ -178,7 +219,9 @@ export function isProgressiveDayUnlocked(
   day: ProgressiveCourseDay
 ) {
   if (day === 1) return true;
-  return progress.completedDays.includes((day - 1) as ProgressiveCourseDay);
+  return courseDays
+    .slice(0, day - 1)
+    .every((requiredDay) => progress.completedDays.includes(requiredDay));
 }
 
 export function markProgressiveLessonViewed(
@@ -213,11 +256,36 @@ export function completeProgressiveDay(
   day: ProgressiveCourseDay,
   now = new Date()
 ): ProgressiveCourseProgress {
+  if (!isProgressiveDayUnlocked(progress, day)) return progress;
   return {
     ...progress,
     completedDays: normalizeDays([...progress.completedDays, day]),
     updatedAt: now.toISOString()
   };
+}
+
+export function completeDaySevenProject(
+  progress: ProgressiveCourseProgress,
+  outcome: DaySevenOutcome,
+  now = new Date()
+): ProgressiveCourseProgress {
+  if (!isProgressiveDayUnlocked(progress, 7)) return progress;
+  return {
+    ...progress,
+    completedDays: normalizeCompletedDays([...progress.completedDays, 7]),
+    daySevenOutcome: outcome,
+    updatedAt: now.toISOString()
+  };
+}
+
+function normalizeCompletedDays(value: unknown) {
+  const normalized = normalizeDays(value);
+  const prefix: ProgressiveCourseDay[] = [];
+  for (const day of courseDays) {
+    if (!normalized.includes(day)) break;
+    prefix.push(day);
+  }
+  return prefix;
 }
 
 function normalizeDays(value: unknown): ProgressiveCourseDay[] {
@@ -268,6 +336,67 @@ function normalizeLongString(value: unknown) {
   return typeof value === "string" ? value.slice(0, 420) : "";
 }
 
+function normalizeDaySevenSession(value: unknown): DaySevenSession {
+  const fallback = createDaySevenSession();
+  if (!value || typeof value !== "object") return fallback;
+  const parsed = value as Partial<DaySevenSession>;
+  return {
+    originalAnswer: normalizeProjectString(parsed.originalAnswer),
+    originalChecked: parsed.originalChecked === true,
+    projectInitialPassed:
+      typeof parsed.projectInitialPassed === "boolean"
+        ? parsed.projectInitialPassed
+        : null,
+    revisionAnswer: normalizeProjectString(parsed.revisionAnswer),
+    revisionChecked: parsed.revisionChecked === true,
+    transferAnswer: normalizeProjectString(parsed.transferAnswer),
+    transferChecked: parsed.transferChecked === true,
+    transferFirstPassed:
+      typeof parsed.transferFirstPassed === "boolean"
+        ? parsed.transferFirstPassed
+        : null,
+    projectAttempts: normalizeAttemptCount(parsed.projectAttempts),
+    revisionAttempts: normalizeAttemptCount(parsed.revisionAttempts),
+    transferAttempts: normalizeAttemptCount(parsed.transferAttempts)
+  };
+}
+
+function normalizeDaySevenOutcome(value: unknown): DaySevenOutcome | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const parsed = value as Partial<DaySevenOutcome>;
+  if (
+    parsed.ruleVersion !== "stg-day-seven-rules-v1" ||
+    typeof parsed.projectInitialPassed !== "boolean" ||
+    (parsed.revisionKind !== "improved" &&
+      parsed.revisionKind !== "maintained") ||
+    typeof parsed.transferFirstPassed !== "boolean" ||
+    typeof parsed.transferFinalPassed !== "boolean" ||
+    typeof parsed.completedAt !== "string"
+  ) {
+    return undefined;
+  }
+  return {
+    ruleVersion: parsed.ruleVersion,
+    projectInitialPassed: parsed.projectInitialPassed,
+    revisionKind: parsed.revisionKind,
+    transferFirstPassed: parsed.transferFirstPassed,
+    transferFinalPassed: parsed.transferFinalPassed,
+    revisionAttempts: normalizeAttemptCount(parsed.revisionAttempts),
+    transferAttempts: normalizeAttemptCount(parsed.transferAttempts),
+    completedAt: parsed.completedAt
+  };
+}
+
+function normalizeProjectString(value: unknown) {
+  return typeof value === "string" ? value.slice(0, 600) : "";
+}
+
+function normalizeAttemptCount(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? Math.min(value, 99)
+    : 0;
+}
+
 function normalizeSessionDay(
   value: unknown
 ): ProgressiveCourseSession["day"] {
@@ -275,7 +404,8 @@ function normalizeSessionDay(
     value === 3 ||
     value === 4 ||
     value === 5 ||
-    value === 6
+    value === 6 ||
+    value === 7
     ? value
     : 1;
 }
