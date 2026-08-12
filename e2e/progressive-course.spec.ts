@@ -45,7 +45,7 @@ test("新用户从知识讲解开始，并完成 Day 1 到 Day 2 的渐进训练
     page.getByRole("heading", { name: "先确定表达的终点" })
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "进入 Day 2：写一句明确目的" })
+    .getByRole("button", { name: "进入第 2 天：写一句明确目的" })
     .click();
 
   await expect(
@@ -80,7 +80,7 @@ test("新用户从知识讲解开始，并完成 Day 1 到 Day 2 的渐进训练
   await expect(
     page.getByRole("heading", { name: "从识别进入了独立表达" })
   ).toBeVisible();
-  await expect(page.getByText("当前完成 2 / 7 课")).toBeVisible();
+  await expect(page.getByText("当前进度 2 / 7 课")).toBeVisible();
   expect(forbiddenRequests).toEqual([]);
 });
 
@@ -122,7 +122,7 @@ test("课程锁定后续难度，并在刷新后恢复 Day 2 回答和支架", a
   await expect(page.getByText("句式骨架")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Day 3 把结论放到第一句 未解锁"
+      name: "第 3 天 把结论放到第一句 未解锁"
     })
   ).toBeDisabled();
 
@@ -131,6 +131,11 @@ test("课程锁定后续难度，并在刷新后恢复 Day 2 回答和支架", a
     "本期预算已使用九成，请负责人批准缩小本期范围。"
   );
   await expect(page.getByText("句式骨架")).toBeVisible();
+  await page.getByRole("button", { name: "继续当前步骤" }).click();
+  await expect(page.getByLabel("用一句话写出你的明确目的")).toHaveValue(
+    "本期预算已使用九成，请负责人批准缩小本期范围。"
+  );
+  await expect(page.locator("#current-lesson")).toBeFocused();
 });
 
 test("Day 3 从首句识别和排序进入无提示结论先行表达", async ({
@@ -152,7 +157,7 @@ test("Day 3 从首句识别和排序进入无提示结论先行表达", async ({
   await page.goto("/training-demo");
   await page
     .getByRole("button", {
-      name: "Day 3 把结论放到第一句 已解锁"
+      name: "第 3 天 把结论放到第一句 已解锁"
     })
     .click();
   await expect(
@@ -190,10 +195,10 @@ test("Day 3 从首句识别和排序进入无提示结论先行表达", async ({
   await expect(
     page.getByRole("heading", { name: "让听众先听到答案" })
   ).toBeVisible();
-  await expect(page.getByText("当前完成 3 / 7 课")).toBeVisible();
+  await expect(page.getByText("当前进度 3 / 7 课")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Day 4 用一个理由支撑结论 已解锁"
+      name: "第 4 天 用一个理由支撑结论 已解锁"
     })
   ).toBeEnabled();
 });
@@ -217,7 +222,7 @@ test("Day 4 从理由识别进入两句话独立表达，并拒绝循环理由",
   await page.goto("/training-demo");
   await page
     .getByRole("button", {
-      name: "Day 4 用一个理由支撑结论 已解锁"
+      name: "第 4 天 用一个理由支撑结论 已解锁"
     })
     .click();
   await expect(
@@ -267,10 +272,10 @@ test("Day 4 从理由识别进入两句话独立表达，并拒绝循环理由",
   await expect(
     page.getByRole("heading", { name: "让结论有一个站得住的理由" })
   ).toBeVisible();
-  await expect(page.getByText("当前完成 4 / 7 课")).toBeVisible();
+  await expect(page.getByText("当前进度 4 / 7 课")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Day 5 把信息整理成两到三点 已解锁"
+      name: "第 5 天 把信息整理成两到三点 已解锁"
     })
   ).toBeEnabled();
 });
@@ -295,7 +300,7 @@ test("Day 5 在移动端完成信息归组，并只接受互不重复的三个�
   await page.goto("/training-demo");
   await page
     .getByRole("button", {
-      name: "Day 5 把信息整理成两到三点 已解锁"
+      name: "第 5 天 把信息整理成两到三点 已解锁"
     })
     .click();
   await expect(
@@ -354,10 +359,10 @@ test("Day 5 在移动端完成信息归组，并只接受互不重复的三个�
   await expect(
     page.getByRole("heading", { name: "让多个信息各就各位" })
   ).toBeVisible();
-  await expect(page.getByText("当前完成 5 / 7 课")).toBeVisible();
+  await expect(page.getByText("当前进度 5 / 7 课")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Day 6 完成一次完整工作汇报 已解锁"
+      name: "第 6 天 完成一次完整工作汇报 已解锁"
     })
   ).toBeEnabled();
 });
@@ -381,7 +386,7 @@ test("Day 6 先组装完整结构，再独立修改缺少行动请求的工作�
   await page.goto("/training-demo");
   await page
     .getByRole("button", {
-      name: "Day 6 完成一次完整工作汇报 已解锁"
+      name: "第 6 天 完成一次完整工作汇报 已解锁"
     })
     .click();
   await expect(
@@ -439,7 +444,7 @@ test("Day 6 先组装完整结构，再独立修改缺少行动请求的工作�
       name: "完成了一次可行动的完整汇报"
     })
   ).toBeVisible();
-  await expect(page.getByText("当前完成 6 / 7 课")).toBeVisible();
+  await expect(page.getByText("当前进度 6 / 7 课")).toBeVisible();
 });
 
 test("Day 7 冻结首稿、恢复主动修改并完成未见迁移，全程零外部请求", async ({
@@ -475,16 +480,16 @@ test("Day 7 冻结首稿、恢复主动修改并完成未见迁移，全程零�
   await page.goto("/training-demo");
   await page
     .getByRole("button", {
-      name: "Day 7 毕业项目：独立完成结构化汇报 已解锁"
+      name: "第 7 天 毕业项目：独立完成结构化汇报 已解锁"
     })
     .click();
   await expect(
     page.getByRole("heading", {
-      name: "毕业项目不是新知识，而是三份互不覆盖的证据"
+      name: "把前六天的方法独立用两次"
     })
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "我已了解规则，查看项目材料" })
+    .getByRole("button", { name: "开始毕业项目" })
     .click();
 
   const original =
@@ -517,13 +522,13 @@ test("Day 7 冻结首稿、恢复主动修改并完成未见迁移，全程零�
   await page.getByRole("button", { name: "检查我的修改" }).click();
   await expect(page.getByText("主动修改证据成立")).toBeVisible();
   await page
-    .getByRole("button", { name: "进入第二个未见情境" })
+    .getByRole("button", { name: "进入最后一个新场景" })
     .click();
 
-  const transfer = page.getByLabel("你的未见迁移回答");
+  const transfer = page.getByLabel("你的新场景回答");
   await expect(transfer).toHaveValue("");
   await transfer.fill(revised);
-  await page.getByRole("button", { name: "检查未见迁移" }).click();
+  await page.getByRole("button", { name: "检查新场景回答" }).click();
   await expect(
     page.getByRole("heading", { name: "请直接完成当前工作汇报" })
   ).toBeVisible();
@@ -533,11 +538,13 @@ test("Day 7 冻结首稿、恢复主动修改并完成未见迁移，全程零�
   const transferAnswer =
     "建议把剩余预算集中投放到渠道A。第一，渠道A获客成本82元、转化率7.8%，效率更高。第二，渠道B获客成本146元、转化率3.1%。第三，剩余预算只够一个渠道，且渠道A素材已审核。请市场负责人今天批准把剩余预算集中到渠道A。";
   await transfer.fill(transferAnswer);
-  await page.getByRole("button", { name: "检查未见迁移" }).click();
-  await expect(page.getByText("本次迁移达到冻结规则")).toBeVisible();
-  await page.getByRole("button", { name: "完成七天课程" }).click();
+  await page.getByRole("button", { name: "检查新场景回答" }).click();
+  await expect(page.getByText("新场景回答达到当前规则")).toBeVisible();
+  await page
+    .getByRole("button", { name: "完成课程并记录迁移达标" })
+    .click();
   await expect(
-    page.getByRole("heading", { name: "七天课程流程已完成" })
+    page.getByRole("heading", { name: "七天训练完成 · 即时迁移达标" })
   ).toBeVisible();
   await expect(page.getByText("首次未达标，修改后达到规则")).toBeVisible();
 
@@ -549,4 +556,86 @@ test("Day 7 冻结首稿、恢复主动修改并完成未见迁移，全程零�
   expect(browserEvidence.local).not.toContain("渠道A获客成本");
   expect(browserEvidence.overflow).toBeLessThanOrEqual(0);
   expect(forbiddenRequests).toEqual([]);
+});
+
+test("迁移待加强与毕业达标分开显示，并可从总结继续补练", async ({
+  page
+}) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "stg:v0.5:progressive-course",
+      JSON.stringify({
+        version: 1,
+        completedDays: [1, 2, 3, 4, 5, 6, 7],
+        lessonViewedDays: [1, 2, 3, 4, 5, 6, 7],
+        scaffoldUses: {},
+        daySevenOutcome: {
+          ruleVersion: "stg-day-seven-rules-v2",
+          projectInitialPassed: false,
+          revisionKind: "improved",
+          transferFirstPassed: false,
+          transferFinalPassed: false,
+          revisionAttempts: 1,
+          transferAttempts: 1,
+          completedAt: new Date().toISOString()
+        },
+        updatedAt: new Date().toISOString()
+      })
+    );
+    window.sessionStorage.setItem(
+      "stg:v0.5:progressive-session",
+      JSON.stringify({
+        version: 1,
+        day: 7,
+        stage: "complete",
+        daySeven: {
+          originalAnswer: "",
+          originalChecked: true,
+          projectInitialPassed: false,
+          revisionAnswer: "",
+          revisionChecked: true,
+          transferAnswer: "",
+          transferChecked: true,
+          transferFirstPassed: false,
+          projectAttempts: 1,
+          revisionAttempts: 1,
+          transferAttempts: 1
+        }
+      })
+    );
+  });
+
+  await page.goto("/training-demo");
+  await expect(
+    page.getByRole("heading", { name: "七天流程已走完 · 迁移待加强" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "第 7 天 毕业项目：独立完成结构化汇报 流程完成 · 迁移待加强"
+    })
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "继续完成新场景迁移" })
+    .click();
+  await page
+    .getByLabel("你的新场景回答")
+    .fill(
+      "建议把剩余预算集中投放到渠道A。第一，渠道A获客成本82元、转化率7.8%。第二，剩余预算只够支持一个渠道。请市场负责人今天批准把剩余预算集中到渠道A。"
+    );
+  await page.getByRole("button", { name: "检查新场景回答" }).click();
+  await page
+    .getByRole("button", { name: "完成课程并记录迁移达标" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "七天训练完成 · 即时迁移达标" })
+  ).toBeVisible();
+  await expect(page.getByText("首次未达标，修改后达到规则")).toBeVisible();
+  const saved = await page.evaluate(() =>
+    JSON.parse(window.localStorage.getItem("stg:v0.5:progressive-course") ?? "{}")
+  );
+  expect(saved.daySevenOutcome).toMatchObject({
+    transferFirstPassed: false,
+    transferFinalPassed: true,
+    transferAttempts: 2
+  });
 });

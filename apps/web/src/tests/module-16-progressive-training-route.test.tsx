@@ -35,23 +35,26 @@ describe("Module 16 progressive public training route", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: "开始第 1 课" })
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", {
-        name: "Day 3 把结论放到第一句 未解锁"
+        name: "第 3 天 把结论放到第一句 未解锁"
       })
     ).toBeDisabled();
     expect(
       screen.getByRole("button", {
-        name: "Day 4 用一个理由支撑结论 未解锁"
+        name: "第 4 天 用一个理由支撑结论 未解锁"
       })
     ).toBeDisabled();
     expect(
       screen.getByRole("button", {
-        name: "Day 5 把信息整理成两到三点 未解锁"
+        name: "第 5 天 把信息整理成两到三点 未解锁"
       })
     ).toBeDisabled();
     expect(
       screen.getByRole("button", {
-        name: "Day 6 完成一次完整工作汇报 未解锁"
+        name: "第 6 天 完成一次完整工作汇报 未解锁"
       })
     ).toBeDisabled();
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -79,7 +82,7 @@ describe("Module 16 progressive public training route", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "进入 Day 2：写一句明确目的"
+        name: "进入第 2 天：写一句明确目的"
       })
     ).toBeInTheDocument();
 
@@ -200,13 +203,39 @@ describe("Module 16 progressive public training route", () => {
     ).toHaveValue("本期预算已使用九成，请负责人批准缩小本期范围。");
   });
 
+  it("continues the current step without resetting the restored answer", async () => {
+    unlockDayTwo();
+    window.sessionStorage.setItem(
+      PROGRESSIVE_SESSION_KEY,
+      JSON.stringify({
+        version: 1,
+        day: 2,
+        stage: "independent",
+        dayTwoKnowledgeSelection: "clear-purpose",
+        dayTwoGuidedSelection: "move-meeting",
+        dayTwoAnswer: "本期预算已使用九成，请负责人批准缩小本期范围。",
+        dayTwoChecked: false,
+        scaffoldVisible: true
+      })
+    );
+    render(<TrainingDemoPage />);
+
+    const answer = await screen.findByLabelText("用一句话写出你的明确目的");
+    fireEvent.click(screen.getByRole("button", { name: "继续当前步骤" }));
+
+    expect(answer).toHaveValue(
+      "本期预算已使用九成，请负责人批准缩小本期范围。"
+    );
+    expect(screen.getByText("句式骨架")).toBeInTheDocument();
+  });
+
   it("unlocks Day 3 and requires sentence order before independent conclusion-first writing", async () => {
     unlockDayThree();
     render(<TrainingDemoPage />);
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Day 3 把结论放到第一句 已解锁"
+        name: "第 3 天 把结论放到第一句 已解锁"
       })
     );
     expect(
@@ -301,7 +330,7 @@ describe("Module 16 progressive public training route", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Day 4 用一个理由支撑结论 已解锁"
+        name: "第 4 天 用一个理由支撑结论 已解锁"
       })
     );
     expect(
@@ -409,7 +438,7 @@ describe("Module 16 progressive public training route", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Day 5 把信息整理成两到三点 已解锁"
+        name: "第 5 天 把信息整理成两到三点 已解锁"
       })
     );
     expect(
@@ -528,7 +557,7 @@ describe("Module 16 progressive public training route", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Day 6 完成一次完整工作汇报 已解锁"
+        name: "第 6 天 完成一次完整工作汇报 已解锁"
       })
     );
     expect(
@@ -644,17 +673,17 @@ describe("Module 16 progressive public training route", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Day 7 毕业项目：独立完成结构化汇报 已解锁"
+        name: "第 7 天 毕业项目：独立完成结构化汇报 已解锁"
       })
     );
     expect(
       screen.getByRole("heading", {
-        name: "毕业项目不是新知识，而是三份互不覆盖的证据"
+        name: "把前六天的方法独立用两次"
       })
     ).toBeInTheDocument();
     expect(screen.queryByText("参考答案")).not.toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: "我已了解规则，查看项目材料" })
+      screen.getByRole("button", { name: "开始毕业项目" })
     );
 
     const original =
@@ -691,14 +720,14 @@ describe("Module 16 progressive public training route", () => {
     );
     expect(screen.getByText("主动修改证据成立")).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: "进入第二个未见情境" })
+      screen.getByRole("button", { name: "进入最后一个新场景" })
     );
 
-    const transfer = screen.getByLabelText("你的未见迁移回答");
+    const transfer = screen.getByLabelText("你的新场景回答");
     expect(transfer).toHaveValue("");
     fireEvent.change(transfer, { target: { value: revised } });
     fireEvent.click(
-      screen.getByRole("button", { name: "检查未见迁移" })
+      screen.getByRole("button", { name: "检查新场景回答" })
     );
     expect(
       screen.getByRole("heading", { name: "请直接完成当前工作汇报" })
@@ -708,17 +737,17 @@ describe("Module 16 progressive public training route", () => {
       "建议把剩余预算集中投放到渠道A。第一，渠道A获客成本82元、转化率7.8%，效率更高。第二，渠道B获客成本146元、转化率3.1%。第三，剩余预算只够一个渠道，且渠道A素材已审核。请市场负责人今天批准把剩余预算集中到渠道A。";
     fireEvent.change(transfer, { target: { value: transferAnswer } });
     fireEvent.click(
-      screen.getByRole("button", { name: "检查未见迁移" })
+      screen.getByRole("button", { name: "检查新场景回答" })
     );
-    expect(screen.getByText("本次迁移达到冻结规则")).toBeInTheDocument();
+    expect(screen.getByText("新场景回答达到当前规则")).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: "完成七天课程" })
+      screen.getByRole("button", { name: "完成课程并记录迁移达标" })
     );
 
     expect(
-      screen.getByRole("heading", { name: "七天课程流程已完成" })
+      screen.getByRole("heading", { name: "七天训练完成 · 即时迁移达标" })
     ).toBeInTheDocument();
-    expect(screen.getByText("Day 7 已记录 · 7 / 7")).toBeInTheDocument();
+    expect(screen.getByText("第 7 天已记录 · 流程 7 / 7")).toBeInTheDocument();
     expect(screen.getByText("首次未达标，修改后达到规则")).toBeInTheDocument();
     const saved = window.localStorage.getItem(PROGRESSIVE_COURSE_KEY) ?? "";
     expect(saved).not.toContain("客服工单系统");
@@ -761,6 +790,47 @@ describe("Module 16 progressive public training route", () => {
     );
   });
 
+  it("lets a complete first draft skip artificial rewriting", async () => {
+    unlockDaySeven();
+    window.sessionStorage.setItem(
+      PROGRESSIVE_SESSION_KEY,
+      JSON.stringify({
+        version: 1,
+        day: 7,
+        stage: "project_draft",
+        daySeven: {
+          originalAnswer:
+            "建议将客服工单系统切换推迟到下周一。第一，历史工单目前只迁移了60%。第二，试运行中有8%的附件缺失。请运营总监今天批准将系统切换推迟到下周一。",
+          originalChecked: false,
+          projectInitialPassed: null,
+          revisionAnswer: "",
+          revisionChecked: false,
+          transferAnswer: "",
+          transferChecked: false,
+          transferFirstPassed: null,
+          projectAttempts: 0,
+          revisionAttempts: 0,
+          transferAttempts: 0
+        }
+      })
+    );
+    render(<TrainingDemoPage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "冻结首稿并查看证据" })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "首稿已完整，直接进入新场景"
+      })
+    );
+
+    expect(screen.getByLabelText("你的新场景回答")).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("修改稿（已为你预填首稿）")
+    ).not.toBeInTheDocument();
+  });
+
   it("lets the user finish the course while honestly marking transfer as needing practice", async () => {
     unlockDaySeven();
     window.sessionStorage.setItem(
@@ -788,23 +858,48 @@ describe("Module 16 progressive public training route", () => {
     );
     render(<TrainingDemoPage />);
 
-    fireEvent.change(await screen.findByLabelText("你的未见迁移回答"), {
+    fireEvent.change(await screen.findByLabelText("你的新场景回答"), {
       target: {
         value:
           "建议将客服工单系统切换推迟到下周一。第一，历史工单目前只迁移了60%。第二，试运行中有8%的附件缺失。请运营总监今天批准将系统切换推迟到下周一。"
       }
     });
     fireEvent.click(
-      screen.getByRole("button", { name: "检查未见迁移" })
+      screen.getByRole("button", { name: "检查新场景回答" })
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "本次先结束，标记待加强" })
+      screen.getByRole("button", { name: "结束本次流程，标记迁移待加强" })
     );
 
     expect(
-      screen.getByRole("heading", { name: "七天课程流程已完成" })
+      screen.getByRole("heading", { name: "七天流程已走完 · 迁移待加强" })
     ).toBeInTheDocument();
-    expect(screen.getByText("本次未见迁移待加强")).toBeInTheDocument();
+    expect(screen.getByText("本次新场景迁移待加强")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "七天流程已走完 · 迁移待加强"
+      })
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("radio", { name: "把信息分成不同要点" })
+    );
+    fireEvent.click(
+      screen.getByRole("radio", { name: "看一眼提示就能完成" })
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "向主管汇报" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "保存自检并生成复练建议" })
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: "复练第 5 天：整理两到三个要点"
+      })
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "继续完成新场景迁移" })
+    );
+    expect(screen.getByLabelText("你的新场景回答")).toBeInTheDocument();
   });
 });
 
@@ -897,7 +992,7 @@ function unlockDaySeven() {
 async function openDayTwo() {
   fireEvent.click(
     await screen.findByRole("button", {
-      name: "Day 2 写一句明确目的 已解锁"
+      name: "第 2 天 写一句明确目的 已解锁"
     })
   );
 }

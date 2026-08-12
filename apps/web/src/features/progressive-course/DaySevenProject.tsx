@@ -8,14 +8,22 @@ import {
   evaluateDaySevenRevision,
   type DaySevenAssessment
 } from "@/features/progressive-course/projectEvaluator";
+import { getNextPracticeRecommendation } from "@/features/progressive-course/recommendation";
 import type {
   DaySevenSession,
   ProgressiveCourseSession
 } from "@/features/progressive-course/progress";
-import type { DaySevenOutcome } from "@/features/progressive-course/types";
+import type {
+  DaySevenOutcome,
+  PostCourseReflection,
+  ReflectionChallenge,
+  ReflectionConfidence,
+  ReflectionUseCase
+} from "@/features/progressive-course/types";
 
 export function DaySevenProject({
   outcome,
+  reflection,
   scaffoldUseCount,
   session,
   stage,
@@ -23,12 +31,16 @@ export function DaySevenProject({
   onCheckRevision,
   onCheckTransfer,
   onComplete,
+  onContinueTransfer,
+  onRetrain,
+  onSaveReflection,
   onStart,
   onUpdate,
   onViewRevision,
   onViewTransfer
 }: {
   outcome?: DaySevenOutcome;
+  reflection?: PostCourseReflection;
   scaffoldUseCount: number;
   session: DaySevenSession;
   stage: ProgressiveCourseSession["stage"];
@@ -36,6 +48,11 @@ export function DaySevenProject({
   onCheckRevision(): void;
   onCheckTransfer(passed: boolean): void;
   onComplete(transferFinalPassed: boolean): void;
+  onContinueTransfer(): void;
+  onRetrain(day: 2 | 3 | 4 | 5 | 6): void;
+  onSaveReflection(
+    reflection: Omit<PostCourseReflection, "completedAt">
+  ): void;
   onStart(): void;
   onUpdate(update: Partial<DaySevenSession>): void;
   onViewRevision(): void;
@@ -155,7 +172,11 @@ export function DaySevenProject({
   return (
     <CourseEvidenceSummary
       outcome={outcome}
+      reflection={reflection}
       scaffoldUseCount={scaffoldUseCount}
+      onContinueTransfer={onContinueTransfer}
+      onRetrain={onRetrain}
+      onSaveReflection={onSaveReflection}
     />
   );
 }
@@ -164,33 +185,33 @@ function ProjectIntro({ onStart }: { onStart(): void }) {
   return (
     <section className="space-y-6 rounded-2xl border border-blue-200 bg-white p-5 shadow-sm sm:p-8">
       <div>
-        <p className="text-sm font-medium text-focus">Day 7 · 预计约 10 分钟</p>
+        <p className="text-sm font-medium text-focus">第 7 天 · 预计约 10 分钟</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-          毕业项目不是新知识，而是三份互不覆盖的证据
+          把前六天的方法独立用两次
         </h2>
         <p className="mt-3 max-w-3xl leading-7 text-slate-600">
-          你会先独立完成一个全新情境，保留首稿并亲自修改，再回答第二个未见情境。没有答案模板，也不会调用 AI。
+          先完成一份新场景汇报；如果有缺口，就根据反馈亲自修改。最后换一个场景再试一次。没有答案模板，也不会调用人工智能。
         </p>
       </div>
       <ol className="grid gap-3 text-sm leading-6 sm:grid-cols-3">
         <li className="rounded-xl bg-slate-50 p-4">
-          <span className="font-semibold text-slate-950">1. 冻结首稿</span>
-          <p className="mt-1 text-slate-600">首次提交后原稿不再覆盖，反馈只引用你的原文。</p>
+          <span className="font-semibold text-slate-950">1. 先写一版</span>
+          <p className="mt-1 text-slate-600">首次提交后保留原稿，反馈只引用你写下的内容。</p>
         </li>
         <li className="rounded-xl bg-slate-50 p-4">
-          <span className="font-semibold text-slate-950">2. 主动修改</span>
-          <p className="mt-1 text-slate-600">修改框预填原稿；只改标点或少量词语不能进入迁移。</p>
+          <span className="font-semibold text-slate-950">2. 修复一个缺口</span>
+          <p className="mt-1 text-slate-600">首稿有缺口时，在预填原文上完成一次真正修改。</p>
         </li>
         <li className="rounded-xl bg-slate-50 p-4">
-          <span className="font-semibold text-slate-950">3. 未见迁移</span>
-          <p className="mt-1 text-slate-600">换一个不同业务情境，首次结果会单独保存，不用修改结果冒充首答。</p>
+          <span className="font-semibold text-slate-950">3. 换场景再试</span>
+          <p className="mt-1 text-slate-600">最后独立回答一个新问题，检查能否继续使用同一结构。</p>
         </li>
       </ol>
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
         回答原文只保存在当前浏览器会话；毕业总结仅保存无原文的规则结果。清除浏览器数据会删除这些记录。
       </div>
       <button className={primaryButtonClass} onClick={onStart} type="button">
-        我已了解规则，查看项目材料
+        开始毕业项目
       </button>
     </section>
   );
@@ -231,7 +252,9 @@ function ProjectDraft({
           eyebrow={assessment.passed ? "首稿结构已达标" : "首稿已冻结 · 一次只改一个缺口"}
         >
           <button className={`${primaryButtonClass} mt-5`} onClick={onContinue} type="button">
-            在原稿上完成一次修改
+            {assessment.passed
+              ? "首稿已完整，直接进入新场景"
+              : "在原稿上完成一次修改"}
           </button>
         </ReportFeedback>
       ) : null}
@@ -261,7 +284,7 @@ function ProjectRevision({
   return (
     <section className="space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7">
-        <p className="text-sm font-medium text-focus">Day 7 · 原稿修改</p>
+        <p className="text-sm font-medium text-focus">第 7 天 · 原稿修改</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           保留首稿，在原文上完成一次实质修改
         </h2>
@@ -269,6 +292,19 @@ function ProjectRevision({
           <p className="text-xs font-semibold text-slate-500">已冻结的首稿</p>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-700">{original}</p>
         </div>
+        <details className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-slate-800">
+            查看原始项目材料
+          </summary>
+          <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+            {daySevenScenarios.project.facts.map((fact) => (
+              <li key={fact}>• {fact}</li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm leading-6 text-slate-800">
+            任务：{daySevenScenarios.project.task}
+          </p>
+        </details>
         <form className="mt-5" onSubmit={onSubmit}>
           <label className="block text-sm font-medium text-slate-800" htmlFor="day-seven-revision">
             修改稿（已为你预填首稿）
@@ -276,13 +312,13 @@ function ProjectRevision({
           <textarea
             className={textareaClass}
             id="day-seven-revision"
-            maxLength={600}
+            maxLength={360}
             onChange={(event) => onChange(event.target.value)}
             value={value}
           />
           <p className="mt-1 flex justify-between gap-3 text-xs text-slate-500">
             <span>至少重写一个完整句子；修改后仍需满足四项结构检查。</span>
-            <span>{value.length} / 600</span>
+            <span>{value.length} / 360</span>
           </p>
           <FormError message={error} />
           <button className={`${primaryButtonClass} mt-4`} type="submit">
@@ -301,7 +337,7 @@ function ProjectRevision({
         >
           {change.passed ? (
             <button className={`${primaryButtonClass} mt-5`} onClick={onContinue} type="button">
-              进入第二个未见情境
+              进入最后一个新场景
             </button>
           ) : null}
         </ReportFeedback>
@@ -329,31 +365,31 @@ function TransferPractice({
     <section className="space-y-6">
       <AnswerForm
         error={error}
-        label="你的未见迁移回答"
+        label="你的新场景回答"
         onChange={onChange}
         onSubmit={onSubmit}
         readOnly={false}
         scenarioId="transfer"
-        submitLabel="检查未见迁移"
+        submitLabel="检查新场景回答"
         value={value}
       />
       {assessment ? (
         <ReportFeedback
           assessment={assessment}
-          eyebrow={assessment.passed ? "本次迁移达到冻结规则" : "本次迁移暂未达到规则"}
+          eyebrow={assessment.passed ? "新场景回答达到当前规则" : "新场景回答暂未达到规则"}
         >
           <div className="mt-5 flex flex-wrap gap-3">
             {assessment.passed ? (
               <button className={primaryButtonClass} onClick={() => onComplete(true)} type="button">
-                完成七天课程
+                完成课程并记录迁移达标
               </button>
             ) : (
               <>
                 <p className="w-full text-sm leading-6 text-amber-950">
-                  你可以直接修改后再次检查；首次结果不会被覆盖。也可以先结束课程，并把迁移标记为待加强。
+                  你可以直接修改后再次检查；首次结果不会被覆盖。也可以先结束本次流程，之后从总结页继续补练。
                 </p>
                 <button className={secondaryButtonClass} onClick={() => onComplete(false)} type="button">
-                  本次先结束，标记待加强
+                  结束本次流程，标记迁移待加强
                 </button>
               </>
             )}
@@ -388,7 +424,7 @@ function AnswerForm({
   return (
     <form className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7" onSubmit={onSubmit}>
       <p className="text-sm font-medium text-focus">
-        {scenarioId === "project" ? "Day 7 · 毕业项目首稿" : "Day 7 · 未见迁移"}
+        {scenarioId === "project" ? "第 7 天 · 第 1 / 2 个新场景" : "第 7 天 · 第 2 / 2 个新场景"}
       </p>
       <h2 className="mt-2 text-2xl font-semibold text-slate-950">{scenario.title}</h2>
       <p className="mt-2 text-sm text-slate-600">受众：{scenario.audience}</p>
@@ -404,7 +440,7 @@ function AnswerForm({
         </p>
       </div>
       <p className="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm leading-6 text-blue-950">
-        先用约 30 秒在心里规划，再独立写作。这里不显示提纲或参考答案。
+        建议写 80–180 字、4–6 句。先用约 30 秒规划，再独立写作；这里不显示提纲或参考答案。
       </p>
       <label className="mt-5 block text-sm font-medium text-slate-800" htmlFor={inputId}>
         {label}
@@ -412,7 +448,7 @@ function AnswerForm({
       <textarea
         className={`${textareaClass} read-only:bg-slate-100 read-only:text-slate-600`}
         id={inputId}
-        maxLength={600}
+        maxLength={360}
         onChange={(event) => onChange(event.target.value)}
         placeholder="请直接向题目中的负责人完成 4–6 句短汇报"
         readOnly={readOnly}
@@ -420,7 +456,7 @@ function AnswerForm({
       />
       <p className="mt-1 flex justify-between gap-3 text-xs text-slate-500">
         <span>{readOnly ? "首稿已冻结，后续修改不会覆盖这份原文。" : "答案只保存在当前浏览器会话。"}</span>
-        <span>{value.length} / 600</span>
+        <span>{value.length} / 360</span>
       </p>
       <FormError message={error} />
       {!readOnly ? (
@@ -485,48 +521,223 @@ function ReportFeedback({
 
 function CourseEvidenceSummary({
   outcome,
-  scaffoldUseCount
+  reflection,
+  scaffoldUseCount,
+  onContinueTransfer,
+  onRetrain,
+  onSaveReflection
 }: {
   outcome?: DaySevenOutcome;
+  reflection?: PostCourseReflection;
   scaffoldUseCount: number;
+  onContinueTransfer(): void;
+  onRetrain(day: 2 | 3 | 4 | 5 | 6): void;
+  onSaveReflection(
+    reflection: Omit<PostCourseReflection, "completedAt">
+  ): void;
 }) {
+  const [challenge, setChallenge] = useState<ReflectionChallenge | "">(
+    reflection?.challenge ?? ""
+  );
+  const [confidence, setConfidence] = useState<ReflectionConfidence | "">(
+    reflection?.confidence ?? ""
+  );
+  const [useCase, setUseCase] = useState<ReflectionUseCase | "">(
+    reflection?.useCase ?? ""
+  );
+  const [reflectionError, setReflectionError] = useState<string | null>(null);
   if (!outcome) {
     return (
       <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
         <h2 className="text-xl font-semibold text-amber-950">毕业总结尚未生成</h2>
-        <p className="mt-2 leading-7 text-amber-900">请从课程地图重新进入 Day 7 完成最后一步。</p>
+        <p className="mt-2 leading-7 text-amber-900">请从课程地图重新进入第 7 天完成最后一步。</p>
       </section>
     );
   }
   const transferLabel = outcome.transferFirstPassed
-    ? "首次未见迁移达到规则"
+    ? "首次新场景迁移达到规则"
     : outcome.transferFinalPassed
       ? "首次未达标，修改后达到规则"
-      : "本次未见迁移待加强";
+      : "本次新场景迁移待加强";
+  const recommendation = reflection
+    ? getNextPracticeRecommendation({ outcome, reflection })
+    : null;
+  const revisionLabel =
+    outcome.revisionKind === "improved"
+      ? "实质修改并修复缺口"
+      : outcome.revisionKind === "maintained"
+        ? "实质修改并保持完整"
+        : "首稿已完整，无需为留痕强制改写";
+  const graduated = outcome.transferFinalPassed;
 
   return (
-    <section className="space-y-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 sm:p-8">
+    <section
+      className={`space-y-6 rounded-2xl border p-6 sm:p-8 ${
+        graduated
+          ? "border-emerald-200 bg-emerald-50"
+          : "border-amber-200 bg-amber-50"
+      }`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-emerald-800">Day 7 已记录 · 7 / 7</p>
-          <h2 className="mt-2 text-2xl font-semibold text-emerald-950">七天课程流程已完成</h2>
+          <p className="text-sm font-medium text-slate-700">第 7 天已记录 · 流程 7 / 7</p>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+            {graduated
+              ? "七天训练完成 · 即时迁移达标"
+              : "七天流程已走完 · 迁移待加强"}
+          </h2>
         </div>
-        <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-900">零 AI 调用</span>
+        <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-800">零人工智能调用</span>
       </div>
       <dl className="grid gap-3 sm:grid-cols-2">
         <SummaryItem label="毕业项目首稿" value={outcome.projectInitialPassed ? "首次即达到规则" : "首次未达标，已保留"} />
-        <SummaryItem label="主动修改" value={outcome.revisionKind === "improved" ? "实质修改并修复缺口" : "实质修改并保持完整"} />
-        <SummaryItem label="未见迁移" value={transferLabel} />
+        <SummaryItem label="修改决策" value={revisionLabel} />
+        <SummaryItem label="新场景迁移" value={transferLabel} />
         <SummaryItem label="练习过程" value={`修改检查 ${outcome.revisionAttempts} 次 · 迁移检查 ${outcome.transferAttempts} 次`} />
         <SummaryItem label="前六天支架" value={`共主动查看 ${scaffoldUseCount} 次`} />
         <SummaryItem label="规则版本" value={outcome.ruleVersion} />
       </dl>
       <div className="rounded-lg border border-amber-200 bg-white/70 p-4 text-sm leading-6 text-slate-700">
-        这份总结只记录当前浏览器中的规则检查、修改行为和本次即时迁移。它不代表长期能力提升，也未证明本产品优于直接使用 AI；尚未检查 24–72 小时后的独立保持。
+        这份总结只记录当前浏览器中的规则检查、修改行为和本次即时迁移。它不代表长期能力提升，也未证明本产品优于直接使用人工智能；尚未检查 24–72 小时后的独立保持。
       </div>
+      {!graduated ? (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 sm:p-6">
+          <p className="text-sm font-semibold text-blue-700">当前唯一优先项</p>
+          <h3 className="mt-2 text-xl font-semibold text-blue-950">
+            回到新场景，继续修复迁移回答
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-blue-900">
+            首次结果仍会保留；继续检查只更新最终状态，不会把第一次回答改成达标。
+          </p>
+          <button className={`${primaryButtonClass} mt-5`} onClick={onContinueTransfer} type="button">
+            继续完成新场景迁移
+          </button>
+        </div>
+      ) : null}
+      <form
+        className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!challenge || !confidence || !useCase) {
+            setReflectionError("请完成三道选择题，再生成下一步建议。");
+            return;
+          }
+          setReflectionError(null);
+          onSaveReflection({ challenge, confidence, useCase });
+        }}
+      >
+        <p className="text-sm font-medium text-focus">30 秒课后自检</p>
+        <h3 className="mt-2 text-xl font-semibold text-slate-950">
+          不用再写长答案，选择最符合你的情况
+        </h3>
+        <ReflectionQuestion
+          legend="1. 哪个动作最容易卡住？"
+          name="reflection-challenge"
+          onChange={(value) => setChallenge(value as ReflectionChallenge)}
+          options={reflectionChallengeOptions}
+          value={challenge}
+        />
+        <ReflectionQuestion
+          legend="2. 换个场景时，你现在需要多少提示？"
+          name="reflection-confidence"
+          onChange={(value) => setConfidence(value as ReflectionConfidence)}
+          options={reflectionConfidenceOptions}
+          value={confidence}
+        />
+        <ReflectionQuestion
+          legend="3. 你最想把方法用在哪里？"
+          name="reflection-use-case"
+          onChange={(value) => setUseCase(value as ReflectionUseCase)}
+          options={reflectionUseCaseOptions}
+          value={useCase}
+        />
+        <FormError message={reflectionError} />
+        <button className={`${secondaryButtonClass} mt-5`} type="submit">
+          {reflection ? "更新自检和复练建议" : "保存自检并生成复练建议"}
+        </button>
+      </form>
+      {recommendation ? (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 sm:p-6">
+          <p className="text-sm font-semibold text-blue-700">闭环下一步</p>
+          <h3 className="mt-2 text-xl font-semibold text-blue-950">
+            复练第 {recommendation.day} 天：{recommendation.title}
+          </h3>
+          <p className="mt-3 leading-7 text-blue-950">{recommendation.reason}</p>
+          <p className="mt-2 text-sm leading-6 text-blue-900">{recommendation.action}</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              className={graduated ? primaryButtonClass : secondaryButtonClass}
+              onClick={() => onRetrain(recommendation.day)}
+              type="button"
+            >
+              进入推荐复练
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
+
+function ReflectionQuestion({
+  legend,
+  name,
+  onChange,
+  options,
+  value
+}: {
+  legend: string;
+  name: string;
+  onChange(value: string): void;
+  options: { label: string; value: string }[];
+  value: string;
+}) {
+  return (
+    <fieldset className="mt-5">
+      <legend className="text-sm font-semibold text-slate-900">{legend}</legend>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {options.map((option) => (
+          <label
+            className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm leading-6 hover:border-blue-300"
+            key={option.value}
+          >
+            <input
+              checked={value === option.value}
+              className="mt-1"
+              name={name}
+              onChange={() => onChange(option.value)}
+              type="radio"
+              value={option.value}
+            />
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+const reflectionChallengeOptions = [
+  { value: "purpose", label: "说清楚希望对方做什么" },
+  { value: "conclusion", label: "第一句直接给结论" },
+  { value: "evidence", label: "用事实支撑结论" },
+  { value: "grouping", label: "把信息分成不同要点" },
+  { value: "complete_report", label: "把结论、理由和请求组合起来" },
+  { value: "none", label: "暂时没有明显卡点" }
+];
+
+const reflectionConfidenceOptions = [
+  { value: "independent", label: "不看提示也能完成" },
+  { value: "with_scaffold", label: "看一眼提示就能完成" },
+  { value: "not_yet", label: "现在仍不知道怎么开始" }
+];
+
+const reflectionUseCaseOptions = [
+  { value: "manager_update", label: "向主管汇报" },
+  { value: "cross_team", label: "跨团队沟通" },
+  { value: "interview", label: "求职面试" },
+  { value: "presentation_writing", label: "演讲或写作" }
+];
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
