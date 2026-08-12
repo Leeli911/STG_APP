@@ -69,13 +69,40 @@ export type ProgressiveCourseProgress = {
   lessonViewedDays: ProgressiveCourseDay[];
   scaffoldUses: Partial<Record<ProgressiveCourseDay, number>>;
   daySevenOutcome?: DaySevenOutcome;
+  reflection?: PostCourseReflection;
   updatedAt: string;
 };
 
+export type ReflectionChallenge =
+  | "purpose"
+  | "conclusion"
+  | "evidence"
+  | "grouping"
+  | "complete_report"
+  | "none";
+
+export type ReflectionConfidence =
+  | "independent"
+  | "with_scaffold"
+  | "not_yet";
+
+export type ReflectionUseCase =
+  | "manager_update"
+  | "cross_team"
+  | "interview"
+  | "presentation_writing";
+
+export type PostCourseReflection = {
+  challenge: ReflectionChallenge;
+  confidence: ReflectionConfidence;
+  useCase: ReflectionUseCase;
+  completedAt: string;
+};
+
 export type DaySevenOutcome = {
-  ruleVersion: "stg-day-seven-rules-v1";
+  ruleVersion: "stg-day-seven-rules-v1" | "stg-day-seven-rules-v2";
   projectInitialPassed: boolean;
-  revisionKind: "improved" | "maintained";
+  revisionKind: "improved" | "maintained" | "not_needed";
   transferFirstPassed: boolean;
   transferFinalPassed: boolean;
   revisionAttempts: number;

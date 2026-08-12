@@ -1,6 +1,6 @@
 import { splitChineseSentences } from "@/features/structured-practice/ruleEngine";
 
-export const DAY_SEVEN_RULE_VERSION = "stg-day-seven-rules-v1" as const;
+export const DAY_SEVEN_RULE_VERSION = "stg-day-seven-rules-v2" as const;
 
 export type DaySevenScenarioId = "project" | "transfer";
 
@@ -51,7 +51,11 @@ type ScenarioAnchor = {
   task: string;
   facts: string[];
   conclusionGroups: string[][];
-  evidenceGroups: { id: string; signals: string[] }[];
+  evidenceGroups: {
+    id: string;
+    signalGroups: string[][];
+    contradictions?: string[];
+  }[];
   requestGroups: string[][];
   allowedNumbers: string[];
   otherScenarioSignals: string[];
@@ -64,7 +68,7 @@ export const daySevenScenarios: Record<DaySevenScenarioId, ScenarioAnchor> = {
     id: "project",
     audience: "运营总监",
     title: "毕业项目 A · 客服工单系统切换",
-    task: "请完成 4–6 句短汇报，请运营总监今天决定是否将系统切换推迟到下周一。",
+    task: "请完成 4–6 句短汇报，向运营总监建议将系统切换推迟到下周一，并请其今天批准。",
     facts: [
       "客服工单系统原定本周三切换。",
       "历史工单目前只迁移了 60%。",
@@ -80,10 +84,24 @@ export const daySevenScenarios: Record<DaySevenScenarioId, ScenarioAnchor> = {
       ["下周一"]
     ],
     evidenceGroups: [
-      { id: "migration", signals: ["历史工单", "迁移", "60%", "六成"] },
-      { id: "attachment", signals: ["试运行", "附件", "8%", "缺失"] },
-      { id: "repair", signals: ["供应商", "两天", "修复"] },
-      { id: "continuity", signals: ["旧系统", "合同", "月底", "客服高峰", "周四", "周五"] }
+      {
+        id: "migration",
+        signalGroups: [["历史工单", "工单"], ["迁移"], ["60%", "六成"]],
+        contradictions: ["全部迁移", "迁移完成", "已经完成迁移", "100%"]
+      },
+      {
+        id: "attachment",
+        signalGroups: [["附件"], ["8%", "百分之八"], ["缺失", "丢失"]],
+        contradictions: ["没有缺失", "无缺失", "不存在缺失", "全部完整"]
+      },
+      {
+        id: "repair",
+        signalGroups: [["供应商"], ["两天", "2天"], ["修复"]]
+      },
+      {
+        id: "continuity",
+        signalGroups: [["旧系统"], ["合同", "月底", "客服高峰", "周四", "周五"]]
+      }
     ],
     requestGroups: [
       ["请", "希望", "申请"],
@@ -95,14 +113,14 @@ export const daySevenScenarios: Record<DaySevenScenarioId, ScenarioAnchor> = {
     ],
     allowedNumbers: ["60%", "8%"],
     otherScenarioSignals: ["接口", "联调", "数据同步", "客户培训", "本周五发布"],
-    conclusionAction: "先只改第一句：建议将客服工单系统切换推迟到下周一。",
-    requestAction: "最后补一句：请运营总监今天批准将系统切换推迟到下周一。"
+    conclusionAction: "先只改第一句：写清你的建议、要调整的事项和新的切换日期。",
+    requestAction: "最后补一句：写清请哪位负责人、在什么时间批准哪项决定。"
   },
   transfer: {
     id: "transfer",
     audience: "市场负责人",
     title: "未见迁移 B · 剩余预算投放",
-    task: "请完成 4–6 句短汇报，请市场负责人今天决定是否把剩余预算集中到渠道 A。",
+    task: "请完成 4–6 句短汇报，向市场负责人建议把剩余预算集中到渠道 A，并请其今天批准。",
     facts: [
       "活动明天启动，目标是新增注册用户。",
       "渠道 A 获客成本 82 元，转化率 7.8%。",
@@ -117,10 +135,10 @@ export const daySevenScenarios: Record<DaySevenScenarioId, ScenarioAnchor> = {
       ["渠道 A", "渠道A", "A 渠道", "A渠道"]
     ],
     evidenceGroups: [
-      { id: "efficiency", signals: ["82", "7.8%"] },
-      { id: "comparison", signals: ["146", "3.1%", "渠道 B", "渠道B"] },
-      { id: "budget", signals: ["剩余预算", "一个渠道", "只够"] },
-      { id: "readiness", signals: ["素材", "审核", "一天修改", "明天启动"] }
+      { id: "efficiency", signalGroups: [["82"], ["7.8%"]] },
+      { id: "comparison", signalGroups: [["146"], ["3.1%"]] },
+      { id: "budget", signalGroups: [["剩余预算", "预算"], ["一个渠道", "只够"]] },
+      { id: "readiness", signalGroups: [["素材"], ["审核", "一天修改", "明天启动"]] }
     ],
     requestGroups: [
       ["请", "希望", "申请"],
@@ -132,28 +150,28 @@ export const daySevenScenarios: Record<DaySevenScenarioId, ScenarioAnchor> = {
     ],
     allowedNumbers: ["82", "7.8%", "146", "3.1%"],
     otherScenarioSignals: ["工单", "历史迁移", "附件缺失", "系统切换", "下周一"],
-    conclusionAction: "先只改第一句：建议把剩余预算集中投放到渠道 A。",
-    requestAction: "最后补一句：请市场负责人今天批准把剩余预算集中到渠道 A。"
+    conclusionAction: "先只改第一句：写清预算投放建议和优先选择的渠道。",
+    requestAction: "最后补一句：写清请哪位负责人、在什么时间批准哪项投放决定。"
   }
 };
 
 const metaSignals = ["命中规则", "评分标准", "关键词", "为了通过", "系统判定"];
 const groupMarkerPattern =
-  /(?:第一|第二|第三|一是|二是|三是)[，,:：、\s]*/g;
+  /(?:第一|第二|第三|首先|其次|最后|一是|二是|三是|一方面|另一方面|[\p{Script=Han}]{2,8}方面|(?:^|\n)\s*(?:[一二三四]、|[1-4][.、）]|（[1-4]）|[•-]))[，,:：、.\s]*/gmu;
 
 export function evaluateDaySevenReport(
   answer: string,
   scenarioId: DaySevenScenarioId
 ): DaySevenAssessment {
   const anchor = daySevenScenarios[scenarioId];
-  const normalized = answer.trim();
+  const normalized = normalizePunctuation(answer.trim());
   const sentences = splitChineseSentences(normalized).filter(Boolean);
   const firstSentence = sentences[0] ?? "";
   const lastSentence = sentences.at(-1) ?? "";
   const groups = extractExplicitGroups(normalized);
   const matchedGroups = groups.map((group) =>
     anchor.evidenceGroups
-      .filter((concept) => containsAny(group, concept.signals))
+      .filter((concept) => matchesEvidenceConcept(group, concept))
       .map((concept) => concept.id)
   );
   const distinctConcepts = new Set(matchedGroups.flat());
@@ -174,7 +192,7 @@ export function evaluateDaySevenReport(
       !["1", "2", "3"].includes(number)
   );
   const relevantFactCount = anchor.evidenceGroups.filter((concept) =>
-    containsAny(normalized, concept.signals)
+    matchesEvidenceConcept(normalized, concept)
   ).length;
 
   const checks: DaySevenReportCheck[] = [
@@ -388,12 +406,21 @@ function revisionResult(
 
 function extractExplicitGroups(value: string) {
   const matches = [...value.matchAll(groupMarkerPattern)];
-  return matches
+  const markedGroups = matches
     .map((match, index) => {
       const start = (match.index ?? 0) + match[0].length;
       const end = matches[index + 1]?.index ?? value.length;
       return value.slice(start, end).split(/请|希望|申请/)[0].trim();
     })
+    .filter((group) => group.length >= 2);
+  if (markedGroups.length >= 2) return markedGroups;
+
+  const sentences = splitChineseSentences(value).filter(Boolean);
+  if (sentences.length < 4) return markedGroups;
+  return sentences
+    .slice(1, -1)
+    .flatMap((sentence) => sentence.split(/[；;]/))
+    .map((group) => group.trim())
     .filter((group) => group.length >= 2);
 }
 
@@ -407,6 +434,24 @@ function matchesAllGroups(value: string, groups: string[][]) {
 
 function containsAny(value: string, signals: string[]) {
   return signals.some((signal) => value.includes(signal));
+}
+
+function matchesEvidenceConcept(
+  value: string,
+  concept: ScenarioAnchor["evidenceGroups"][number]
+) {
+  if (concept.contradictions && containsAny(value, concept.contradictions)) {
+    return false;
+  }
+  return concept.signalGroups.every((signals) => containsAny(value, signals));
+}
+
+function normalizePunctuation(value: string) {
+  return value
+    .replace(/[０-９]/g, (digit) =>
+      String.fromCharCode(digit.charCodeAt(0) - 0xfee0)
+    )
+    .replaceAll("％", "%");
 }
 
 function normalizeForComparison(value: string) {

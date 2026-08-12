@@ -4,7 +4,8 @@ Structured Thinking Gym (STG) 是一个面向中文职场用户的结构化表�
 
 ```text
 微课 → 正反例 → 知识检查 → 有支架练习
-→ 独立表达 → 原稿修改 → 未见迁移 → 毕业项目
+→ 独立表达 → 必要时修改 → 新场景迁移
+→ 选择题式自检 → 推荐复练
 ```
 
 核心定位是：**不是帮用户把这一次写得更好，而是训练用户下一次自己说清楚。** 免费公开训练使用浏览器内确定性规则，不调用付费模型。现有 AI 面试训练后端继续保留为实验能力，不作为免费课程用户价值成立的前提。
@@ -13,7 +14,7 @@ Structured Thinking Gym (STG) 是一个面向中文职场用户的结构化表�
 
 | 能力 | 状态 | 说明 |
 | --- | --- | --- |
-| v0.5 渐进课程 | Done in code | `/training-demo` 已实现 Day 1–7：微课、支架练习、独立表达、毕业项目首稿、主动修改、未见迁移、诚实总结、顺序解锁与刷新恢复。 |
+| v0.5 渐进课程 | Done in code | `/training-demo` 已实现 Day 1–7：微课、支架练习、独立表达、毕业项目、必要修改、新场景迁移、选择题式自检、推荐复练、顺序解锁与刷新恢复。 |
 | v0.4 可信水平检查 | Done | `/training-demo/classic` 保留冷答、自检、单点反馈、主动重写、迁移和 24 小时间隔冷测。 |
 | 三个微技能与 18 个场景 | Done | 明确目的、结论先行、两到三点框架；覆盖冷题、近迁移、远迁移和延迟题。 |
 | 可信规则验收 | Done | 四种状态、场景目标锚点、原文位置证据、抗投机规则及 180 个冻结回归样本。 |
@@ -36,13 +37,13 @@ Judge 不在生产推理链路中。现有 Judge 相关资源只用于离线评�
 - 有基础用户仍可进入 v0.4 经典水平检查，保留真实冷回答基线。
 - 选择、排序和填空只记录知识理解，只有开放回答和未见迁移才构成技能证据。
 - 每次只训练一个可观察动作，反馈引用用户原文，不给黑盒能力高分。
-- 不提供一键采用，必须亲自重写，避免把 AI 的表达误认为自己的能力。
+- 不提供一键采用；首稿有缺口时必须亲自重写，首稿已完整时不为留痕强迫改写。
 - 用一个未见过的新工作情境做迁移检查，而不只比较同一答案的前后分数。
 - 用 24 小时后的未见题区分即时表现与间隔保持，不把完成流程叫作能力提升。
 - 场景目标而不是用户自填结论决定规则状态；关键词、重复分点和元评分话术不能自证通过。
 - 中文职场短汇报、五分钟、零模型成本；用户不需要自行编写复杂教练提示词。
 
-完整范围、证据和限制见 [v0.5 渐进学习计划](docs/V05_PROGRESSIVE_LEARNING_PLAN.md)、[Day 1–7 用户旅程会审](docs/V05_USER_JOURNEY_REVIEW_2026-08-04.md)、[v0.4 可信评测计划](docs/V04_TRUSTWORTHY_EVAL_PLAN.md)、[产品有用性评估](docs/V04_PRODUCT_UTILITY_ASSESSMENT.md) 与 [产品决策日志](docs/PRODUCT_DECISION_LOG.md)。
+完整范围、证据和限制见 [v0.5 渐进学习计划](docs/V05_PROGRESSIVE_LEARNING_PLAN.md)、[Day 1–7 用户旅程会审](docs/V05_USER_JOURNEY_REVIEW_2026-08-04.md)、[多身份模拟用户闭环审查](docs/evals/V05_PERSONA_CLOSED_LOOP_AUDIT_2026-08-10.md)、[v0.4 可信评测计划](docs/V04_TRUSTWORTHY_EVAL_PLAN.md)、[产品有用性评估](docs/V04_PRODUCT_UTILITY_ASSESSMENT.md) 与 [产品决策日志](docs/PRODUCT_DECISION_LOG.md)。
 
 ## 本地运行
 
@@ -79,7 +80,7 @@ npm run test:e2e
 
 Playwright 使用 Mock AI 和本地开发认证，覆盖 v0.5 Day 1–7、顺序解锁、句子排序、理由匹配、信息卡归组、毕业项目首稿冻结、实质修改、未见迁移、刷新恢复、v0.4 完整修订、Demo 无外部 API、登录/Onboarding 和受保护路由跳转。浏览器产物写入 `output/playwright/`，不会提交到 Git。
 
-当前 v0.5 Day 7 验收基线：33 个 Vitest 文件、475 项单元/组件测试，以及 Desktop Chrome 与移动端 Chromium 共 28 项 Playwright 流程；最终数字以本分支完整质量门结果为准。规则评测和合成审计报告分别见 [V04_RULE_EVAL](docs/evals/V04_RULE_EVAL.md) 与 [V04_SYNTHETIC_USER_AUDIT](docs/evals/V04_SYNTHETIC_USER_AUDIT.md)。
+当前 v0.5 闭环验收基线：33 个 Vitest 文件、480 项单元/组件测试，以及 Desktop Chrome 与移动端 Chromium 共 32 项 Playwright 流程；包含同一浏览器连续 Day 1–7、自检、推荐复练和迁移待加强恢复。规则评测和合成审计报告分别见 [V04_RULE_EVAL](docs/evals/V04_RULE_EVAL.md)、[V04_SYNTHETIC_USER_AUDIT](docs/evals/V04_SYNTHETIC_USER_AUDIT.md) 与 [V05_PERSONA_CLOSED_LOOP_AUDIT](docs/evals/V05_PERSONA_CLOSED_LOOP_AUDIT_2026-08-10.md)。
 
 本机已有 Google Chrome 时可用 `PLAYWRIGHT_USE_SYSTEM_CHROME=1 npm run test:e2e` 跳过浏览器下载；CI 始终安装并使用固定 Playwright Chromium。
 

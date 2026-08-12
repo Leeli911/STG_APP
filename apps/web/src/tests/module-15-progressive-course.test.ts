@@ -11,7 +11,8 @@ import {
   markProgressiveLessonViewed,
   parseProgressiveCourseProgress,
   parseProgressiveCourseSession,
-  recordProgressiveScaffoldUse
+  recordProgressiveScaffoldUse,
+  savePostCourseReflection
 } from "@/features/progressive-course/progress";
 import {
   DAY_SEVEN_RULE_VERSION,
@@ -19,6 +20,7 @@ import {
   evaluateDaySevenRevision
 } from "@/features/progressive-course/projectEvaluator";
 import { evaluateDaySixReport } from "@/features/progressive-course/reportEvaluator";
+import { getNextPracticeRecommendation } from "@/features/progressive-course/recommendation";
 import { evaluateDayFourAnswer } from "@/features/progressive-course/supportEvaluator";
 import type { ProgressiveCourseProgress } from "@/features/progressive-course/types";
 import { getStructuredPracticePrompt } from "@/features/structured-practice/curriculum";
@@ -131,6 +133,31 @@ describe("Module 15 progressive course contract", () => {
         "project"
       )
     ).toMatchObject({ status: "unsupported_fact", passed: false });
+  });
+
+  it("accepts natural Chinese point markers and full-width percentages", () => {
+    expect(
+      evaluateDaySevenReport(
+        "建议将客服工单系统切换推迟到下周一。数据准备方面，历史工单目前只迁移了60％。运行风险方面，试运行中有8％的附件缺失。请运营总监今天批准将系统切换推迟到下周一。",
+        "project"
+      )
+    ).toMatchObject({ status: "met", passed: true });
+
+    expect(
+      evaluateDaySevenReport(
+        "建议把剩余预算集中投放到渠道A。首先，渠道A获客成本82元、转化率7.8%。其次，剩余预算只够支持一个渠道。请市场负责人今天批准把剩余预算集中投放到渠道A。",
+        "transfer"
+      )
+    ).toMatchObject({ status: "met", passed: true });
+  });
+
+  it("rejects evidence that repeats fact keywords while reversing their direction", () => {
+    expect(
+      evaluateDaySevenReport(
+        "建议将客服工单系统切换推迟到下周一。第一，历史工单已经全部迁移完成。第二，试运行附件完全没有缺失。请运营总监今天批准将系统切换推迟到下周一。",
+        "project"
+      )
+    ).toMatchObject({ status: "weak_evidence", passed: false });
   });
 
   it("requires a substantive Day 7 revision that remains structurally complete", () => {
@@ -321,6 +348,47 @@ describe("Module 15 progressive course contract", () => {
     expect(supported.lessonViewedDays).toEqual([2]);
     expect(supported.scaffoldUses[2]).toBe(2);
     expect(supported.completedDays).toEqual([]);
+  });
+
+  it("stores a choice-only reflection and derives one concrete retraining action", () => {
+    const completed = completeDaySevenProject(
+      {
+        ...createProgressiveCourseProgress(),
+        completedDays: [1, 2, 3, 4, 5, 6]
+      },
+      {
+        ruleVersion: DAY_SEVEN_RULE_VERSION,
+        projectInitialPassed: false,
+        revisionKind: "improved",
+        transferFirstPassed: false,
+        transferFinalPassed: false,
+        revisionAttempts: 1,
+        transferAttempts: 1,
+        completedAt: "2026-08-10T00:00:00.000Z"
+      }
+    );
+    const reflected = savePostCourseReflection(
+      completed,
+      {
+        challenge: "grouping",
+        confidence: "with_scaffold",
+        useCase: "manager_update"
+      },
+      new Date("2026-08-10T01:00:00.000Z")
+    );
+
+    expect(reflected.reflection).toEqual({
+      challenge: "grouping",
+      confidence: "with_scaffold",
+      useCase: "manager_update",
+      completedAt: "2026-08-10T01:00:00.000Z"
+    });
+    expect(
+      getNextPracticeRecommendation({
+        outcome: reflected.daySevenOutcome!,
+        reflection: reflected.reflection!
+      })
+    ).toMatchObject({ day: 5, title: "整理两到三个要点" });
   });
 
   it("fails closed when stored progress or sessions are malformed", () => {

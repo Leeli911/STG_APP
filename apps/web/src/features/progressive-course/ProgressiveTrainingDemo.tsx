@@ -33,6 +33,7 @@ import {
   PROGRESSIVE_DAY_SEVEN_SESSION_KEY,
   PROGRESSIVE_SESSION_KEY,
   recordProgressiveScaffoldUse,
+  savePostCourseReflection,
   type ProgressiveCourseSession
 } from "@/features/progressive-course/progress";
 import { evaluateDaySixReport } from "@/features/progressive-course/reportEvaluator";
@@ -99,6 +100,20 @@ export function ProgressiveTrainingDemo({
   const nextCourseDay =
     implementedDays.find((day) => !progress.completedDays.includes(day)) ??
     7;
+  const summaryAvailable = progress.daySevenOutcome !== undefined;
+  const showSummaryShortcut = summaryAvailable && session.stage === "complete";
+  const continueDay = showSummaryShortcut
+    ? 7
+    : summaryAvailable
+      ? session.day
+      : nextCourseDay;
+  const continueMode: "start" | "resume" | "summary" = showSummaryShortcut
+    ? "summary"
+    : session.day === continueDay &&
+        (session.stage !== "lesson" ||
+          progress.lessonViewedDays.includes(session.day))
+      ? "resume"
+      : "start";
   const scaffoldUseCount = Object.values(progress.scaffoldUses).reduce(
     (total, count) => total + (count ?? 0),
     0
@@ -173,7 +188,15 @@ export function ProgressiveTrainingDemo({
     );
     const storedSession = parseProgressiveCourseSession(rawSession);
     const candidate =
-      rawSession === null ? createProgressiveCourseSession() : storedSession;
+      rawSession === null
+        ? storedProgress.daySevenOutcome
+          ? {
+              ...createProgressiveCourseSession(),
+              day: 7 as const,
+              stage: "complete" as const
+            }
+          : createProgressiveCourseSession()
+        : storedSession;
     const safeSession = !isProgressiveDayUnlocked(
       storedProgress,
       candidate.day
@@ -228,8 +251,9 @@ export function ProgressiveTrainingDemo({
       />
       <ContinueCourseCard
         currentDay={session.day}
-        day={nextCourseDay}
-        onContinue={() => selectDay(nextCourseDay)}
+        day={continueDay}
+        mode={continueMode}
+        onContinue={continueCourse}
         outcome={progress.daySevenOutcome}
       />
       <CourseMap
@@ -258,7 +282,7 @@ export function ProgressiveTrainingDemo({
       {session.day === 1 && session.stage === "knowledge" ? (
         <KnowledgeCheckForm
           error={formError}
-          eyebrow="Day 1 · 简单识别"
+          eyebrow="第 1 天 · 简单识别"
           onSelect={(questionId, optionId) => {
             setDayOneResult(null);
             setFormError(null);
@@ -280,8 +304,8 @@ export function ProgressiveTrainingDemo({
       {session.day === 1 && session.stage === "complete" ? (
         <CompletionCard
           description="你已经能从工作任务中找到受众和期望行动。今天没有要求长文本输入。"
-          eyebrow="Day 1 已完成"
-          nextLabel="进入 Day 2：写一句明确目的"
+          eyebrow="第 1 天已完成"
+          nextLabel="进入第 2 天：写一句明确目的"
           onNext={() => selectDay(2)}
           title="先确定表达的终点"
         />
@@ -290,7 +314,7 @@ export function ProgressiveTrainingDemo({
       {session.day === 2 && session.stage === "knowledge" ? (
         <KnowledgeCheckForm
           error={formError}
-          eyebrow="Day 2 · 知识检查"
+          eyebrow="第 2 天 · 知识检查"
           onSelect={(_, optionId) => {
             setDayTwoKnowledgeResult(null);
             setFormError(null);
@@ -344,8 +368,8 @@ export function ProgressiveTrainingDemo({
       {session.day === 2 && session.stage === "complete" ? (
         <CompletionCard
           description="你已经用自己的话写出包含问题和行动请求的目的句。知识选择只负责理解，本次开放回答才记录为课程内技能证据。"
-          eyebrow="Day 2 已完成"
-          nextLabel="进入 Day 3：把结论放到第一句"
+          eyebrow="第 2 天已完成"
+          nextLabel="进入第 3 天：把结论放到第一句"
           onNext={() => selectDay(3)}
           title="从识别进入了独立表达"
         />
@@ -354,7 +378,7 @@ export function ProgressiveTrainingDemo({
       {session.day === 3 && session.stage === "knowledge" ? (
         <KnowledgeCheckForm
           error={formError}
-          eyebrow="Day 3 · 首句识别"
+          eyebrow="第 3 天 · 首句识别"
           onSelect={(_, optionId) => {
             setDayThreeKnowledgeResult(null);
             setFormError(null);
@@ -404,8 +428,8 @@ export function ProgressiveTrainingDemo({
       {session.day === 3 && session.stage === "complete" ? (
         <CompletionCard
           description="你已经先给出项目判断，再补充背景和依据。排序题只帮助理解；本次无提示短答才构成结论先行的课程内证据。"
-          eyebrow="Day 3 已完成"
-          nextLabel="进入 Day 4：用一个理由支撑结论"
+          eyebrow="第 3 天已完成"
+          nextLabel="进入第 4 天：用一个理由支撑结论"
           onNext={() => selectDay(4)}
           title="让听众先听到答案"
         />
@@ -414,7 +438,7 @@ export function ProgressiveTrainingDemo({
       {session.day === 4 && session.stage === "knowledge" ? (
         <KnowledgeCheckForm
           error={formError}
-          eyebrow="Day 4 · 理由识别"
+          eyebrow="第 4 天 · 理由识别"
           onSelect={(_, optionId) => {
             setDayFourKnowledgeResult(null);
             setFormError(null);
@@ -468,8 +492,8 @@ export function ProgressiveTrainingDemo({
       {session.day === 4 && session.stage === "complete" ? (
         <CompletionCard
           description="你已经用第一句给出判断，再用第二句提供一个直接、可核对的依据。选择题和组合练习只用于理解，独立回答才构成课程内证据。"
-          eyebrow="Day 4 已完成"
-          nextLabel="进入 Day 5：把信息整理成两到三点"
+          eyebrow="第 4 天已完成"
+          nextLabel="进入第 5 天：把信息整理成两到三点"
           onNext={() => selectDay(5)}
           title="让结论有一个站得住的理由"
         />
@@ -478,7 +502,7 @@ export function ProgressiveTrainingDemo({
       {session.day === 5 && session.stage === "knowledge" ? (
         <KnowledgeCheckForm
           error={formError}
-          eyebrow="Day 5 · 分组识别"
+          eyebrow="第 5 天 · 分组识别"
           onSelect={(_, optionId) => {
             setDayFiveKnowledgeResult(null);
             setFormError(null);
@@ -528,8 +552,8 @@ export function ProgressiveTrainingDemo({
       {session.day === 5 && session.stage === "complete" ? (
         <CompletionCard
           description="你已经用结论统领三个不同类别，并在未见情境中独立写出不重复的三点。信息卡归类只帮助理解，最终短答才构成课程内技能证据。"
-          eyebrow="Day 5 已完成"
-          nextLabel="进入 Day 6：完成一次完整工作汇报"
+          eyebrow="第 5 天已完成"
+          nextLabel="进入第 6 天：完成一次完整工作汇报"
           onNext={() => selectDay(6)}
           title="让多个信息各就各位"
         />
@@ -538,7 +562,7 @@ export function ProgressiveTrainingDemo({
       {session.day === 6 && session.stage === "knowledge" ? (
         <KnowledgeCheckForm
           error={formError}
-          eyebrow="Day 6 · 完整结构识别"
+          eyebrow="第 6 天 · 完整结构识别"
           onSelect={(_, optionId) => {
             setDaySixKnowledgeResult(null);
             setFormError(null);
@@ -587,9 +611,9 @@ export function ProgressiveTrainingDemo({
 
       {session.day === 6 && session.stage === "complete" ? (
         <CompletionCard
-          description="你已经在一个新情境中独立组合结论、不同事实分点和明确行动请求。规则通过只说明本题结构满足要求，最终迁移仍要由 Day 7 检查。"
-          eyebrow="Day 6 已完成"
-          nextLabel="进入 Day 7 毕业项目"
+          description="你已经在一个新情境中独立组合结论、不同事实分点和明确行动请求。规则通过只说明本题结构满足要求，最终迁移仍要由第 7 天检查。"
+          eyebrow="第 6 天已完成"
+          nextLabel="进入第 7 天毕业项目"
           onNext={() => selectDay(7)}
           title="完成了一次可行动的完整汇报"
         />
@@ -601,11 +625,19 @@ export function ProgressiveTrainingDemo({
           onCheckRevision={checkDaySevenRevision}
           onCheckTransfer={checkDaySevenTransfer}
           onComplete={completeDaySeven}
+          onContinueTransfer={continueDaySevenTransfer}
+          onRetrain={retrainDay}
+          onSaveReflection={(reflection) =>
+            setProgress((current) =>
+              savePostCourseReflection(current, reflection)
+            )
+          }
           onStart={startDaySevenProject}
           onUpdate={updateDaySeven}
           onViewRevision={viewDaySevenRevision}
           onViewTransfer={() => updateSession({ stage: "project_transfer" })}
           outcome={progress.daySevenOutcome}
+          reflection={progress.reflection}
           scaffoldUseCount={scaffoldUseCount}
           session={session.daySeven}
           stage={session.stage}
@@ -618,8 +650,34 @@ export function ProgressiveTrainingDemo({
     setSession((current) => ({ ...current, ...update }));
   }
 
+  function focusCurrentLesson() {
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById("current-lesson");
+      if (typeof target?.scrollIntoView === "function") {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      target?.focus({ preventScroll: true });
+    });
+  }
+
+  function continueCourse() {
+    if (continueMode === "summary") {
+      selectDay(7);
+      focusCurrentLesson();
+      return;
+    }
+    if (continueDay !== session.day) {
+      selectDay(continueDay);
+    }
+    focusCurrentLesson();
+  }
+
   function selectDay(day: ProgressiveCourseDay) {
     if (!isProgressiveDayUnlocked(progress, day)) return;
+    if (day === session.day && session.stage !== "complete") {
+      focusCurrentLesson();
+      return;
+    }
     setFormError(null);
     setDayOneResult(null);
     setDayTwoKnowledgeResult(null);
@@ -1066,6 +1124,17 @@ export function ProgressiveTrainingDemo({
   }
 
   function viewDaySevenRevision() {
+    if (session.daySeven.projectInitialPassed) {
+      updateSession({
+        stage: "project_transfer",
+        daySeven: {
+          ...session.daySeven,
+          revisionAnswer: session.daySeven.originalAnswer,
+          revisionChecked: true
+        }
+      });
+      return;
+    }
     updateSession({
       stage: "project_revision",
       daySeven: {
@@ -1097,23 +1166,69 @@ export function ProgressiveTrainingDemo({
     if (!session.daySeven.revisionChecked || !session.daySeven.transferChecked) {
       return;
     }
+    const previousOutcome = progress.daySevenOutcome;
+    const projectInitialPassed =
+      previousOutcome?.projectInitialPassed ??
+      session.daySeven.projectInitialPassed === true;
     const outcome: DaySevenOutcome = {
       ruleVersion: DAY_SEVEN_RULE_VERSION,
-      projectInitialPassed:
-        session.daySeven.projectInitialPassed === true,
+      projectInitialPassed,
       revisionKind:
-        session.daySeven.projectInitialPassed === true
-          ? "maintained"
-          : "improved",
+        previousOutcome?.revisionKind ??
+        (projectInitialPassed
+          ? session.daySeven.revisionAttempts > 0
+            ? "maintained"
+            : "not_needed"
+          : "improved"),
       transferFirstPassed:
+        previousOutcome?.transferFirstPassed ??
         session.daySeven.transferFirstPassed === true,
       transferFinalPassed,
-      revisionAttempts: session.daySeven.revisionAttempts,
-      transferAttempts: session.daySeven.transferAttempts,
+      revisionAttempts:
+        previousOutcome?.revisionAttempts ?? session.daySeven.revisionAttempts,
+      transferAttempts: Math.max(
+        previousOutcome?.transferAttempts ?? 0,
+        session.daySeven.transferAttempts
+      ),
       completedAt: new Date().toISOString()
     };
     setProgress((current) => completeDaySevenProject(current, outcome));
     updateSession({ stage: "complete" });
+  }
+
+  function continueDaySevenTransfer() {
+    const fallback = createProgressiveCourseSession();
+    const previousOutcome = progress.daySevenOutcome;
+    const currentDaySeven =
+      session.day === 7 ? session.daySeven : fallback.daySeven;
+    setSession({
+      ...fallback,
+      day: 7,
+      stage: "project_transfer",
+      daySeven: {
+        ...currentDaySeven,
+        projectInitialPassed:
+          currentDaySeven.projectInitialPassed ??
+          previousOutcome?.projectInitialPassed ??
+          null,
+        revisionChecked: true,
+        transferChecked: false,
+        transferFirstPassed:
+          currentDaySeven.transferFirstPassed ??
+          previousOutcome?.transferFirstPassed ??
+          null,
+        transferAttempts: Math.max(
+          currentDaySeven.transferAttempts,
+          previousOutcome?.transferAttempts ?? 0
+        )
+      }
+    });
+    focusCurrentLesson();
+  }
+
+  function retrainDay(day: 2 | 3 | 4 | 5 | 6) {
+    setSession({ ...createProgressiveCourseSession(), day });
+    focusCurrentLesson();
   }
 }
 
@@ -1149,7 +1264,7 @@ function CourseHeader({
           前六天 3–7 分钟 · 毕业项目约 10 分钟
         </span>
         <span className="rounded-full bg-slate-100 px-3 py-1">
-          当前完成 {completedCount} / 7 课
+          当前进度 {completedCount} / 7 课
         </span>
         <span className="rounded-full bg-slate-100 px-3 py-1">
           浏览器本地保存 · 零模型费用
@@ -1162,16 +1277,18 @@ function CourseHeader({
 function ContinueCourseCard({
   currentDay,
   day,
+  mode,
   onContinue,
   outcome
 }: {
   currentDay: ProgressiveCourseDay;
   day: ProgressiveCourseDay;
+  mode: "start" | "resume" | "summary";
   onContinue(): void;
   outcome?: DaySevenOutcome;
 }) {
   const activeLesson = progressiveCourse.find((lesson) => lesson.day === day);
-  const isSummary = outcome !== undefined;
+  const isSummary = mode === "summary" && outcome !== undefined;
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
       <div>
@@ -1180,16 +1297,20 @@ function ContinueCourseCard({
         </p>
         <p className="mt-1 font-medium text-blue-950">
           {isSummary
-            ? "七天流程已完成，可随时回看无原文总结"
-            : `继续 Day ${day}：${activeLesson?.title ?? "继续训练"}`}
+            ? outcome.transferFinalPassed
+              ? "即时迁移已达标，可回看总结和复练建议"
+              : "七天流程已走完，迁移仍待加强"
+            : `${mode === "resume" ? "继续" : "开始"}第 ${day} 天：${activeLesson?.title ?? "继续训练"}`}
         </p>
       </div>
       <button className={primaryButtonClass} onClick={onContinue} type="button">
         {isSummary
           ? "查看七天总结"
-          : currentDay === day
+          : mode === "resume" && currentDay === day
             ? "继续当前步骤"
-            : `继续 Day ${day}`}
+            : day === 1
+              ? "开始第 1 课"
+              : `开始第 ${day} 天`}
       </button>
     </section>
   );
@@ -1231,7 +1352,10 @@ function CourseMap({
             implementedDays.includes(lesson.day);
           const active = lesson.day === currentDay;
           const status = completed
-            ? "已完成"
+            ? lesson.day === 7 &&
+              progress.daySevenOutcome?.transferFinalPassed === false
+              ? "流程完成 · 迁移待加强"
+              : "已完成"
             : !lesson.implemented
               ? "后续开发"
               : prerequisiteMet
@@ -1242,7 +1366,7 @@ function CourseMap({
 
           return (
             <button
-              aria-label={`Day ${lesson.day} ${lesson.title} ${status}`}
+              aria-label={`第 ${lesson.day} 天 ${lesson.title} ${status}`}
               aria-pressed={active}
               className={
                 active
@@ -1255,7 +1379,7 @@ function CourseMap({
               type="button"
             >
               <span className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500">
-                <span>Day {lesson.day} · 难度 {lesson.difficulty}</span>
+                <span>第 {lesson.day} 天 · 难度 {lesson.difficulty}</span>
                 <span>{lesson.estimatedMinutes} 分钟</span>
               </span>
               <span className="mt-2 block font-semibold text-slate-950">
@@ -1286,14 +1410,18 @@ function LessonProgress({
     independent: "独立表达",
     project_draft: "毕业项目首稿",
     project_revision: "原稿修改",
-    project_transfer: "未见迁移",
+    project_transfer: "新场景迁移",
     complete: "完成"
   };
 
   return (
-    <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-900 px-5 py-4 text-white">
+    <section
+      className="scroll-mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-900 px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2"
+      id="current-lesson"
+      tabIndex={-1}
+    >
       <div>
-        <p className="text-xs text-slate-300">Day {day} / 7</p>
+        <p className="text-xs text-slate-300">第 {day} 天 / 共 7 天</p>
         <p className="mt-1 font-semibold">{title}</p>
       </div>
       <span className="rounded-full bg-white/10 px-3 py-1 text-sm">
@@ -1324,7 +1452,7 @@ function LessonCard({
     <section className="space-y-5 rounded-2xl border border-blue-200 bg-white p-5 shadow-sm sm:p-7">
       <div>
         <p className="text-sm font-medium text-focus">
-          Day {day} 微课 · 预计阅读 60–90 秒
+          第 {day} 天微课 · 预计阅读 60–90 秒
         </p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">{title}</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -1374,10 +1502,10 @@ function LessonCard({
             你已经分别练过明确目的、结论先行、直接依据和两到三点。今天只把这些动作组合起来，并新增一个明确收尾请求。
           </p>
           <ul className="mt-3 grid gap-2 text-sm text-violet-950 sm:grid-cols-2">
-            <li>✓ Day 2：说明为什么沟通</li>
-            <li>✓ Day 3：第一句给判断</li>
-            <li>✓ Day 4–5：用不同事实支撑</li>
-            <li>＋ Day 6：请对方明确行动</li>
+            <li>✓ 第 2 天：说明为什么沟通</li>
+            <li>✓ 第 3 天：第一句给判断</li>
+            <li>✓ 第 4–5 天：用不同事实支撑</li>
+            <li>＋ 第 6 天：请对方明确行动</li>
           </ul>
         </section>
       ) : null}
@@ -1519,7 +1647,7 @@ function GuidedPurposePractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 2 · 有支架练习</p>
+        <p className="text-sm font-medium text-focus">第 2 天 · 有支架练习</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           先补全“希望对方做什么”
         </h2>
@@ -1607,7 +1735,7 @@ function SentenceOrderPractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 3 · 句子排序</p>
+        <p className="text-sm font-medium text-focus">第 3 天 · 句子排序</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           先给答案，再放依据和补充信息
         </h2>
@@ -1716,7 +1844,7 @@ function IndependentConclusionPractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 3 · 独立表达</p>
+        <p className="text-sm font-medium text-focus">第 3 天 · 独立表达</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           用 2–3 句话直接回答主管
         </h2>
@@ -1839,7 +1967,7 @@ function GuidedSupportPractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 4 · 有支架练习</p>
+        <p className="text-sm font-medium text-focus">第 4 天 · 有支架练习</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           给结论配一个最直接的理由
         </h2>
@@ -1936,7 +2064,7 @@ function IndependentSupportPractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 4 · 独立表达</p>
+        <p className="text-sm font-medium text-focus">第 4 天 · 独立表达</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           只写一个结论和一个关键理由
         </h2>
@@ -2058,7 +2186,7 @@ function InformationGroupingPractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 5 · 信息卡归组</p>
+        <p className="text-sm font-medium text-focus">第 5 天 · 信息卡归组</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           先判断每条信息属于哪一类
         </h2>
@@ -2177,7 +2305,7 @@ function IndependentGroupingPractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 5 · 独立表达</p>
+        <p className="text-sm font-medium text-focus">第 5 天 · 独立表达</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           先给结论，再整理成三个不同要点
         </h2>
@@ -2299,7 +2427,7 @@ function GuidedReportBuilder({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 6 · 句块组装</p>
+        <p className="text-sm font-medium text-focus">第 6 天 · 句块组装</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           不重复手打，先把四个功能放对位置
         </h2>
@@ -2410,7 +2538,7 @@ function IndependentReportPractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 6 · 独立完整汇报</p>
+        <p className="text-sm font-medium text-focus">第 6 天 · 独立完整汇报</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           用 4–6 句话让负责人可以直接作决定
         </h2>
@@ -2552,7 +2680,7 @@ function IndependentPurposePractice({
         className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         onSubmit={onSubmit}
       >
-        <p className="text-sm font-medium text-focus">Day 2 · 独立表达</p>
+        <p className="text-sm font-medium text-focus">第 2 天 · 独立表达</p>
         <h2 className="mt-2 text-2xl font-semibold text-slate-950">
           现在只写一句明确目的
         </h2>

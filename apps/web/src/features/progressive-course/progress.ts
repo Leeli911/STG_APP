@@ -1,5 +1,6 @@
 import type {
   DaySevenOutcome,
+  PostCourseReflection,
   ProgressiveCourseDay,
   ProgressiveCourseProgress
 } from "@/features/progressive-course/types";
@@ -204,6 +205,7 @@ export function parseProgressiveCourseProgress(
       lessonViewedDays: normalizeDays(parsed.lessonViewedDays),
       scaffoldUses: normalizeScaffoldUses(parsed.scaffoldUses),
       daySevenOutcome: normalizeDaySevenOutcome(parsed.daySevenOutcome),
+      reflection: normalizePostCourseReflection(parsed.reflection),
       updatedAt:
         typeof parsed.updatedAt === "string"
           ? parsed.updatedAt
@@ -274,6 +276,24 @@ export function completeDaySevenProject(
     ...progress,
     completedDays: normalizeCompletedDays([...progress.completedDays, 7]),
     daySevenOutcome: outcome,
+    updatedAt: now.toISOString()
+  };
+}
+
+export function savePostCourseReflection(
+  progress: ProgressiveCourseProgress,
+  reflection: Omit<PostCourseReflection, "completedAt">,
+  now = new Date()
+): ProgressiveCourseProgress {
+  if (!progress.daySevenOutcome || !progress.completedDays.includes(7)) {
+    return progress;
+  }
+  return {
+    ...progress,
+    reflection: {
+      ...reflection,
+      completedAt: now.toISOString()
+    },
     updatedAt: now.toISOString()
   };
 }
@@ -365,10 +385,12 @@ function normalizeDaySevenOutcome(value: unknown): DaySevenOutcome | undefined {
   if (!value || typeof value !== "object") return undefined;
   const parsed = value as Partial<DaySevenOutcome>;
   if (
-    parsed.ruleVersion !== "stg-day-seven-rules-v1" ||
+    (parsed.ruleVersion !== "stg-day-seven-rules-v1" &&
+      parsed.ruleVersion !== "stg-day-seven-rules-v2") ||
     typeof parsed.projectInitialPassed !== "boolean" ||
     (parsed.revisionKind !== "improved" &&
-      parsed.revisionKind !== "maintained") ||
+      parsed.revisionKind !== "maintained" &&
+      parsed.revisionKind !== "not_needed") ||
     typeof parsed.transferFirstPassed !== "boolean" ||
     typeof parsed.transferFinalPassed !== "boolean" ||
     typeof parsed.completedAt !== "string"
@@ -385,6 +407,37 @@ function normalizeDaySevenOutcome(value: unknown): DaySevenOutcome | undefined {
     transferAttempts: normalizeAttemptCount(parsed.transferAttempts),
     completedAt: parsed.completedAt
   };
+}
+
+function normalizePostCourseReflection(
+  value: unknown
+): PostCourseReflection | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const parsed = value as Partial<PostCourseReflection>;
+  const challenges = [
+    "purpose",
+    "conclusion",
+    "evidence",
+    "grouping",
+    "complete_report",
+    "none"
+  ] as const;
+  const confidences = ["independent", "with_scaffold", "not_yet"] as const;
+  const useCases = [
+    "manager_update",
+    "cross_team",
+    "interview",
+    "presentation_writing"
+  ] as const;
+  if (
+    !challenges.includes(parsed.challenge as (typeof challenges)[number]) ||
+    !confidences.includes(parsed.confidence as (typeof confidences)[number]) ||
+    !useCases.includes(parsed.useCase as (typeof useCases)[number]) ||
+    typeof parsed.completedAt !== "string"
+  ) {
+    return undefined;
+  }
+  return parsed as PostCourseReflection;
 }
 
 function normalizeProjectString(value: unknown) {
